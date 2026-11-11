@@ -49,6 +49,12 @@ type Identity interface {
 	// SetExitNode selects the exit node that carries the identity's
 	// internet connections, by hostname, FQDN or address.
 	SetExitNode(ctx context.Context, node string) error
+	// ExitPeer is what the tailnet map says of an exit node: whether the
+	// node is there, online, and offering to be an exit node.
+	ExitPeer(ctx context.Context, node string) (Peer, error)
+	// Ping sends a Tailscale ping (TSMP) to a node, through the tunnel:
+	// nil when it answered.
+	Ping(ctx context.Context, node string) error
 	// Status is a snapshot for status and show.
 	Status(ctx context.Context) Status
 	Close() error
@@ -64,6 +70,13 @@ type Status struct {
 	ExitNode string   `json:"exit_node,omitempty"`
 	Peers    int      `json:"peers"`
 	Err      string   `json:"error,omitempty"`
+}
+
+// Peer is an exit node as the tailnet map has it.
+type Peer struct {
+	Found      bool `json:"found"`
+	Online     bool `json:"online"`
+	OffersExit bool `json:"offers_exit"`
 }
 
 // ErrNoRoute: the address is not reachable through this identity.

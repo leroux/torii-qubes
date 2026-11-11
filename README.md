@@ -22,16 +22,18 @@ machine: m1
 defaults:
   network: none                      # no network card unless a qube says otherwise
   tailnet: { tags: [server] }
+egress:
+  vpn: { exits: [exit1, exit2] }     # exit nodes in order; none healthy: refused, never direct
 qubes:
   wiki:                              # offline, but reachable from the tailnet on 443
     tailnet: { identity: tagged, inbound: [{port: 443, target: 8080}] }
   build:                             # offline; may fetch from PyPI and use the tailnet
     outbound: { internet: [pypi.org, files.pythonhosted.org], tailnet: yes }
     tailnet: { identity: tagged, tags: [job] }
-  browser:                           # networked, its internet through an exit node
+  browser:                           # networked, its internet through vpn; no identity needed
     network: proxy
-    outbound: { internet: all, via: exit1 }
-    tailnet: { identity: tagged }
+    egress: vpn
+    outbound: { internet: all }
 ```
 
 ## Why
@@ -57,9 +59,9 @@ With lintel:
   network card.
 - **Internet access is allowlisted by name.** List names like `pypi.org` or
   `*.example.com:443`. The proxy checks them against the name the qube looked
-  up and the TLS server name it sends. Or send a qube's internet through an
-  exit node. If the exit node is down, connections fail rather than going
-  direct.
+  up and the TLS server name it sends. Or send a qube's internet through
+  exit nodes, tried in order, without giving it an identity of its own. If
+  none is up, connections fail rather than going direct.
 - **You can see the result.** `lintel show` reads netvms, every policy file,
   the proxy's config and each identity's state. `lintel check` reports where
   they differ from the file. `lintel log` shows why each connection was
@@ -106,7 +108,8 @@ With lintel:
 | An **offline service** reachable from the tailnet | `tailnet: {identity: tagged, inbound: [443]}` | The qube keeps no netvm. Its identity listens on 443, and each connection is a `qubes.ConnectTCP` call into the qube, allowed by dom0 on that port only. |
 | An **offline job** that fetches packages and uses the tailnet | `outbound: {internet: [pypi.org], tailnet: yes}` | Inside the qube, `HTTPS_PROXY` and SOCKS are on loopback. The proxy allows only the names on the list, and tailnet destinations the grants allow. |
 | A **networked qube** behind the proxy | `network: proxy` | Its netvm becomes `sys-lintel`. All its traffic and DNS are intercepted and decided per destination, and tailnet traffic goes out on its own identity. |
-| Internet **through an exit node** | `outbound: {via: <exit node>}` | Its internet and DNS go to that exit node on its own identity, failing closed. |
+| Internet **through exit nodes** | `egress: vpn`, with `egress: {vpn: {exits: [a, b]}}` | Its internet and DNS go through the first healthy exit node, failing over in order and back after a hold-down. With none healthy, connections are refused, never sent direct. The egress has one internet-only identity, so the qube needs none. |
+| **Qubes attached by hand** | `proxy: {unlisted: refuse}` (default) or `{internet: all, egress: vpn}` | A qube attached to a proxy but not in the file gets nothing, or the internet through an egress. Disposables are such qubes: their disposable template's proxy decides. |
 | **Named services** | `services: {chat: {qube, tags, ports}}` | Each service is its own tailnet device. With `tls: yes` it serves HTTPS with a Tailscale certificate. |
 | **Local access** between qubes | `local-inbound: [{port: 5432, from: [job]}]` | `job` reaches the qube's port 5432 on `127.0.0.1:5432` over qrexec, and nothing else. |
 

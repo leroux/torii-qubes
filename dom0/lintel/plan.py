@@ -47,8 +47,13 @@ def _known_netvm(snap: Snapshot, info) -> bool:
 def used_proxies(m: Machine, snap: Snapshot) -> list[str]:
     """The proxies this plan sets up: those something in the file uses, and
     those that exist already (kept, since they hold identities)."""
-    used = {q.proxy for q in m.qubes.values() if q.via_proxy} | {x.proxy for x in m.services.values()}
-    return sorted(p for p in m.proxies if p in used or p in snap.qubes)
+    return sorted(p for p in m.proxies if p in _used(m) or p in snap.qubes)
+
+
+def _used(m: Machine) -> set[str]:
+    """Proxies something in the file uses: a qube, a service, unlisted."""
+    return ({q.proxy for q in m.qubes.values() if q.via_proxy} | {x.proxy for x in m.services.values()}
+            | {p.name for p in m.proxies.values() if p.unlisted is not None})
 
 
 @dataclasses.dataclass
@@ -309,7 +314,7 @@ def make(m: Machine, snap: Snapshot, bundle_version: str) -> list[Step]:
 def notes(m: Machine, snap: Snapshot) -> list[str]:
     """Things apply does not change but a person should know."""
     out = []
-    used = {q.proxy for q in m.qubes.values() if q.via_proxy} | {x.proxy for x in m.services.values()}
+    used = _used(m)
     for p in sorted(m.proxies):
         if p in snap.qubes and p not in used:
             out.append(f"{p}: unused (kept: it holds identities)")
@@ -324,6 +329,9 @@ def notes(m: Machine, snap: Snapshot) -> list[str]:
             t = snap.qubes.get(tpl)
             if t is None or derive.CLIENT_VERSION_FEATURE not in t.features:
                 need.setdefault(tpl, []).append(name)
+    for name, wq in sorted(m.qubes.items()):
+        if wq.egress != "direct" and wq.lan != "none":
+            out.append(f"{name}: its LAN access goes direct through {wq.proxy}'s netvm, never through egress {wq.egress}")
     for tpl, users in sorted(need.items()):
         out.append(f"{', '.join(users)} need{'s' if len(users) == 1 else ''} the lintel client in {tpl}; "
                    f"install it with `lintel install-client {tpl}`, then restart them")

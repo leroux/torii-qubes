@@ -227,7 +227,7 @@ func TestUDPExitNodeFailsClosed(t *testing.T) {
 	exit := w.net.Node("exit-1")
 	exit.OfferExitNode()
 	w.start(t)
-	waitFor(t, func() bool { return w.net.Node("work").Status(context.Background()).ExitNode == "exit-1" })
+	waitFor(t, func() bool { return w.net.Node("egress-vpn").Status(context.Background()).ExitNode == "exit-1" })
 	r := newCapture()
 	w.udp("10.137.0.22:40000", "8.8.8.8:443", "a", r)
 	r.expect(t, "via-exit:a")

@@ -176,6 +176,11 @@ func newSim(t *testing.T) *sim {
 		s.hostname[name] = w.Identity.Hostname
 		s.tags[w.Identity.Hostname] = w.Identity.Tags
 	}
+	for _, name := range cfg.EgressNames() {
+		g := cfg.Egresses[name]
+		ids[config.EgressIdentityKey(name)] = s.net.Node(g.Hostname)
+		s.tags[g.Hostname] = g.Tags
+	}
 	peer := s.net.Node(simPeer)
 	peer.OfferExitNode()
 	serveFake(t, peer, 7000, "peer 7000")
@@ -253,6 +258,17 @@ func newSim(t *testing.T) *sim {
 	t.Cleanup(func() { s.eng.Close() })
 	if err := s.eng.Start(context.Background()); err != nil {
 		t.Fatal(err)
+	}
+	// Exit-path connections are refused until each egress has checked its
+	// exit nodes once.
+	deadline := time.Now().Add(5 * time.Second)
+	for _, g := range s.eng.Status(context.Background()).Egresses {
+		for !s.eng.Status(context.Background()).Egresses[g.Name].Usable {
+			if time.Now().After(deadline) {
+				t.Fatalf("egress %s never usable: %+v", g.Name, s.eng.Status(context.Background()).Egresses[g.Name])
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
 	}
 	return s
 }
@@ -392,9 +408,9 @@ func (s *sim) measure(c *simCell) {
 	c.got = verdict(line != "" && strings.Contains(line, c.dest.marker))
 	// Through an exit node, the internet answers from the exit node's side.
 	if c.got == "reached" && c.dest.kind == "internet" && c.channel != "in" {
-		if w := s.cfg.Workloads[c.src]; w.ExitNode != "" && !strings.HasPrefix(line, "exit ") {
+		if w := s.cfg.Workloads[c.src]; w.Egress != "" && !strings.HasPrefix(line, "exit ") {
 			c.got, c.why = "refused", c.why+"; went direct, not through the exit node"
-		} else if w.ExitNode == "" && strings.HasPrefix(line, "exit ") {
+		} else if w.Egress == "" && strings.HasPrefix(line, "exit ") {
 			c.got, c.why = "refused", c.why+"; went through an exit node it does not have"
 		}
 	}

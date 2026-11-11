@@ -6,7 +6,9 @@
     lintel check    [-f FILE]          where the live system and the file disagree
     lintel grants   [-f FILE]          proposed Tailscale tag owners and grants
     lintel log      QUBE [-n N]        recent connection decisions for a qube
-    lintel sign-in-key NAME < key       a one-time key for a qube's or a service's identity, stored in its proxy qube
+    lintel log      --egress NAME      an egress's exit-node events: switches, nodes down and back
+    lintel sign-in-key NAME < key       a one-time key for a qube's, a service's or an egress's (egress:NAME)
+                                        identity, stored in its proxy qube
     lintel install-client TEMPLATE     the workload-side client, into a template
     lintel snapshot                    the live state plan reads, as JSON (for bug reports and tests)
 """
@@ -14,6 +16,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import os
 import sys
@@ -142,6 +145,8 @@ def cmd_show(a) -> int:
         print(line)
         for w, link in sorted(status.sign_in_links(d.get("status") or {}).items()):
             print(f"  waiting for sign-in: {w}: {link}")
+        for line in show.egress_lines(st) + show.unlisted_lines(snap, d.get("status") or {}):
+            print(line)
     print()
     print("\n\n".join(show.format_view(v) for v in views))
     missing = [n for n in a.qubes if n not in snap.qubes]
@@ -185,6 +190,10 @@ def cmd_check(a) -> int:
                                 + (f"; sign in: {ident['auth_url']}" if ident.get("auth_url") else ""))
             if ident.get("tag_mismatch"):
                 problems.append(f"{w}: {ident['tag_mismatch']}")
+        problems += show.egress_problems(p, st, datetime.datetime.now(datetime.timezone.utc))
+        for line in show.unlisted_lines(snap, d.get("status") or {}):
+            if not line.endswith(", 0 refused"):
+                problems.append(f"{p}:{line.strip()} (attached, not in the file)")
     # Hand-written policy that widens what the tool set.
     for r in show.rules(snap):
         if r.file.startswith(derive.POLICY_NAME) or r.file == derive.DENY_POLICY or r.action != "allow":
@@ -207,6 +216,11 @@ def cmd_grants(a) -> int:
 
 
 def cmd_log(a) -> int:
+    if a.egress:
+        a.qube = f"egress:{a.egress}"
+    if not a.qube:
+        print("name a QUBE, or --egress NAME", file=sys.stderr)
+        return 2
     app = _app()
     snap = _snapshot(app, None)
     ps = _proxy_states(app, snap)
@@ -229,13 +243,24 @@ def cmd_sign_in_key(a) -> int:
     m = machine.load(a.file)
     # A qube's own identity, or a service; a service's identity state and
     # key are kept under its workload name, <qube>.<service>.
-    if a.qube in m.services:
+    if a.qube.startswith("egress:"):
+        # An egress's identity, on one proxy: egress:<name>, or
+        # egress:<name>@<proxy> when several proxies carry it.
+        g, _, want = a.qube[len("egress:"):].partition("@")
+        on = [p for e, p in m.egress_instances() if e == g and (not want or p == want)]
+        if len(on) != 1:
+            print(f"{a.qube}: " + ("not carried by any proxy in " + a.file if not on else
+                                   "on several proxies; write egress:" + g + "@<one of " + ", ".join(on) + ">"),
+                  file=sys.stderr)
+            return 2
+        workload, proxy = f"egress-{g}", on[0]
+    elif a.qube in m.services:
         x = m.services[a.qube]
         workload, proxy = f"{x.qube}.{x.name}", x.proxy
     elif a.qube in m.qubes and m.qubes[a.qube].identity != "none":
         workload, proxy = a.qube, m.qubes[a.qube].proxy
     else:
-        print(f"{a.qube}: no such identity in {a.file} (a qube with tailnet.identity, or a service)",
+        print(f"{a.qube}: no such identity in {a.file} (a qube with tailnet.identity, a service, or egress:<name>)",
               file=sys.stderr)
         return 2
     key = sys.stdin.readline().strip()
@@ -325,10 +350,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--json", action="store_true")
     add("check", cmd_check, "where the live system and the file disagree")
     add("grants", cmd_grants, "proposed Tailscale tag owners and grants")
-    p = add("log", cmd_log, "recent connection decisions for a qube")
-    p.add_argument("qube")
+    p = add("log", cmd_log, "recent connection decisions for a qube, or an egress's exit-node events")
+    p.add_argument("qube", nargs="?")
+    p.add_argument("--egress", metavar="NAME", help="an egress's events: switches, exit nodes down and back")
     p.add_argument("-n", type=int, default=20)
-    p = add("sign-in-key", cmd_sign_in_key, "give an identity (a QUBE, or a SERVICE) a one-time key from stdin")
+    p = add("sign-in-key", cmd_sign_in_key,
+            "give an identity (a QUBE, a SERVICE, or egress:NAME) a one-time key from stdin")
     p.add_argument("qube")
     p = add("install-client", cmd_install_client, "install the lintel client into a workload template")
     p.add_argument("template")

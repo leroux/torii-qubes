@@ -18,6 +18,7 @@ import (
 
 	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/config"
 	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/dnsx"
+	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/egress"
 	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/events"
 	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/policy"
 	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/sni"
@@ -44,7 +45,8 @@ type QubeDialer interface {
 // Deps is everything the engine talks to.
 type Deps struct {
 	Config *config.Config
-	// Identities by workload name.
+	// Identities by workload name; an egress's under
+	// config.EgressIdentityKey(name).
 	Identities map[string]tailnet.Identity
 	// Internet dials through the proxy qube's own netvm.
 	Internet Dialer
@@ -79,10 +81,11 @@ type Engine struct {
 	d     Deps
 	cache *dnsx.Cache
 
+	egress map[string]*egress.Selector // by egress name; set by Start
+
 	mu       sync.Mutex
 	active   map[string]int
 	lnErrs   map[string]string
-	exitErrs map[string]string
 	lns      []net.Listener
 	local    map[string]string // local listener name -> address
 	flows    map[string]*udpFlow
@@ -139,8 +142,8 @@ func New(d Deps) *Engine {
 		cache:    &dnsx.Cache{Clock: d.Clock, MinTTL: 5 * time.Minute},
 		active:   map[string]int{},
 		lnErrs:   map[string]string{},
-		exitErrs: map[string]string{},
 		local:    map[string]string{},
+		egress:   map[string]*egress.Selector{},
 		flows:    map[string]*udpFlow{},
 		nflows:   map[string]int{},
 		limitLog: map[string]time.Time{},
@@ -185,13 +188,63 @@ func (e *Engine) forbidden(a netip.Addr, path policy.Path) bool {
 }
 
 // decide is policy.DecideOutbound with the proxy qube's own addresses
-// forbidden off the tailnet.
+// forbidden off the tailnet, and the exit path refused while the
+// workload's egress has no healthy exit node.
 func (e *Engine) decide(o policy.Outbound) policy.Decision {
 	d := policy.DecideOutbound(e.d.Config, o)
 	if d.Verdict == policy.Allow && d.Path == policy.PathInternet && o.Addr.IsValid() && e.forbidden(o.Addr, d.Path) {
 		return policy.Decision{Verdict: policy.Refuse, Reason: policy.ReasonForbiddenAddress}
 	}
+	return e.exitUsable(o.Workload, d)
+}
+
+// exitUsable refuses an exit-path decision whose egress has no healthy
+// exit node: the connection fails at once instead of hanging, and is
+// never sent another way.
+func (e *Engine) exitUsable(workload string, d policy.Decision) policy.Decision {
+	if d.Verdict != policy.Allow || d.Path != policy.PathExit {
+		return d
+	}
+	if s := e.selectorOf(workload); s == nil || !s.Usable() {
+		return policy.Decision{Verdict: policy.Refuse, Reason: policy.ReasonNoHealthyExit, Path: policy.PathExit, Identity: d.Identity}
+	}
 	return d
+}
+
+// selectorOf is the selector of a workload's egress, or nil.
+func (e *Engine) selectorOf(workload string) *egress.Selector {
+	w, ok := e.d.Config.Lookup(workload)
+	if !ok || w.Egress == "" {
+		return nil
+	}
+	return e.egress[w.Egress]
+}
+
+// exitIdentity is the identity a workload's exit path dials through: its
+// egress's, never its own. nil when it has none.
+func (e *Engine) exitIdentity(workload string) tailnet.Identity {
+	w, ok := e.d.Config.Lookup(workload)
+	if !ok || w.Egress == "" {
+		return nil
+	}
+	return e.d.Identities[config.EgressIdentityKey(w.Egress)]
+}
+
+// dialExit dials through the workload's egress, and tells its selector
+// how it went (the passive health check).
+func (e *Engine) dialExit(ctx context.Context, workload string, dst netip.AddrPort, udp bool) (net.Conn, error) {
+	id := e.exitIdentity(workload)
+	if id == nil {
+		return nil, tailnet.ErrNoRoute
+	}
+	if udp {
+		return id.DialUDP(ctx, dst) // connectionless: says nothing of health
+	}
+	c, err := id.Dial(ctx, dst)
+	if s := e.selectorOf(workload); s != nil && ctx.Err() == nil {
+		s.Report(dst.String(), err)
+	}
+	return c, err
 }
 
 // ExitResolver resolves through id's exit node: DNS over TCP to server,
@@ -210,12 +263,31 @@ func ExitResolver(id tailnet.Identity, server string) Resolver {
 // Log is the decision log.
 func (e *Engine) Log() *events.Log { return e.d.Log }
 
-// Start starts every identity, its inbound listeners and its exit-node
-// selection. It does not wait for sign-in.
+// Start starts every identity, its inbound listeners, and each egress's
+// exit-node selection. It does not wait for sign-in.
 func (e *Engine) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	e.cancel = cancel
 	c := e.d.Config
+	for _, name := range c.EgressNames() {
+		g := c.Egresses[name]
+		id := e.d.Identities[config.EgressIdentityKey(name)]
+		if id == nil {
+			return fmt.Errorf("engine: no identity for egress %s", name)
+		}
+		if err := id.Start(ctx); err != nil {
+			return fmt.Errorf("engine: start egress %s: %w", name, err)
+		}
+		opt := egress.Options{Log: e.d.Log, Logf: e.d.Logf, Now: e.d.Clock.Now}
+		if g.Probe != "" {
+			probe := g.Probe
+			opt.Probe = func(ctx context.Context) error { return e.probe(ctx, id, probe) }
+		}
+		s := egress.New(name, g, id, opt)
+		e.egress[name] = s
+		e.wg.Add(1)
+		go func() { defer e.wg.Done(); s.Run(ctx) }()
+	}
 	for _, name := range c.WorkloadNames() {
 		w := c.Workloads[name]
 		id := e.d.Identities[name]
@@ -243,10 +315,6 @@ func (e *Engine) Start(ctx context.Context) error {
 			e.track(ln)
 			e.wg.Add(1)
 			go e.serveInbound(ctx, name, in.Port, ln, id)
-		}
-		if w.ExitNode != "" {
-			e.wg.Add(1)
-			go e.selectExit(ctx, name, w.ExitNode, id)
 		}
 	}
 	if err := e.startLocal(ctx); err != nil {
@@ -320,33 +388,28 @@ func (e *Engine) track(ln net.Listener) {
 	e.lns = append(e.lns, ln)
 }
 
-// selectExit keeps trying to select the exit node until it works. Until
-// then the workload's internet connections fail: the path is the exit
-// node or nothing.
-func (e *Engine) selectExit(ctx context.Context, workload, node string, id tailnet.Identity) {
-	defer e.wg.Done()
-	if err := id.AwaitRunning(ctx); err != nil {
-		return
+// probe dials an egress's probe address through its identity, resolving
+// a name through the exit node, and closes it: nil when it connected.
+func (e *Engine) probe(ctx context.Context, id tailnet.Identity, hostport string) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	host, port, err := config.SplitHostPort(hostport)
+	if err != nil {
+		return err
 	}
-	for {
-		err := id.SetExitNode(ctx, node)
-		e.mu.Lock()
-		if err != nil {
-			e.exitErrs[workload] = err.Error()
-		} else {
-			delete(e.exitErrs, workload)
+	a, err := netip.ParseAddr(host)
+	if err != nil {
+		addrs, lerr := e.d.ExitResolver(id).LookupNetIP(ctx, "ip4", host)
+		if lerr != nil || len(addrs) == 0 {
+			return fmt.Errorf("probe %s: %v", host, lerr)
 		}
-		e.mu.Unlock()
-		if err == nil {
-			e.d.Logf("%s: exit node %s selected", workload, node)
-			return
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(time.Second):
-		}
+		a = addrs[0]
 	}
+	c, err := id.Dial(ctx, netip.AddrPortFrom(a, port))
+	if err != nil {
+		return err
+	}
+	return c.Close()
 }
 
 // Close stops listeners and identities.
@@ -424,7 +487,7 @@ func (e *Engine) handleInbound(ctx context.Context, workload string, port uint16
 }
 
 func (e *Engine) dialWorkload(ctx context.Context, workload string, port uint16) (net.Conn, error) {
-	w := e.d.Config.Workloads[workload]
+	w, _ := e.d.Config.Lookup(workload)
 	switch w.Link {
 	case config.LinkQrexec, config.LinkRouted:
 		// Routed workloads too: a Qubes app qube's own firewall drops new
@@ -450,7 +513,7 @@ func (e *Engine) dialWorkload(ctx context.Context, workload string, port uint16)
 // as dom0 named it, arg the service argument ("socks" or "f.<name>").
 func (e *Engine) HandleQrexec(ctx context.Context, caller, arg string, c net.Conn) {
 	defer c.Close()
-	if w, ok := e.d.Config.Workloads[caller]; !ok || w.Link != config.LinkQrexec {
+	if w, ok := e.d.Config.Lookup(caller); !ok || w.Link != config.LinkQrexec {
 		reason := policy.ReasonWrongEntry
 		if !ok {
 			reason = policy.ReasonUnknownWorkload
@@ -541,7 +604,7 @@ func (e *Engine) classify(ctx context.Context, o policy.Outbound, host string) p
 }
 
 func (e *Engine) hasIdentity(w string) bool {
-	wl := e.d.Config.Workloads[w]
+	wl, _ := e.d.Config.Lookup(w)
 	return wl != nil && wl.Identity != nil
 }
 
@@ -585,13 +648,17 @@ func (e *Engine) dial(ctx context.Context, o *policy.Outbound, d policy.Decision
 	default:
 		r := e.d.Resolver
 		if d.Path == policy.PathExit {
-			r = e.d.ExitResolver(id)
+			xid := e.exitIdentity(o.Workload)
+			if xid == nil {
+				return nil, tailnet.ErrNoRoute
+			}
+			r = e.d.ExitResolver(xid)
 		}
 		a, err := r.LookupNetIP(ctx, "ip", o.Host)
 		if err != nil {
 			return nil, err
 		}
-		w := e.d.Config.Workloads[o.Workload]
+		w, _ := e.d.Config.Lookup(o.Workload)
 		for _, x := range a {
 			// Each address is decided by its zone: a name allowed on the
 			// internet that resolves to the LAN, to another qube or to the
@@ -613,11 +680,14 @@ func (e *Engine) dial(ctx context.Context, o *policy.Outbound, d policy.Decision
 		var err error
 		path := d.Path
 		if path != policy.PathTailnet && !o.Addr.IsValid() {
-			path = policy.PathFor(e.d.Config.Workloads[o.Workload], a)
+			w, _ := e.d.Config.Lookup(o.Workload)
+			path = policy.PathFor(w, a)
 		}
 		switch path {
-		case policy.PathTailnet, policy.PathExit:
+		case policy.PathTailnet:
 			c, err = id.Dial(ctx, ap)
+		case policy.PathExit:
+			c, err = e.dialExit(ctx, o.Workload, ap, false)
 		default:
 			c, err = e.d.Internet.DialContext(ctx, "tcp", ap.String())
 		}
@@ -644,7 +714,7 @@ func (e *Engine) dial(ctx context.Context, o *policy.Outbound, d policy.Decision
 // goes upstream, however long the client waits to send it. The server's
 // side flows from the start, so a server that speaks first can.
 func (e *Engine) carry(ctx context.Context, o policy.Outbound, ev events.Event, c, up net.Conn, checkSNI bool) {
-	w := e.d.Config.Workloads[o.Workload]
+	w, _ := e.d.Config.Lookup(o.Workload)
 	check := func() ([]byte, bool) {
 		e.d.Log.Emit(ev)
 		return nil, true
@@ -728,8 +798,13 @@ func (e *Engine) AnswerDNS(ctx context.Context, src netip.Addr, b []byte) []byte
 	if w.Identity != nil && id != nil {
 		tailAddrs, isTail = id.LookupTailnet(ctx, q.Name)
 	}
-	d := policy.DecideName(e.d.Config, name, q.Name, isTail)
+	d := e.exitUsable(name, policy.DecideName(e.d.Config, name, q.Name, isTail))
 	fill(&ev, d)
+	if d.Reason == policy.ReasonNoHealthyExit {
+		e.d.Log.Emit(ev)
+		out, _ := dnsx.Error(q, 2) // SERVFAIL: no way out, not "no such name"
+		return out
+	}
 	if d.Verdict != policy.Allow {
 		e.d.Log.Emit(ev)
 		out, _ := dnsx.Error(q, 3) // NXDOMAIN
@@ -746,7 +821,7 @@ func (e *Engine) AnswerDNS(ctx context.Context, src netip.Addr, b []byte) []byte
 	} else if q.Type == 1 || q.Type == 28 { // A, AAAA
 		r := e.d.Resolver
 		if d.Path == policy.PathExit {
-			r = e.d.ExitResolver(id)
+			r = e.d.ExitResolver(e.exitIdentity(name))
 		}
 		network := "ip4"
 		if q.Type == 28 {
@@ -795,7 +870,7 @@ type Explanation struct {
 
 // Explain decides without sending traffic.
 func (e *Engine) Explain(ctx context.Context, r ExplainRequest) (Explanation, error) {
-	w, ok := e.d.Config.Workloads[r.Workload]
+	w, ok := e.d.Config.Lookup(r.Workload)
 	if !ok {
 		return Explanation{Decision: policy.Decision{Verdict: policy.Refuse, Reason: policy.ReasonUnknownWorkload}}, nil
 	}
@@ -832,6 +907,13 @@ type Status struct {
 	Version   string                    `json:"config_version"`
 	ProxyQube string                    `json:"proxy_qube"`
 	Workloads map[string]WorkloadStatus `json:"workloads"`
+	Egresses  map[string]EgressStatus   `json:"egresses,omitempty"`
+}
+
+// EgressStatus is one egress: its identity and its exit nodes' health.
+type EgressStatus struct {
+	egress.Status
+	Identity *tailnet.Status `json:"identity,omitempty"`
 }
 
 // WorkloadStatus is one workload's part of the status.
@@ -860,11 +942,19 @@ func (e *Engine) Status(ctx context.Context) Status {
 				ws.Errors = append(ws.Errors, "listen "+k+": "+v)
 			}
 		}
-		if v, ok := e.exitErrs[name]; ok {
-			ws.Errors = append(ws.Errors, "exit node: "+v)
-		}
 		e.mu.Unlock()
 		st.Workloads[name] = ws
+	}
+	for name, s := range e.egress {
+		if st.Egresses == nil {
+			st.Egresses = map[string]EgressStatus{}
+		}
+		es := EgressStatus{Status: s.Status()}
+		if id := e.d.Identities[config.EgressIdentityKey(name)]; id != nil {
+			is := id.Status(ctx)
+			es.Identity = &is
+		}
+		st.Egresses[name] = es
 	}
 	return st
 }

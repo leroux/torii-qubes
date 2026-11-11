@@ -28,7 +28,7 @@ const (
 	PathNone     Path = ""
 	PathTailnet  Path = "tailnet"  // dialled through the workload's identity
 	PathInternet Path = "internet" // dialled through the proxy qube's netvm
-	PathExit     Path = "exit"     // dialled through the identity's exit node
+	PathExit     Path = "exit"     // dialled through the workload's egress: its identity, its active exit node
 	PathWorkload Path = "workload" // inbound: into the workload
 )
 
@@ -60,6 +60,12 @@ const (
 	ReasonTailnetName      Reason = "tailnet-name"
 	ReasonTailnetNotListed Reason = "tailnet-not-allowlisted"
 	ReasonUDPFlowLimit     Reason = "udp-flow-limit"
+	ReasonNoHealthyExit    Reason = "egress-no-healthy-exit" // the engine's: its egress has no exit node up
+	// An egress's own events (direction egress): its exit node changed,
+	// or one went down or came back.
+	ReasonExitSwitch    Reason = "exit-switch"
+	ReasonExitUnhealthy Reason = "exit-unhealthy"
+	ReasonExitHealthy   Reason = "exit-healthy"
 )
 
 // Entry is how an outbound connection arrived.
@@ -120,7 +126,7 @@ func (o Outbound) proto() string {
 
 // DecideOutbound decides an outbound connection.
 func DecideOutbound(c *config.Config, o Outbound) Decision {
-	w, ok := c.Workloads[o.Workload]
+	w, ok := c.Lookup(o.Workload)
 	if !ok {
 		return refuse(ReasonUnknownWorkload)
 	}
@@ -179,9 +185,7 @@ func DecideOutbound(c *config.Config, o Outbound) Decision {
 			return refuse(r)
 		}
 		path := PathFor(w, o.Addr)
-		if path != PathExit {
-			ident = ""
-		}
+		ident = pathIdentity(c, w, path, ident)
 		if host == "" {
 			host = o.Host
 		}
@@ -199,11 +203,10 @@ func DecideOutbound(c *config.Config, o Outbound) Decision {
 	}
 	o.Host = host
 	path := PathInternet
-	if w.ExitNode != "" {
+	if w.Egress != "" {
 		path = PathExit
-	} else {
-		ident = ""
 	}
+	ident = pathIdentity(c, w, path, ident)
 	return Decision{Verdict: Allow, Reason: r, Path: path, Identity: ident, Host: o.Host}
 }
 
@@ -233,7 +236,7 @@ func Match(allow []string, host string) bool {
 // name may be answered, and through which path it is looked up. tailnet
 // says the name is a tailnet name of the workload's identity.
 func DecideName(c *config.Config, workload, name string, tailnet bool) Decision {
-	w, ok := c.Workloads[workload]
+	w, ok := c.Lookup(workload)
 	if !ok {
 		return refuse(ReasonUnknownWorkload)
 	}
@@ -246,15 +249,32 @@ func DecideName(c *config.Config, workload, name string, tailnet bool) Decision 
 		}
 		return Decision{Verdict: Allow, Reason: ReasonTailnetName, Path: PathTailnet, Identity: w.Identity.Hostname, Host: name}
 	}
-	path, ident := PathInternet, ""
-	if w.ExitNode != "" {
-		path, ident = PathExit, w.Identity.Hostname
+	path := PathInternet
+	if w.Egress != "" {
+		path = PathExit
 	}
+	ident := pathIdentity(c, w, path, "")
 	if ok, r := MayAskName(w, name, 0, ""); ok {
 		return Decision{Verdict: Allow, Reason: r, Path: path, Identity: ident, Host: name}
 	} else {
 		return refuse(r)
 	}
+}
+
+// pathIdentity is the identity an internet-zone path uses: the egress's
+// on the exit path, none direct. The workload's own identity (own) is for
+// the tailnet only.
+func pathIdentity(c *config.Config, w *config.Workload, path Path, own string) string {
+	switch path {
+	case PathExit:
+		if g := c.EgressOf(w); g != nil {
+			return g.Hostname
+		}
+		return ""
+	case PathTailnet:
+		return own
+	}
+	return ""
 }
 
 // DecideInbound decides a connection arriving at a workload's identity.

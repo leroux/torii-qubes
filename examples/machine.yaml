@@ -9,11 +9,23 @@ machine: m1               # this machine's name: prefixes its tags (server -> ta
 # records its netvm (feature lintel-prior-netvm); a qube leaving the file gets no netvm.
 
 proxy: sys-lintel          # the proxy qube the tool creates: tailnet identities and outbound relay
-# proxy: { name: sys-lintel, netvm: sys-firewall, label: orange }
+# proxy: { name: sys-lintel, netvm: sys-firewall, label: orange,
+#          unlisted: refuse }  # qubes attached to it but not listed below: refuse (default),
+#                              # or e.g. { internet: all, egress: vpn }
 # proxies:                # dedicated proxies, chosen per qube with `proxy: <name>`
 #   - { name: sys-lintel-admin }
 # template: lintel-fedora-44-minimal  # the tool's own template (lintel-<base>), cloned from:
 # base-template: fedora-44-minimal
+
+# Ways out through tailnet exit nodes. A qube with `egress: vpn` sends its internet and
+# DNS through the first healthy exit node, in order; with none healthy, it is refused,
+# never sent direct. vpn has one internet-only identity (m1-egress-vpn, tag:m1-egress),
+# so the qubes using it need no identity of their own.
+egress:
+  vpn:
+    exits: [exit1, exit2]
+    # failback-after: 2m     # a preferred exit node must stay healthy this long to be used again
+    # probe: 1.1.1.1:443     # optional end-to-end check through the exit node; default none
 
 tailnet:
   # control-url: https://headscale.example.org   # empty: Tailscale
@@ -25,7 +37,7 @@ defaults:                 # for every qube in the file unless it says otherwise
                           # | default: Qubes' default netvm | <netvm>: that netvm. Not listed: untouched.
   # outbound: every destination is in one zone, decided by the address really dialled:
   #   internet: public addresses        lan: this machine's private network (192.168/16, ...)
-  #   tailnet:  yes or no (where to: the grants)        via: direct, or an exit node
+  #   tailnet:  yes or no (where to: the grants)
   # Each of internet and lan is none, all, or a list of names, addresses or ranges,
   # each with an optional :port and /tcp or /udp (none: TCP only; QUIC and other UDP
   # need /udp). Other qubes' addresses are never reachable this way.
@@ -55,10 +67,11 @@ qubes:
     outbound: { internet: all }
     tailnet: { identity: tagged, inbound: [8000] }
 
-  # A laptop work qube: signs in as its person, internet through an exit node.
+  # A laptop work qube: signs in as its person, internet through egress vpn.
   work:
     network: proxy
-    outbound: { internet: all, tailnet: yes, via: exit1 }
+    egress: vpn
+    outbound: { internet: all, tailnet: yes }
     tailnet: { identity: login }
 
   # A qube with no network card that hosts the services below.

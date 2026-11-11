@@ -139,8 +139,10 @@ func (e *Engine) newFlow(ctx context.Context, src, dst netip.AddrPort, open func
 	var up net.Conn
 	var err error
 	switch d.Path {
-	case policy.PathTailnet, policy.PathExit:
+	case policy.PathTailnet:
 		up, err = e.d.Identities[name].DialUDP(dctx, dst)
+	case policy.PathExit:
+		up, err = e.dialExit(dctx, name, dst, true)
 	default:
 		up, err = e.d.Internet.DialContext(dctx, "udp", dst.String())
 	}

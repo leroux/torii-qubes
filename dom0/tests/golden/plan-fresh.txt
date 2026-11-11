@@ -7,8 +7,8 @@ sys-lintel: set netvm = sys-firewall
 sys-lintel: set provides_network = True
 sys-lintel: set autostart = True
 sys-lintel: enable service lintel-proxy
-sys-lintel: set its config 26cdf62d71f3: 3 workloads
-sys-lintel: start it and wait until it runs config 26cdf62d71f3
+sys-lintel: set its config 88c8d0955fc8: 3 workloads
+sys-lintel: start it and wait until it runs config 88c8d0955fc8
 50-lintel: write the qrexec policy
 59-lintel-deny: write the shared qrexec denies
 lintel-probe: tag lintel-managed

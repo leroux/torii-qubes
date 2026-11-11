@@ -76,7 +76,7 @@ func TestPermit(t *testing.T) {
 
 func TestLANNeverThroughTheExitNode(t *testing.T) {
 	w := wl(config.InternetFull, nil, config.InternetFull, nil)
-	w.ExitNode = "exit1"
+	w.Egress = "vpn"
 	if p := PathFor(w, netip.MustParseAddr("192.168.1.1")); p != PathInternet {
 		t.Errorf("LAN via %s", p)
 	}

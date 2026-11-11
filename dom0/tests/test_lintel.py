@@ -141,6 +141,7 @@ class MachineFile(unittest.TestCase):
     def test_example_file_parses(self):
         machine.load(os.path.join(HERE, "..", "..", "examples", "machine.yaml"))
         machine.load(os.path.join(HERE, "..", "..", "proxy", "internal", "engine", "testdata", "sim", "machine.yaml"))
+        machine.load(os.path.join(HERE, "..", "..", "dev", "headscale", "lintel-test.yaml"))
 
     def test_every_machine_file_in_the_docs_parses(self):
         """Every ```yaml block in the README and docs/ parses with the tool's
@@ -181,7 +182,7 @@ class MachineFile(unittest.TestCase):
         self.bad("qubes: {a: {tailnet: {inbound: [80]}}}", "need an identity")
         self.bad("qubes: {a: {outbound: {tailnet: yes}}}", "need an identity")
         self.bad("qubes: {a: {network: proxy, forwards: {x: 'h:1'}}}", "forwards are for qubes without")
-        self.bad("qubes: {a: {outbound: {via: ex, internet: all}}}", "needs an identity")
+        self.bad("qubes: {a: {outbound: {via: ex, internet: all}}}", "outbound.via: removed")
         self.bad("qubes: {sys-lintel: {}}", "is a proxy qube")
         self.bad("qubes: {a: {proxy: nope}}", "no proxy 'nope'")
         self.bad("defaults: {tailnet: {inbound: [1]}}", "unknown key 'inbound'")
@@ -238,7 +239,7 @@ services:
     def test_earlier_schema_says_where_keys_went(self):
         self.bad("qubes: {a: {internet: full}}", "moved to outbound.internet")
         self.bad("qubes: {a: {internet-allow: [x.org]}}", "moved to the list in outbound.internet")
-        self.bad("qubes: {a: {internet-via: ex}}", "moved to outbound.via")
+        self.bad("qubes: {a: {internet-via: ex}}", "moved to egress:")
         self.bad("qubes: {a: {tailnet: {outbound: yes}}}", "moved to outbound.tailnet")
         self.bad("defaults: {internet: none}", "moved to outbound.internet")
 
@@ -586,6 +587,143 @@ class Adoption(unittest.TestCase):
         with self.assertRaises(plan.PlanError) as e:
             plan.make(mparse("qubes: {personal: {network: proxy, disposables: yes}}"), s, VERSION)
         self.assertIn("personal is not a disposable template", str(e.exception))
+
+
+EGRESS = """
+egress:
+  vpn: {exits: [exit-nyc, exit-ams], failback-after: 90s}
+proxies: [{name: sys-lintel-dvm, unlisted: {internet: all, egress: vpn}}]
+qubes:
+  browser: {network: proxy, egress: vpn, outbound: {internet: all}}
+  build:
+    egress: vpn
+    outbound: {internet: [pypi.org], tailnet: yes, lan: [192.168.1.2:22]}
+    tailnet: {identity: tagged, tags: [job]}
+"""
+
+
+class Egresses(unittest.TestCase):
+    def bad(self, text, msg):
+        with self.assertRaises(machine.FileError) as e:
+            mparse(text)
+        self.assertIn(msg, str(e.exception))
+
+    def test_parse(self):
+        m = mparse(EGRESS)
+        g = m.egresses["vpn"]
+        self.assertEqual((g.exits, g.failback_after, g.tags, g.hostname),
+                         (("exit-nyc", "exit-ams"), 90, ("tag:m1-egress", "tag:m1"), "m1-egress-vpn"))
+        self.assertEqual(mparse("egress: {e: {exits: [x]}}\nqubes: {}").egresses["e"].failback_after, 120)
+        self.assertEqual(m.qubes["browser"].identity, "none", "an egress needs no identity of the qube's")
+        self.assertEqual(m.egress_instances(), [("vpn", "sys-lintel"), ("vpn", "sys-lintel-dvm")])
+
+    def test_errors(self):
+        self.bad("qubes: {a: {network: proxy, egress: vpn, outbound: {internet: all}}}", "no egress 'vpn'")
+        self.bad("egress: {vpn: {exits: []}}\nqubes: {}", "one or more exit nodes")
+        self.bad("egress: {vpn: {exits: [a, a]}}\nqubes: {}", "an exit node twice")
+        self.bad("egress: {vpn: {exits: [a], failback-after: soon}}\nqubes: {}", "a duration")
+        self.bad("egress: {vpn: {exits: [a], via: b}}\nqubes: {}", "unknown key 'via'")
+        self.bad("egress: {vpn: {exits: [a], probe: example.com}}\nqubes: {}", "host:port")
+        self.bad("egress: {vpn: {exits: [a]}}\nqubes: {a: {network: proxy, egress: vpn}}", "outbound.internet: none")
+        self.bad("egress: {vpn: {exits: [a]}}\nproxy: {name: sys-lintel, unlisted: {internet: none}}\nqubes: {}",
+                 "`unlisted: refuse`")
+        self.bad("proxy: {name: sys-lintel, unlisted: {internet: all, egress: nope}}\nqubes: {}", "no egress 'nope'")
+        self.bad("egress: {vpn: {exits: [a]}}\nproxy: {name: sys-lintel, unlisted: {internet: all, tailnet: yes}}\nqubes: {}",
+                 "unknown key 'tailnet'")
+        self.bad("egress: {vpn: {exits: [a]}}\nqubes: {a: {network: default, egress: vpn, outbound: {internet: all}}}",
+                 "not carried by the proxy")
+        # The egress's device name is a tailnet name like any other.
+        self.bad("egress: {vpn: {exits: [a]}}\nqubes:\n  egress-vpn: {network: proxy, egress: vpn, outbound: {internet: all}, "
+                 "tailnet: {identity: tagged, tags: [t]}}", "tailnet name m1-egress-vpn also used")
+
+    def test_proxy_config(self):
+        m = mparse(EGRESS)
+        main = derive.proxy_config(m, "sys-lintel", {"browser": "10.137.0.20"}, "v")
+        self.assertEqual(main["egresses"], {"vpn": {
+            "hostname": "m1-egress-vpn", "tags": ["tag:m1-egress", "tag:m1"], "exits": ["exit-nyc", "exit-ams"],
+            "failback_after": 90, "auth_key_file": "/rw/lintel/keys/egress-vpn"}})
+        self.assertEqual(main["workloads"]["browser"]["egress"], "vpn")
+        self.assertNotIn("identity", main["workloads"]["browser"])
+        self.assertNotIn("unlisted", main, "the main proxy refuses unlisted qubes by default")
+        dvm = derive.proxy_config(m, "sys-lintel-dvm", {}, "v")
+        self.assertEqual(dvm["egresses"]["vpn"]["hostname"], "m1-egress-vpn-sys-lintel-dvm")
+        self.assertEqual(dvm["unlisted"], {"internet": "full", "egress": "vpn"})
+        self.assertEqual(dvm["workloads"], {})
+
+    def test_grants_allow_only_the_internet(self):
+        g = derive.grants(mparse(EGRESS))
+        self.assertIn({"src": ["tag:m1-egress"], "dst": ["autogroup:internet"], "ip": ["*"]}, g["grants"])
+        self.assertIn("tag:m1-egress", g["tagOwners"])
+        self.assertFalse([x for x in g["grants"] if "tag:m1-egress" in x["src"] and x["dst"] != ["autogroup:internet"]])
+
+    def test_unlisted_makes_a_proxy_used(self):
+        m = mparse("egress: {vpn: {exits: [a]}}\nproxies: [{name: sys-lintel-dvm, unlisted: {internet: all, egress: vpn}}]\nqubes: {}")
+        steps = [str(s) for s in plan.make(m, snap(), VERSION)]
+        self.assertTrue(any(s.startswith("sys-lintel-dvm: create the proxy qube") for s in steps), steps)
+        self.assertFalse(any(s.startswith("sys-lintel: create") for s in steps), "the main proxy is not used")
+
+    def test_lan_with_an_egress_is_noted(self):
+        s = with_qube(snap(), "build", "")
+        notes = plan.notes(mparse(EGRESS), s)
+        self.assertIn("build: its LAN access goes direct through sys-lintel's netvm, never through egress vpn", notes)
+
+
+PROXY_STATUS = {"status": {
+    "config_version": "v", "proxy_qube": "sys-lintel", "workloads": {},
+    "egresses": {"vpn": {
+        "name": "vpn", "active": "exit-ams", "active_since": "2026-11-08T10:02:00Z", "usable": True,
+        "exits": [{"name": "exit-nyc", "healthy": False, "why": "ping: missed 3"},
+                  {"name": "exit-ams", "healthy": True, "healthy_since": "2026-11-08T10:00:00Z"}],
+        "identity": {"hostname": "m1-egress-vpn", "state": "NeedsLogin", "auth_url": "https://login/x"}}}},
+    "log": [
+        {"workload": "-", "direction": "out", "source": "10.137.0.50", "dest": "1.1.1.1:443", "verdict": "refuse",
+         "reason": "unknown-workload"},
+        {"workload": "-", "direction": "dns", "source": "10.137.0.50", "dest": "a.org A", "verdict": "refuse",
+         "reason": "unknown-workload"},
+        {"workload": "unlisted:10.137.0.51", "direction": "out", "source": "unlisted:10.137.0.51",
+         "dest": "1.1.1.1:443", "verdict": "allow", "reason": "internet-full"},
+        {"workload": "egress:vpn", "direction": "egress", "dest": "exit-ams", "reason": "exit-switch"}]}
+
+
+class EgressStatus(unittest.TestCase):
+    def test_sign_in_links_include_egresses(self):
+        from lintel import status
+        self.assertEqual(status.sign_in_links(PROXY_STATUS), {"egress vpn": "https://login/x"})
+
+    def test_show_egress(self):
+        from lintel import show
+        self.assertEqual(show.egress_lines(PROXY_STATUS["status"]), [
+            "  egress vpn: active exit-ams since 2026-11-08 10:02 UTC",
+            "    exit-nyc  down (ping: missed 3)",
+            "    exit-ams  up",
+        ])
+        down = copy.deepcopy(PROXY_STATUS["status"])
+        down["egresses"]["vpn"]["usable"] = False
+        self.assertEqual(show.egress_lines(down)[0], "  egress vpn: NO HEALTHY EXIT NODE (connections refused; last exit-ams)")
+
+    def test_unlisted_sources_are_named_by_dom0(self):
+        from lintel import show
+        s = with_qube(with_qube(snap(), "shopping", "sys-lintel", qid=50), "disp1234", "sys-lintel", qid=51)
+        self.assertEqual(s.qubes["shopping"].address, "10.137.0.50")
+        self.assertEqual(show.unlisted_lines(s, PROXY_STATUS), [
+            "  unlisted disp1234 (10.137.0.51): 1 allowed, 0 refused",
+            "  unlisted shopping (10.137.0.50): 0 allowed, 2 refused",
+        ])
+
+    def test_check_egress(self):
+        from lintel import show
+        import datetime
+        now = datetime.datetime(2026, 11, 10, 12, 0, tzinfo=datetime.timezone.utc)
+        self.assertEqual(show.egress_problems("sys-lintel", PROXY_STATUS["status"], now), [
+            "egress vpn on sys-lintel: identity m1-egress-vpn is NeedsLogin; sign in: https://login/x",
+            "egress vpn on sys-lintel: on fallback exit-ams since 2026-11-08 10:02 UTC (exit-nyc: ping: missed 3)",
+        ])
+        st = copy.deepcopy(PROXY_STATUS["status"])
+        st["egresses"]["vpn"].update(usable=False)
+        st["egresses"]["vpn"]["identity"]["state"] = "Running"
+        self.assertEqual(show.egress_problems("sys-lintel", st, now),
+                         ["egress vpn on sys-lintel: no healthy exit node; its qubes' internet is refused "
+                          "(exit-nyc: ping: missed 3)"])
 
 
 class Chunks(unittest.TestCase):

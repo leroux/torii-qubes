@@ -34,9 +34,16 @@ def _has_timeout(p) -> bool:
 
 
 def sign_in_links(st: dict[str, Any]) -> dict[str, str]:
+    """Identities waiting for sign-in: workloads by name, egresses as
+    "egress <name>"."""
     out = {}
-    for name, w in (st.get("status", {}).get("workloads") or {}).items():
+    s = st.get("status", {})
+    for name, w in (s.get("workloads") or {}).items():
         ident = w.get("identity") or {}
         if ident.get("auth_url"):
             out[name] = ident["auth_url"]
+    for name, g in (s.get("egresses") or {}).items():
+        ident = g.get("identity") or {}
+        if ident.get("auth_url"):
+            out[f"egress {name}"] = ident["auth_url"]
     return out

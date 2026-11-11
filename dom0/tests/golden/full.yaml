@@ -1,6 +1,8 @@
 # The golden tests' machine: the design's example, on the recorded snapshot's qubes.
 machine: m1
 proxy: sys-lintel
+egress:
+  vpn: { exits: [exit1, exit2] }
 defaults:
   network: none
   tailnet: { tags: [lintel-test] }
@@ -14,9 +16,10 @@ qubes:
       tailnet: yes
     tailnet: { identity: tagged, inbound: [8080], tags: [lintel-job] }
     forwards: { db: { to: "store.example.ts.net:8000", port: 5432 } }
-  personal:               # routed, all of the internet, through an exit node
+  personal:               # routed, all of the internet, through egress vpn
     network: proxy
-    outbound: { internet: all, via: exit1 }
+    egress: vpn
+    outbound: { internet: all }
     tailnet: { identity: login }
     local-inbound:
       - { port: 22, from: [lintel-probe2] }

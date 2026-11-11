@@ -129,15 +129,59 @@ address that nobody resolved is refused. This stops domain fronting with an
 allowed name, though not raw traffic to another site on a shared address.
 The remaining gaps are listed in [`reference.md`](reference.md#limits).
 
-### Exit nodes per identity, failing closed
+### Identity, egress and policy are separate
 
-A qube's internet can go through an exit node on its own identity. Different
-qubes can use different exit nodes, and no separate gateway qube is needed.
-The program dials straight into the identity's userspace network stack and
-never uses `tsnet.Server.Dial`, which falls back to the system network for
-addresses without a tailnet route. When the exit node is unreachable,
-connections fail instead of leaking. DNS for those qubes also goes through
-the exit node.
+Three questions, each answered in one place: *who is this qube on the
+tailnet* (`tailnet:`, its identity), *which way does its internet go*
+(`egress:`), and *what may it reach* (`outbound:`). An **egress** is a way
+out through tailnet exit nodes, defined once and used by name. Each proxy
+that carries it holds one shared identity for it, so a qube that only needs
+its internet forced through an exit node gets no identity of its own. A qube
+with both uses both: its tailnet traffic on its identity, its internet on the
+egress's, chosen per connection by the zone of the address dialled.
+
+An egress identity is internet-only, held on both sides: the proxy never
+sends tailnet destinations through it (they are a zone of their own,
+dialled only on the workload's identity), and `lintel grants` proposes only
+`autogroup:internet` for its tag. Sharing a *path* is harmless, since everyone
+behind one exit node shares its address anyway. Sharing tailnet
+*authorisation* is how compartments merge, so egresses don't do it.
+
+Rules attach to the qube, not to the identity or the egress. That is what
+leaves room for per-qube firewalling (prompts, learned rules) later without
+changing either.
+
+### Exit nodes in order, failing closed
+
+An egress lists exit nodes in order. The proxy uses the first healthy one,
+fails over when it goes down, and fails back to a preferred one once that
+has stayed healthy for a hold-down (`failback-after`, 2 minutes), so a
+flapping home exit node doesn't move the qubes' address every minute.
+
+Healthy means: listed online and offering an exit node in the tailnet map
+(free, catches withdrawn routes and ACL changes), answering a Tailscale ping
+(the map lags by tens of seconds), and real connections through it not all
+failing (three or more destinations failing within 30 s with none succeeding
+trips it: one dead site doesn't). No third-party probe runs by default; it
+would send a recognisable connection out of every exit node. `probe:` adds
+one for those who want it.
+
+Failing closed holds in two independent places. The program dials straight
+into the egress identity's userspace network stack and never uses
+`tsnet.Server.Dial`, which falls back to the system network for addresses
+without a tailnet route, so without an exit node nothing has a route out.
+And the engine refuses exit-path connections, and answers SERVFAIL to their
+DNS, while the egress has no healthy node. A switch is one prefs change from
+the old node to the new; the exit node is never cleared, because for a stock
+Tailscale client clearing it is exactly the switch back to direct.
+
+### Unlisted qubes and disposables
+
+A qube attached to a proxy but not in the file is decided by that proxy's
+`unlisted:`, `refuse` by default: attaching a qube by mistake gets it
+nothing. A disposable can't be listed (its address changes per start), so
+its disposable template's proxy's `unlisted:` is its policy; the documented
+way is a proxy of their own, so the main proxy can stay `refuse`.
 
 ### Configuration in features, status over one read-only service
 

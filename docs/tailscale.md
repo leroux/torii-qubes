@@ -143,16 +143,31 @@ curl -u "$TS_API_KEY:" -X POST https://api.tailscale.com/api/v2/tailnet/-/keys \
 
 ## Exit nodes
 
-A qube with `outbound: {via: exit1}` sends its internet traffic, and its DNS
-lookups, through the device `exit1` on its own identity. If that device
-is down, the qube's internet fails; it never falls back to going direct.
+An egress (`egress: {vpn: {exits: [exit1, exit2]}}`) sends the internet
+traffic and DNS lookups of the qubes that use it (`egress: vpn`) through the
+first healthy of its exit nodes. It is its own tailnet device,
+`<machine>-egress-vpn` tagged `tag:<machine>-egress`, one per proxy qube that
+carries it; the qubes using it need no identity. An exit node is healthy
+while the tailnet map lists it online and offering an exit node, it answers a
+Tailscale ping (every 10 s; three missed is down), and real connections
+through it are not all failing (three or more destinations failing in 30 s,
+none succeeding). The egress fails over to the next healthy node in order,
+and back to a preferred one once it has stayed healthy for `failback-after`
+(2 minutes). With none healthy, connections are refused at once and DNS
+answers SERVFAIL; nothing is sent direct, and the exit node is never cleared.
+`probe: host:port` adds an end-to-end check through the active node; there is
+none by default, since it would send a recognisable connection to a third
+party from every exit node.
 
-1. Run Tailscale on the exit device with `--advertise-exit-node`, and
+1. Run Tailscale on each exit device with `--advertise-exit-node`, and
    approve it under Machines → Edit route settings. Or let the policy approve
    it: `"autoApprovers": {"exitNode": ["tag:exit"]}`.
-2. Grant the qube's identity the internet:
-   `{"src": ["tag:job"], "dst": ["autogroup:internet"], "ip": ["*"]}`.
-   (`lintel grants` proposes it.)
+2. Grant the egress the internet, and nothing else:
+   `{"src": ["tag:m1-egress"], "dst": ["autogroup:internet"], "ip": ["*"]}`.
+   (`lintel grants` proposes it.) The proxy never sends tailnet destinations
+   through an egress either; a qube that needs the tailnet gets its own
+   identity, which carries its tailnet traffic while the egress carries its
+   internet.
 
 ## Removing devices
 

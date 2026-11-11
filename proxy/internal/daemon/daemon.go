@@ -53,23 +53,30 @@ type Daemon struct {
 
 type closer interface{ Close() error }
 
-// Identities builds the tsnet identities of cfg.
+// Identities builds the tsnet identities of cfg: each workload's that has
+// one, and each egress's under config.EgressIdentityKey.
 func Identities(cfg *config.Config, logf func(string, ...any)) (map[string]tailnet.Identity, error) {
 	ids := map[string]tailnet.Identity{}
+	authKey := func(name, file string) (string, error) {
+		if file == "" {
+			return "", nil
+		}
+		// No key file: sign in by link. A key is used once; tsnet keeps
+		// the identity's state after that.
+		b, err := os.ReadFile(file)
+		if err != nil && !os.IsNotExist(err) {
+			return "", fmt.Errorf("auth key for %s: %w", name, err)
+		}
+		return strings.TrimSpace(string(b)), nil
+	}
 	for _, name := range cfg.WorkloadNames() {
 		w := cfg.Workloads[name]
 		if w.Identity == nil {
 			continue
 		}
-		key := ""
-		if w.Identity.AuthKeyFile != "" {
-			// No key file: sign in by link. A key is used once; tsnet keeps
-			// the identity's state after that.
-			b, err := os.ReadFile(w.Identity.AuthKeyFile)
-			if err != nil && !os.IsNotExist(err) {
-				return nil, fmt.Errorf("auth key for %s: %w", name, err)
-			}
-			key = strings.TrimSpace(string(b))
+		key, err := authKey(name, w.Identity.AuthKeyFile)
+		if err != nil {
+			return nil, err
 		}
 		ids[name] = tailnet.NewTSNet(tailnet.TSNetOptions{
 			Hostname:   w.Identity.Hostname,
@@ -78,6 +85,24 @@ func Identities(cfg *config.Config, logf func(string, ...any)) (map[string]tailn
 			Tags:       w.Identity.Tags,
 			AuthKey:    key,
 			Ephemeral:  w.Identity.Ephemeral,
+			Logf:       logf,
+		})
+	}
+	for _, name := range cfg.EgressNames() {
+		g := cfg.Egresses[name]
+		k := config.EgressIdentityKey(name)
+		key, err := authKey(k, g.AuthKeyFile)
+		if err != nil {
+			return nil, err
+		}
+		// State as "egress-<name>": qube names have no ':', and neither may
+		// a folder the tool's other code globs.
+		ids[k] = tailnet.NewTSNet(tailnet.TSNetOptions{
+			Hostname:   g.Hostname,
+			Dir:        filepath.Join(cfg.StateDir, "egress-"+name),
+			ControlURL: cfg.ControlURL,
+			Tags:       g.Tags,
+			AuthKey:    key,
 			Logf:       logf,
 		})
 	}

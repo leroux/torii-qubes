@@ -260,8 +260,11 @@ the tailnet; connections reach `infra`'s port 8008 over qrexec, whatever
 origin (a configured base URL or public address) must be told its new address,
 `https://chat.<your-tailnet>.ts.net`.
 
-**Internet through an exit node:** `outbound: {via: <exit node name>}`. The exit
-node and its grant are in [`tailscale.md`, "Exit nodes"](tailscale.md#exit-nodes).
+**Internet through exit nodes:** define an egress once at the top of the file,
+`egress: {vpn: {exits: [<exit node>, <another>]}}`, and give a qube `egress: vpn`
+(with `network: proxy` for transparent routing). The qube needs no tailnet
+identity. The exit nodes and the egress's grant are in
+[`tailscale.md`, "Exit nodes"](tailscale.md#exit-nodes).
 
 ## Day to day
 

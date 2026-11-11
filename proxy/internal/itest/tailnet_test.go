@@ -193,8 +193,9 @@ func TestRealTailnet(t *testing.T) {
 			"job":     {Link: config.LinkQrexec, Identity: &config.Identity{Tags: []string{"tag:job"}}, TailnetOutbound: true, SOCKS: true},
 			"browser": {Link: config.LinkRouted, Address: "10.137.0.23", Identity: &config.Identity{Tags: []string{"tag:browser"}}, TailnetOutbound: true},
 			"work": {Link: config.LinkRouted, Address: "10.137.0.22", Identity: &config.Identity{Login: true},
-				Internet: config.InternetFull, ExitNode: "exit-1"},
+				Internet: config.InternetFull, Egress: "vpn"},
 		},
+		Egresses: map[string]*config.Egress{"vpn": {Hostname: "egress-vpn", Tags: []string{"tag:egress"}, Exits: []string{"exit-1"}}},
 	}
 	if err := cfg.Normalize(); err != nil {
 		t.Fatal(err)
@@ -203,6 +204,7 @@ func TestRealTailnet(t *testing.T) {
 	for _, n := range []string{"infra", "job", "work", "browser"} {
 		ids[n] = newID(t, controlURL, n)
 	}
+	ids[config.EgressIdentityKey("vpn")] = newID(t, controlURL, "egress-vpn")
 	direct := &countingDialer{}
 	log := &events.Log{}
 	eng := engine.New(engine.Deps{Config: cfg, Identities: ids, Qubes: q, Internet: direct, Log: log, DialTimeout: 5 * time.Second})
@@ -328,7 +330,11 @@ func TestRealTailnet(t *testing.T) {
 	})
 
 	t.Run("exit node carries internet and fails closed", func(t *testing.T) {
-		waitFor(t, 30*time.Second, func() bool { return ids["work"].Status(ctx).ExitNode != "" })
+		// The egress's identity carries it (pinged healthy first), not work's own.
+		waitFor(t, 30*time.Second, func() bool { return eng.Status(ctx).Egresses["vpn"].Usable })
+		if ids["work"].Status(ctx).ExitNode != "" {
+			t.Error("the exit node was set on the workload's own identity")
+		}
 		src := netip.MustParseAddrPort("10.137.0.22:40000")
 		var got string
 		for i := 0; i < 30 && got == ""; i++ {

@@ -155,10 +155,10 @@ func MayAskName(w *config.Workload, name string, p uint16, proto string) (bool, 
 }
 
 // PathFor is the path an allowed address takes: the LAN is this machine's
-// network, always direct; the internet goes through the exit node if the
-// workload has one.
+// network, always direct; the internet goes through the workload's egress
+// if it has one.
 func PathFor(w *config.Workload, a netip.Addr) Path {
-	if ZoneOf(a) == ZoneInternet && w.ExitNode != "" {
+	if ZoneOf(a) == ZoneInternet && w.Egress != "" {
 		return PathExit
 	}
 	return PathInternet

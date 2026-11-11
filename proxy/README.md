@@ -34,7 +34,8 @@ Every decision (`internal/policy`, pure) is one of these:
   grants. It is dialled straight into the identity's netstack, never the
   system network.
 - **Internet** `none | full | allowlist`: dialled through the proxy qube's
-  netvm, or through the identity's **exit node** when `exit_node` is set.
+  netvm, or through an **egress** (`egress`): exit nodes tried in order, on
+  the egress's own internet-only identity, failing closed.
 - **Allowlist**: decided by name. The name is either the one the workload
   asked for (SOCKS or forward) or the one it resolved through the program's
   DNS, remembered per workload. A TLS server name, when sent, must be

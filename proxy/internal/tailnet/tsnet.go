@@ -15,6 +15,7 @@ import (
 	"tailscale.com/ipn"
 	"tailscale.com/ipn/ipnstate"
 	"tailscale.com/net/tsaddr"
+	"tailscale.com/tailcfg"
 	"tailscale.com/tsnet"
 	"tailscale.com/types/logger"
 	"tailscale.com/wgengine/netstack"
@@ -327,42 +328,83 @@ func (t *TSNet) WhoIs(ctx context.Context, remote string) string {
 	return name
 }
 
-func (t *TSNet) SetExitNode(ctx context.Context, node string) error {
-	st, err := t.lc.Status(ctx)
-	if err != nil {
-		return err
-	}
+// findPeer is the peer a node names: its short or full MagicDNS name, its
+// hostname, or one of its addresses.
+func findPeer(st *ipnstate.Status, node string) *ipnstate.PeerStatus {
 	want := strings.TrimSuffix(strings.ToLower(node), ".")
 	wantIP, _ := netip.ParseAddr(want)
 	for _, p := range st.Peer {
 		fqdn := strings.TrimSuffix(strings.ToLower(p.DNSName), ".")
 		short, _, _ := strings.Cut(fqdn, ".")
-		match := want == fqdn || want == short || strings.EqualFold(p.HostName, want)
+		if want == fqdn || want == short || strings.EqualFold(p.HostName, want) {
+			return p
+		}
 		for _, ip := range p.TailscaleIPs {
 			if ip == wantIP {
-				match = true
+				return p
 			}
 		}
-		if !match {
-			continue
-		}
-		if !p.ExitNodeOption {
-			return fmt.Errorf("tailnet: %s does not offer an exit node", node)
-		}
-		_, err := t.lc.EditPrefs(ctx, &ipn.MaskedPrefs{
-			Prefs:                     ipn.Prefs{ExitNodeID: p.ID, ExitNodeAllowLANAccess: false},
-			ExitNodeIDSet:             true,
-			ExitNodeAllowLANAccessSet: true,
-		})
-		if err == nil {
-			t.mu.Lock()
-			t.exitNode = fqdn
-			t.stCache = nil
-			t.mu.Unlock()
-		}
+	}
+	return nil
+}
+
+func (t *TSNet) ExitPeer(ctx context.Context, node string) (Peer, error) {
+	st, err := t.lc.Status(ctx)
+	if err != nil {
+		return Peer{}, err
+	}
+	p := findPeer(st, node)
+	if p == nil {
+		return Peer{}, nil
+	}
+	return Peer{Found: true, Online: p.Online, OffersExit: p.ExitNodeOption}, nil
+}
+
+func (t *TSNet) Ping(ctx context.Context, node string) error {
+	st, err := t.lc.Status(ctx)
+	if err != nil {
 		return err
 	}
-	return fmt.Errorf("tailnet: exit node %s not found", node)
+	p := findPeer(st, node)
+	if p == nil || len(p.TailscaleIPs) == 0 {
+		return fmt.Errorf("tailnet: %s not found", node)
+	}
+	r, err := t.lc.Ping(ctx, p.TailscaleIPs[0], tailcfg.PingTSMP)
+	if err != nil {
+		return err
+	}
+	if r.Err != "" {
+		return errors.New(r.Err)
+	}
+	return nil
+}
+
+func (t *TSNet) SetExitNode(ctx context.Context, node string) error {
+	st, err := t.lc.Status(ctx)
+	if err != nil {
+		return err
+	}
+	p := findPeer(st, node)
+	if p == nil {
+		return fmt.Errorf("tailnet: exit node %s not found", node)
+	}
+	if !p.ExitNodeOption {
+		return fmt.Errorf("tailnet: %s does not offer an exit node", node)
+	}
+	// One prefs change, from the old node to the new: there is never a
+	// moment with no exit node set.
+	_, err = t.lc.EditPrefs(ctx, &ipn.MaskedPrefs{
+		Prefs:                     ipn.Prefs{ExitNodeID: p.ID, ExitNodeAllowLANAccess: false},
+		ExitNodeIDSet:             true,
+		ExitNodeAllowLANAccessSet: true,
+	})
+	if err == nil {
+		t.mu.Lock()
+		t.exitNode = strings.TrimSuffix(strings.ToLower(p.DNSName), ".")
+		t.stCache = nil
+		t.mu.Unlock()
+	}
+	return err
 }
 
 func (t *TSNet) Status(ctx context.Context) Status {

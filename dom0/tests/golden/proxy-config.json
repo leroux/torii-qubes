@@ -1,4 +1,19 @@
 {
+ "egresses": {
+  "vpn": {
+   "auth_key_file": "/rw/lintel/keys/egress-vpn",
+   "exits": [
+    "exit1",
+    "exit2"
+   ],
+   "failback_after": 120,
+   "hostname": "m1-egress-vpn",
+   "tags": [
+    "tag:m1-egress",
+    "tag:m1"
+   ]
+  }
+ },
  "log_dir": "/rw/lintel/log",
  "proxy_qube": "sys-lintel",
  "state_dir": "/rw/lintel/state",
@@ -61,7 +76,7 @@
   },
   "personal": {
    "address": "10.137.0.15",
-   "exit_node": "exit1",
+   "egress": "vpn",
    "identity": {
     "auth_key_file": "/rw/lintel/keys/personal",
     "hostname": "m1-personal",

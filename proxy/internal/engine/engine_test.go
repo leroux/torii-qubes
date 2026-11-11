@@ -37,8 +37,9 @@ const testCfg = `{
     "browser": {"link": "routed", "address": "10.137.0.20", "identity": {"tags": ["tag:browser"]}, "tailnet_outbound": true,
                 "internet": "allowlist", "internet_allow": ["pypi.org", "pypi.org/udp"]},
     "web":     {"link": "routed", "address": "10.137.0.21", "internet": "full", "identity": {"tags": ["tag:web"]}, "inbound": [{"port": 80}]},
-    "work":    {"link": "routed", "address": "10.137.0.22", "identity": {"login": true}, "internet": "full", "exit_node": "exit-1"}
-  }}`
+    "work":    {"link": "routed", "address": "10.137.0.22", "identity": {"login": true}, "internet": "full", "egress": "vpn"}
+  },
+  "egresses": {"vpn": {"hostname": "egress-vpn", "tags": ["tag:egress"], "exits": ["exit-1", "exit-2"]}}}`
 
 // world is everything outside the proxy, faked.
 type world struct {
@@ -67,6 +68,9 @@ func newWorld(t *testing.T) *world {
 		if cfg.Workloads[n].Identity != nil {
 			ids[n] = w.net.Node(cfg.Workloads[n].Identity.Hostname)
 		}
+	}
+	for _, n := range cfg.EgressNames() {
+		ids[config.EgressIdentityKey(n)] = w.net.Node(cfg.Egresses[n].Hostname)
 	}
 	w.eng = New(Deps{
 		Config: cfg, Identities: ids, Internet: w.internet, Resolver: w.internet, Qubes: w.qubes, Local: w.local,
@@ -485,8 +489,12 @@ func TestExitNodeFailsClosed(t *testing.T) {
 	exit := w.net.Node("exit-1")
 	exit.OfferExitNode()
 	w.start(t)
-	work := w.net.Node("work")
-	waitFor(t, func() bool { return work.Status(context.Background()).ExitNode == "exit-1" })
+	vpn := w.net.Node("egress-vpn")
+	waitFor(t, func() bool { return vpn.Status(context.Background()).ExitNode == "exit-1" })
+	// The exit node is set on the egress's identity, not the workload's.
+	if got := w.net.Node("work").Status(context.Background()).ExitNode; got != "" {
+		t.Errorf("work's own identity has exit node %q", got)
+	}
 	src := netip.AddrPortFrom(netip.MustParseAddr("10.137.0.22"), 50000)
 	intercept := func() net.Conn {
 		a, b := net.Pipe()
@@ -509,16 +517,49 @@ func TestExitNodeFailsClosed(t *testing.T) {
 	}
 }
 
-func TestExitNodeNotYetSelectedFailsClosed(t *testing.T) {
-	w := newWorld(t) // exit-1 never offers an exit node
+func TestNoHealthyExitIsRefusedWithoutDialling(t *testing.T) {
+	w := newWorld(t) // neither exit node offers to be one
 	w.start(t)
 	a, b := net.Pipe()
 	go w.eng.HandleIntercepted(context.Background(), b, netip.MustParseAddrPort("10.137.0.22:1"), netip.MustParseAddrPort("93.184.216.34:443"))
 	expectClosed(t, a)
+	ev := waitEvent(t, w.eng.Log(), func(e events.Event) bool { return e.Workload == "work" })
+	if ev.Verdict != policy.Refuse || ev.Reason != policy.ReasonNoHealthyExit || ev.Identity != "egress-vpn" {
+		t.Errorf("%+v", ev)
+	}
 	if n := w.internet.dials("93.184.216.34:443"); n != 0 {
 		t.Errorf("fell back to the local network")
 	}
-	waitFor(t, func() bool { return len(w.eng.Status(context.Background()).Workloads["work"].Errors) > 0 })
+	st := w.eng.Status(context.Background()).Egresses["vpn"]
+	if st.Usable || st.Active != "" || len(st.Exits) != 2 || st.Identity == nil {
+		t.Errorf("status %+v", st)
+	}
+	// DNS through the egress: SERVFAIL, not NXDOMAIN, and nothing asked locally.
+	q := dnsQuery(t, "example.com", dnsmessage.TypeA)
+	if rc, _ := dnsAnswer(t, w.eng.AnswerDNS(context.Background(), netip.MustParseAddr("10.137.0.22"), q)); rc != dnsmessage.RCodeServerFailure {
+		t.Errorf("rcode %v", rc)
+	}
+}
+
+func TestUnlistedSourcesUseTheirEgress(t *testing.T) {
+	w := newWorld(t)
+	w.net.Node("exit-1").OfferExitNode()
+	w.cfg.Unlisted = &config.Unlisted{Internet: config.InternetFull, Egress: "vpn"}
+	w.start(t)
+	waitFor(t, func() bool { return w.eng.Status(context.Background()).Egresses["vpn"].Usable })
+	a, b := net.Pipe()
+	go w.eng.HandleIntercepted(context.Background(), b, netip.MustParseAddrPort("10.137.0.99:1"), netip.MustParseAddrPort("93.184.216.34:443"))
+	expectGreeting(t, a, "via-exit")
+	a.Close()
+	ev := waitEvent(t, w.eng.Log(), func(e events.Event) bool { return e.Workload == "unlisted:10.137.0.99" })
+	if ev.Verdict != policy.Allow || ev.Path != policy.PathExit || ev.Identity != "egress-vpn" {
+		t.Errorf("%+v", ev)
+	}
+	// A tailnet address is never reached through the egress.
+	a, b = net.Pipe()
+	go w.eng.HandleIntercepted(context.Background(), b, netip.MustParseAddrPort("10.137.0.99:2"),
+		netip.AddrPortFrom(w.net.Node("airgap").IP(), 443))
+	expectClosed(t, a)
 }
 
 func TestSignInLinkInStatus(t *testing.T) {

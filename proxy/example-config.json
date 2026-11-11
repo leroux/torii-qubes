@@ -32,7 +32,10 @@
       "identity": {"login": true},
       "tailnet_outbound": true,
       "internet": "full",
-      "exit_node": "exit1"
+      "egress": "vpn"
     }
+  },
+  "egresses": {
+    "vpn": {"hostname": "m1-egress-vpn", "tags": ["tag:m1-egress"], "exits": ["exit1", "exit2"]}
   }
 }

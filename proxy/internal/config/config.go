@@ -57,7 +57,50 @@ type Config struct {
 	Listen Listen `json:"listen"`
 
 	Workloads map[string]*Workload `json:"workloads"`
+
+	// Egresses are the ways out through exit nodes that workloads here
+	// use: one shared, internet-only identity each.
+	Egresses map[string]*Egress `json:"egresses,omitempty"`
+	// Unlisted decides sources on this proxy's interfaces that no routed
+	// workload has; nil refuses them.
+	Unlisted *Unlisted `json:"unlisted,omitempty"`
 }
+
+// Egress is a way out to the internet through tailnet exit nodes, tried
+// in order. Its identity carries internet traffic only, never tailnet
+// destinations. With no healthy exit node, its connections are refused.
+type Egress struct {
+	Hostname string   `json:"hostname"`
+	Tags     []string `json:"tags"`
+	// Exits are exit nodes (hostname, FQDN or address), most preferred first.
+	Exits []string `json:"exits"`
+	// FailbackAfter is how long, in seconds, a node ahead of the active
+	// one must stay healthy before it is used again; default 120.
+	FailbackAfter int `json:"failback_after,omitempty"`
+	// Probe, when set, is a host:port dialled through the active exit node
+	// as an end-to-end check.
+	Probe       string `json:"probe,omitempty"`
+	AuthKeyFile string `json:"auth_key_file,omitempty"`
+}
+
+// Unlisted is what sources no workload names get: internet access,
+// optionally through an egress. Never a tailnet identity.
+type Unlisted struct {
+	Internet      Internet `json:"internet"`
+	InternetAllow []string `json:"internet_allow,omitempty"`
+	Egress        string   `json:"egress,omitempty"`
+}
+
+// UnlistedPrefix names an unlisted source's workload: "unlisted:<address>".
+// Qube names cannot contain ':', so these never collide with one.
+const UnlistedPrefix = "unlisted:"
+
+// EgressIdentityKey is the key of an egress's identity among the
+// identities: "egress:<name>".
+func EgressIdentityKey(egress string) string { return "egress:" + egress }
+
+// DefaultFailbackAfter is Egress.FailbackAfter's default, in seconds.
+const DefaultFailbackAfter = 120
 
 // Listen says where the program listens inside the proxy qube.
 type Listen struct {
@@ -112,9 +155,9 @@ type Workload struct {
 	InternetAllow []string `json:"internet_allow,omitempty"`
 	LAN           Internet `json:"lan,omitempty"`
 	LANAllow      []string `json:"lan_allow,omitempty"`
-	// ExitNode, when set, sends the workload's internet traffic through
-	// this exit node (a tailnet hostname, FQDN or IP) on its own identity.
-	ExitNode string `json:"exit_node,omitempty"`
+	// Egress, when set, names the egress that carries the workload's
+	// internet traffic (on the egress's identity, not the workload's own).
+	Egress string `json:"egress,omitempty"`
 
 	// Forwards are fixed outbound destinations: for qrexec workloads,
 	// called as lintel.Connect+f.<name>; for the proxy qube itself
@@ -243,6 +286,49 @@ func (c *Config) Normalize() error {
 	}
 	addrs := map[netip.Addr]string{}
 	hostnames := map[string]string{}
+	for _, name := range sortedKeys(c.Egresses) {
+		g := c.Egresses[name]
+		if g == nil || !qubeName.MatchString(name) {
+			return fmt.Errorf("config: egress %q", name)
+		}
+		if g.Hostname == "" || len(g.Tags) == 0 || len(g.Exits) == 0 {
+			return fmt.Errorf("config: egress %s needs a hostname, tags and exits", name)
+		}
+		for _, t := range g.Tags {
+			if !tagName.MatchString(t) {
+				return fmt.Errorf("config: egress %s: bad tag %q", name, t)
+			}
+		}
+		if g.FailbackAfter == 0 {
+			g.FailbackAfter = DefaultFailbackAfter
+		}
+		if g.FailbackAfter < 0 {
+			return fmt.Errorf("config: egress %s: failback_after %d", name, g.FailbackAfter)
+		}
+		if g.Probe != "" {
+			if h, p, err := SplitHostPort(g.Probe); err != nil || h == "" || p == 0 {
+				return fmt.Errorf("config: egress %s: probe must be host:port", name)
+			}
+		}
+		h := strings.ToLower(g.Hostname)
+		if other, ok := hostnames[h]; ok {
+			return fmt.Errorf("config: %s and egress %s share hostname %s", other, name, h)
+		}
+		hostnames[h] = "egress " + name
+	}
+	if u := c.Unlisted; u != nil {
+		w := &Workload{Link: LinkRouted, Address: "0.0.0.0", Internet: u.Internet, InternetAllow: u.InternetAllow, Egress: u.Egress}
+		if err := w.normalize("unlisted"); err != nil {
+			return err
+		}
+		if w.Internet == InternetNone {
+			return fmt.Errorf("config: unlisted needs internet (leave unlisted out to refuse)")
+		}
+		u.Internet, u.InternetAllow = w.Internet, w.InternetAllow
+		if u.Egress != "" && c.Egresses[u.Egress] == nil {
+			return fmt.Errorf("config: unlisted: no egress %q", u.Egress)
+		}
+	}
 	for _, name := range c.WorkloadNames() {
 		w := c.Workloads[name]
 		if w == nil {
@@ -263,6 +349,9 @@ func (c *Config) Normalize() error {
 				return fmt.Errorf("config: %s and %s share address %s", other, name, a)
 			}
 			addrs[a] = name
+		}
+		if w.Egress != "" && c.Egresses[w.Egress] == nil {
+			return fmt.Errorf("config: workload %s: no egress %q", name, w.Egress)
 		}
 		if w.Identity != nil {
 			h := strings.ToLower(w.Identity.Hostname)
@@ -361,12 +450,9 @@ func (w *Workload) normalize(name string) error {
 		if w.TailnetOutbound {
 			return errf("tailnet_outbound needs an identity")
 		}
-		if w.ExitNode != "" {
-			return errf("exit_node needs an identity")
-		}
 	}
-	if w.ExitNode != "" && w.Internet == InternetNone {
-		return errf("exit_node without internet")
+	if w.Egress != "" && w.Internet == InternetNone {
+		return errf("egress without internet")
 	}
 	seen := map[uint16]bool{}
 	for _, in := range w.Inbound {
@@ -418,7 +504,9 @@ func (c *Config) WorkloadNames() []string {
 	return names
 }
 
-// ByAddress returns the routed workload whose Qubes address is a.
+// ByAddress returns the routed workload whose Qubes address is a; with
+// Unlisted set, an address no workload has is the unlisted workload
+// "unlisted:<a>".
 func (c *Config) ByAddress(a netip.Addr) (string, *Workload, bool) {
 	a = a.Unmap()
 	for _, n := range c.WorkloadNames() {
@@ -427,7 +515,52 @@ func (c *Config) ByAddress(a netip.Addr) (string, *Workload, bool) {
 			return n, w, true
 		}
 	}
+	if c.Unlisted != nil && a.IsValid() {
+		n := UnlistedPrefix + a.String()
+		w, _ := c.Lookup(n)
+		return n, w, true
+	}
 	return "", nil, false
+}
+
+// Lookup returns the workload of a name: a listed one, or, with Unlisted
+// set, an unlisted source ("unlisted:<address>"), routed, with the
+// unlisted access and nothing else.
+func (c *Config) Lookup(name string) (*Workload, bool) {
+	if w, ok := c.Workloads[name]; ok {
+		return w, true
+	}
+	rest, ok := strings.CutPrefix(name, UnlistedPrefix)
+	if !ok || c.Unlisted == nil {
+		return nil, false
+	}
+	a, err := netip.ParseAddr(rest)
+	if err != nil {
+		return nil, false
+	}
+	u := c.Unlisted
+	return &Workload{Link: LinkRouted, Address: a.Unmap().String(), Internet: u.Internet,
+		InternetAllow: u.InternetAllow, Egress: u.Egress}, true
+}
+
+// EgressNames returns the egress names in order.
+func (c *Config) EgressNames() []string { return sortedKeys(c.Egresses) }
+
+// EgressOf is the egress carrying w's internet traffic, or nil.
+func (c *Config) EgressOf(w *Workload) *Egress {
+	if w == nil || w.Egress == "" {
+		return nil
+	}
+	return c.Egresses[w.Egress]
+}
+
+func sortedKeys[V any](m map[string]V) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // NormalizePattern lowercases an allowlist entry and checks its form:

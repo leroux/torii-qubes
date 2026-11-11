@@ -3,6 +3,8 @@
 # and qubes. Grants: tailnet-policy.json next to this file.
 machine: m1
 proxy: sys-lintel
+egress:
+  peer: { exits: [lintel-peer] }
 defaults:
   network: none
 qubes:
@@ -14,9 +16,10 @@ qubes:
     forwards: { peer: { to: "lintel-peer:7000", port: 7000 } }
   lintel-job2:             # no network card, all of the internet
     outbound: { internet: all }
-  lintel-routed:           # routed: one name, the tailnet, through an exit node, 8000 in
+  lintel-routed:           # routed: one name, the tailnet, internet through egress peer, 8000 in
     network: proxy
-    outbound: { internet: [example.com], tailnet: yes, via: lintel-peer }
+    egress: peer
+    outbound: { internet: [example.com], tailnet: yes }
     tailnet: { identity: tagged, tags: [lintel-routed], inbound: [8000] }
   lintel-routed2:          # routed: one name and one LAN host, no identity
     network: proxy

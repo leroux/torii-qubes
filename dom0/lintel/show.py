@@ -121,7 +121,7 @@ def qube_view(snap: Snapshot, name: str, proxy_states: dict[str, dict[str, Any]]
             v[zone] = "all" if mode == "full" else mode
             if cfg.get(f"{zone}_allow"):
                 v[f"{zone}_allow"] = cfg[f"{zone}_allow"]
-        v["internet_via"] = cfg.get("exit_node") or "direct"
+        v["internet_via"] = cfg.get("egress") or "direct"
     elif info.netvm:
         v["internet"] = f"as {info.netvm} allows (qvm-firewall)"
     else:
@@ -214,7 +214,7 @@ def format_view(v: dict[str, Any]) -> str:
     if v.get("internet_allow"):
         inet += ": " + ", ".join(v["internet_allow"])
     if v.get("internet_via") not in (None, "direct"):
-        inet += f" via exit node {v['internet_via']}"
+        inet += f" via egress {v['internet_via']}"
     lines.append(f"  internet       {inet}")
     if "lan" in v:
         lan = v["lan"]
@@ -239,3 +239,74 @@ def format_view(v: dict[str, Any]) -> str:
         a = v["adopted"]
         lines.append(f"  adopted        from netvm {a['from']}" + (f" on {a['on']}" if a["on"] else ""))
     return "\n".join(lines)
+
+
+# --- egresses and unlisted sources, from a proxy's status ------------------
+
+def _when(ts: str) -> str:
+    """An RFC 3339 time from the proxy, shortened: 2026-11-08 10:02 UTC."""
+    if not ts:
+        return "?"
+    return ts[:10] + " " + ts[11:16] + " UTC"
+
+
+def _down(g: dict[str, Any]) -> str:
+    return ", ".join(f"{x['name']}: {x.get('why') or 'down'}" for x in g.get("exits") or [] if not x.get("healthy"))
+
+
+def egress_lines(st: dict[str, Any]) -> list[str]:
+    """Each egress of a proxy's status: the exit node in use, and why the
+    others are down."""
+    out = []
+    for name, g in sorted((st.get("egresses") or {}).items()):
+        if g.get("usable"):
+            head = f"  egress {name}: active {g.get('active')} since {_when(g.get('active_since', ''))}"
+        else:
+            last = f"; last {g['active']}" if g.get("active") else ""
+            head = f"  egress {name}: NO HEALTHY EXIT NODE (connections refused{last})"
+        out.append(head)
+        for x in g.get("exits") or []:
+            out.append(f"    {x['name']}  " + ("up" if x.get("healthy") else f"down ({x.get('why') or '?'})"))
+    return out
+
+
+def unlisted_lines(snap: Snapshot, read: dict[str, Any]) -> list[str]:
+    """Qubes attached to a proxy but not in its config, from its recent log
+    (read: what lintel.Status returned):
+    refused ones (workload "-") and those its unlisted: lets through. dom0
+    names them by address; the proxy never knows their names."""
+    by_ip = {i.address: n for n, i in snap.qubes.items() if i.address}
+    counts: dict[str, list[int]] = {}
+    for e in read.get("log") or []:
+        w = e.get("workload", "")
+        if w == "-" and e.get("reason") == "unknown-workload":
+            ip, allowed = e.get("source", ""), False
+        elif w.startswith("unlisted:"):
+            ip, allowed = w[len("unlisted:"):], e.get("verdict") == "allow"
+        else:
+            continue
+        c = counts.setdefault(ip, [0, 0])
+        c[0 if allowed else 1] += 1
+    return [f"  unlisted {by_ip.get(ip, '?')} ({ip}): {a} allowed, {r} refused"
+            for ip, (a, r) in sorted(counts.items(), key=lambda kv: by_ip.get(kv[0], kv[0]))]
+
+
+def egress_problems(proxy: str, st: dict[str, Any], now) -> list[str]:
+    """What check reports of a proxy's egresses: an identity not signed in,
+    no healthy exit node, or more than a day on a fallback node."""
+    import datetime  # noqa: PLC0415
+    out = []
+    for name, g in sorted((st.get("egresses") or {}).items()):
+        where = f"egress {name} on {proxy}"
+        ident = g.get("identity") or {}
+        if ident and ident.get("state") != "Running":
+            out.append(f"{where}: identity {ident.get('hostname')} is {ident.get('state')}"
+                       + (f"; sign in: {ident['auth_url']}" if ident.get("auth_url") else ""))
+        exits = [x["name"] for x in g.get("exits") or []]
+        if not g.get("usable"):
+            out.append(f"{where}: no healthy exit node; its qubes' internet is refused ({_down(g)})")
+        elif exits and g.get("active") != exits[0] and g.get("active_since"):
+            since = datetime.datetime.fromisoformat(g["active_since"].replace("Z", "+00:00"))
+            if now - since > datetime.timedelta(days=1):
+                out.append(f"{where}: on fallback {g['active']} since {_when(g['active_since'])} ({_down(g)})")
+    return out

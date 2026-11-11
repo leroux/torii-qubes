@@ -99,7 +99,7 @@ class Qube:
     network: str  # none | proxy | default | the name of a netvm
     internet: str  # outbound.internet: none | all | allowlist
     internet_allow: tuple[str, ...]
-    internet_via: str  # outbound.via: "direct" or an exit node
+    egress: str  # "direct" or the name of an egress
     identity: str  # none | tagged | login
     proxy: str  # the proxy qube that carries its traffic
     hostname: str
@@ -141,10 +141,36 @@ class Qube:
 
 
 @dataclasses.dataclass(frozen=True)
+class Unlisted:
+    """What qubes attached to a proxy but not in the file get."""
+
+    internet: str  # all | allowlist
+    internet_allow: tuple[str, ...]
+    egress: str  # "direct" or an egress
+
+
+@dataclasses.dataclass(frozen=True)
 class Proxy:
     name: str
     netvm: str
     label: str
+    unlisted: Unlisted | None = None  # None: refused
+
+
+@dataclasses.dataclass(frozen=True)
+class Egress:
+    """A way out through exit nodes, tried in order. Each proxy that
+    carries it holds one internet-only identity for it."""
+
+    name: str
+    exits: tuple[str, ...]
+    failback_after: int  # seconds
+    tags: tuple[str, ...]
+    hostname: str  # on the main proxy; others append -<proxy>
+    probe: str  # host:port or ""
+
+    def hostname_on(self, proxy: str, main: str) -> str:
+        return self.hostname if proxy == main else f"{self.hostname}-{proxy}"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -159,12 +185,21 @@ class Machine:
     qubes: dict[str, Qube]
     defaults: dict[str, Any]
     services: dict[str, Service] = dataclasses.field(default_factory=dict)
+    egresses: dict[str, Egress] = dataclasses.field(default_factory=dict)
     name: str = ""  # the machine: prefixes its tags and its qubes' device names
     mesh: str = ""  # this file's mesh; "" is the default. Meshes never touch each other's qubes
 
     @property
     def machine_tag(self) -> str:
         return f"tag:{self.name}"
+
+    def egress_instances(self) -> list[tuple[str, str]]:
+        """(egress, proxy) for every egress some proxy carries: used by a
+        qube there, or by that proxy's unlisted."""
+        out = {(q.egress, q.proxy) for q in self.qubes.values() if q.egress != "direct"}
+        out |= {(p.unlisted.egress, p.name) for p in self.proxies.values()
+                if p.unlisted and p.unlisted.egress != "direct"}
+        return sorted(out)
 
 
 def _check_keys(where: str, d: dict, allowed: set[str]) -> None:
@@ -198,17 +233,17 @@ def _qube_name(where: str, v: Any) -> str:
     return v
 
 
-QUBE_KEYS = {"network", "proxy", "outbound", "tailnet", "forwards", "socks", "http-proxy", "local-inbound",
+QUBE_KEYS = {"network", "proxy", "egress", "outbound", "tailnet", "forwards", "socks", "http-proxy", "local-inbound",
              "adopt", "disposables"}
 ENTRY_ONLY_KEYS = {"forwards", "local-inbound", "adopt", "disposables"}  # not in defaults
 TAILNET_KEYS = {"identity", "hostname", "tags", "inbound"}
-OUTBOUND_KEYS = {"internet", "lan", "tailnet", "via"}
+OUTBOUND_KEYS = {"internet", "lan", "tailnet"}
 
 # Keys of the earlier schema, and where they went.
 MOVED = {
     "internet": "outbound.internet (none, all, or a list)",
     "internet-allow": "the list in outbound.internet",
-    "internet-via": "outbound.via",
+    "internet-via": "egress: (an egress defined at the top of the file)",
     "network-card": "network: none (was no), proxy (was yes); a qube that kept its own netvm "
                     "is not listed, or has network: default or the netvm's name",
     "identities": "services: at the top of the file, each with qube: <this qube>",
@@ -296,10 +331,14 @@ def _moved(where: str, d: dict) -> None:
             raise FileError(f"{where}.{k}: moved to {to}")
     if isinstance(d.get("tailnet"), dict) and "outbound" in d["tailnet"]:
         raise FileError(f"{where}.tailnet.outbound: moved to outbound.tailnet")
+    if isinstance(d.get("outbound"), dict) and "via" in d["outbound"]:
+        raise FileError(f"{where}.outbound.via: removed; define the exit nodes once, "
+                        f"`egress: {{<name>: {{exits: [{d['outbound']['via']}]}}}}` at the top of the file, "
+                        "and write `egress: <name>` here")
 
 
 def _resolve(name: str, entry: dict, defaults: dict, default_proxy: str,
-             proxies: dict[str, Proxy], where: str, machine: str) -> Qube:
+             proxies: dict[str, Proxy], where: str, machine: str, egresses: dict | None = None) -> Qube:
     _moved(where, entry)
     _check_keys(where, entry, QUBE_KEYS)
     tn = entry.get("tailnet") or {}
@@ -326,7 +365,9 @@ def _resolve(name: str, entry: dict, defaults: dict, default_proxy: str,
     _check_keys(f"{where}.outbound", ob, OUTBOUND_KEYS)
     internet, allow_n = _zone(f"{where}.outbound.internet", _merged(ob, dob, "internet", "none"))
     lan, lan_n = _zone(f"{where}.outbound.lan", _merged(ob, dob, "lan", "none"))
-    via = str(_merged(ob, dob, "via", "direct"))
+    egress = str(_merged(entry, defaults, "egress", "direct"))
+    if egress != "direct" and egresses is not None and egress not in egresses:
+        raise FileError(f"{where}.egress: no egress {egress!r} (define it under egress: at the top of the file)")
     ident = str(_merged(tn, dtn, "identity", "none"))
     if ident.startswith("proxy:"):
         raise FileError(f"{where}.tailnet.identity: write proxy: {ident.split(':', 1)[1]} and identity: tagged")
@@ -358,11 +399,8 @@ def _resolve(name: str, entry: dict, defaults: dict, default_proxy: str,
         outbound = _bool(f"{where}.outbound.tailnet", tv)
     if ident == "none" and (inbound or outbound):
         raise FileError(f"{where}: tailnet inbound and outbound.tailnet need an identity")
-    if via != "direct":
-        if ident == "none":
-            raise FileError(f"{where}: outbound.via an exit node needs an identity")
-        if internet == "none":
-            raise FileError(f"{where}: outbound.via without outbound.internet")
+    if egress != "direct" and internet == "none":
+        raise FileError(f"{where}.egress: an egress carries internet traffic; this qube has outbound.internet: none")
 
     forwards = []
     fports = set()
@@ -407,7 +445,7 @@ def _resolve(name: str, entry: dict, defaults: dict, default_proxy: str,
         local.append(LocalInbound(_port(w + ".port", v.get("port")),
                                   tuple(_qube_name(w + ".from", s) for s in srcs)))
 
-    if not behind and (ident != "none" or has_out or forwards or inbound or via != "direct"
+    if not behind and (ident != "none" or has_out or forwards or inbound or egress != "direct"
                        or entry.get("socks") or entry.get("http-proxy")):
         raise FileError(f"{where}: network: {network} is not carried by the proxy, so no tailnet identity, "
                         "outbound or forwards; reach it from the tailnet with services:")
@@ -418,16 +456,70 @@ def _resolve(name: str, entry: dict, defaults: dict, default_proxy: str,
     disposables = _bool(f"{where}.disposables", entry.get("disposables", False))
 
     return Qube(name=name, network=network, internet=internet,
-                internet_allow=tuple(allow_n), internet_via=via, lan=lan, lan_allow=tuple(lan_n), tailnet_allow=tailnet_allow, identity=ident, proxy=proxy,
+                internet_allow=tuple(allow_n), egress=egress, lan=lan, lan_allow=tuple(lan_n), tailnet_allow=tailnet_allow, identity=ident, proxy=proxy,
                 hostname=hostname, tags=tuple(str(t) for t in tags), inbound=tuple(inbound),
                 tailnet_outbound=outbound, forwards=tuple(forwards), socks_port=socks,
                 http_port=http, local_inbound=tuple(local),
                 adopt_force=adopt == "force", disposables=disposables)
 
 
-TOP_KEYS = {"mesh", "machine", "manage", "proxy", "proxies", "template", "base-template", "tailnet",
+TOP_KEYS = {"mesh", "machine", "manage", "proxy", "proxies", "egress", "template", "base-template", "tailnet",
             "defaults", "qubes", "services", "status-readers"}
 SERVICE_KEYS = {"qube", "proxy", "hostname", "tags", "ports"}
+
+
+EGRESS_KEYS = {"exits", "failback-after", "tags", "hostname", "probe"}
+DURATION_RE = re.compile(r"^(\d+)(s|m|h)?$")
+
+
+def _duration(where: str, v: Any) -> int:
+    """Seconds, from 90, "90s", "2m" or "1h"."""
+    m = DURATION_RE.match(str(v)) if not isinstance(v, bool) else None
+    if not m:
+        raise FileError(f"{where}: a duration such as 90s, 2m or 1h, not {v!r}")
+    return int(m.group(1)) * {"s": 1, None: 1, "m": 60, "h": 3600}[m.group(2)]
+
+
+def _egress(name: str, spec: Any, machine: str) -> Egress:
+    where = f"egress.{name}"
+    if not QUBE_RE.match(name) or name == "direct":
+        raise FileError(f"{where}: bad egress name")
+    if not isinstance(spec, dict):
+        raise FileError(f"{where}: expected {{exits: [exit nodes]}}")
+    _check_keys(where, spec, EGRESS_KEYS)
+    exits = spec.get("exits")
+    if not isinstance(exits, list) or not exits:
+        raise FileError(f"{where}.exits: one or more exit nodes, by tailnet name or address, in order")
+    for i, e in enumerate(exits):
+        if not isinstance(e, str) or not e or any(c.isspace() for c in e):
+            raise FileError(f"{where}.exits[{i}]: {e!r} is not a tailnet name or address")
+    if len(set(exits)) != len(exits):
+        raise FileError(f"{where}.exits: an exit node twice")
+    probe = str(spec.get("probe", ""))
+    if probe:
+        allow_entry(f"{where}.probe", probe)
+        if ":" not in probe.rsplit("]", 1)[-1]:
+            raise FileError(f"{where}.probe: host:port")
+    tags = tags_of(f"{where}.tags", spec.get("tags", ["egress"]), machine, False) + (f"tag:{machine}",)
+    return Egress(name=name, exits=tuple(exits), failback_after=_duration(f"{where}.failback-after", spec.get("failback-after", "2m")),
+                  tags=tuple(dict.fromkeys(tags)), hostname=str(spec.get("hostname", f"{machine}-egress-{name}")), probe=probe)
+
+
+def _unlisted(where: str, v: Any, egresses: dict[str, Egress]) -> Unlisted | None:
+    """refuse, or {internet, egress}: what qubes attached to the proxy but
+    not in the file get."""
+    if v in ("refuse", None):
+        return None
+    if not isinstance(v, dict):
+        raise FileError(f"{where}: refuse, or {{internet: ..., egress: ...}}")
+    _check_keys(where, v, {"internet", "egress"})
+    internet, allow = _zone(f"{where}.internet", v.get("internet", "none"))
+    if internet == "none":
+        raise FileError(f"{where}.internet: none is `unlisted: refuse`")
+    egress = str(v.get("egress", "direct"))
+    if egress != "direct" and egress not in egresses:
+        raise FileError(f"{where}.egress: no egress {egress!r}")
+    return Unlisted(internet=internet, internet_allow=allow, egress=egress)
 
 
 def _service(name: str, spec: Any, defaults: dict, default_proxy: str, proxies: dict[str, Proxy],
@@ -469,14 +561,22 @@ def parse(text: str) -> Machine:
     if "manage" in doc:
         raise FileError("manage: removed; lintel only changes the qubes listed under qubes:")
 
-    # proxy: NAME or {name, netvm, label}; proxies: more, dedicated.
+    egresses = {}
+    raw_egress = doc.get("egress", {}) or {}
+    if not isinstance(raw_egress, dict):
+        raise FileError("egress: expected name: {exits: [exit nodes]}")
+    for ename, spec in raw_egress.items():
+        egresses[str(ename)] = _egress(str(ename), spec, mname)
+
+    # proxy: NAME or {name, netvm, label, unlisted}; proxies: more, dedicated.
     def proxy_of(where, v):
         if isinstance(v, str):
             v = {"name": v}
-        _check_keys(where, v, {"name", "netvm", "label"})
+        _check_keys(where, v, {"name", "netvm", "label", "unlisted"})
         return Proxy(_qube_name(where + ".name", v.get("name", DEFAULT_PROXY)),
                      _qube_name(where + ".netvm", v.get("netvm", DEFAULT_PROXY_NETVM)),
-                     str(v.get("label", "orange")))
+                     str(v.get("label", "orange")),
+                     _unlisted(where + ".unlisted", v.get("unlisted", "refuse"), egresses))
 
     main = proxy_of("proxy", doc.get("proxy", DEFAULT_PROXY))
     proxies = {main.name: main}
@@ -501,7 +601,7 @@ def parse(text: str) -> Machine:
         _qube_name("qubes", name)
         if name in proxies:
             raise FileError(f"qubes.{name}: is a proxy qube; the tool owns it")
-        qubes[name] = _resolve(name, entry or {}, defaults, main.name, proxies, f"qubes.{name}", mname)
+        qubes[name] = _resolve(name, entry or {}, defaults, main.name, proxies, f"qubes.{name}", mname, egresses)
 
     services = {}
     raw_services = doc.get("services", {}) or {}
@@ -513,6 +613,9 @@ def parse(text: str) -> Machine:
     hostnames = {}
     owners = [(f"qubes.{q.name}", q.hostname) for q in qubes.values() if q.identity != "none"] + \
              [(f"services.{x.name}", x.hostname) for x in services.values()]
+    m0 = Machine(template="", base_template="", control_url="", tag_owners=(), proxies=proxies,
+                 default_proxy=main.name, status_readers=(), qubes=qubes, defaults={}, egresses=egresses)
+    owners += [(f"egress.{g}", egresses[g].hostname_on(p, main.name)) for g, p in m0.egress_instances()]
     for where, h in owners:
         h = h.lower()
         if h in hostnames:
@@ -531,10 +634,10 @@ def parse(text: str) -> Machine:
                 tag_owners=tuple(tnet.get("tag-owners", ["autogroup:admin"])),
                 proxies=proxies, default_proxy=main.name,
                 status_readers=tuple(_qube_name("status-readers", s) for s in doc.get("status-readers", []) or []),
-                qubes=qubes, defaults=defaults, services=services, name=mname, mesh=mesh)
+                qubes=qubes, defaults=defaults, services=services, egresses=egresses, name=mname, mesh=mesh)
     # The defaults themselves must resolve (network may come from entries).
     _resolve("defaults-check", {} if "network" in defaults else {"network": "none"}, defaults, main.name,
-             proxies, "defaults", mname)
+             proxies, "defaults", mname, egresses)
     return m
 
 

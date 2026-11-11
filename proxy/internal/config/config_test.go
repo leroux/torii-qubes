@@ -52,8 +52,8 @@ func TestParseRefuses(t *testing.T) {
 		"bad pattern":              `{"link":"routed","address":"10.0.0.1","internet":"allowlist","internet_allow":["a.*.com"]}`,
 		"inbound without identity": `{"link":"qrexec","inbound":[{"port":1}]}`,
 		"outbound w/o identity":    `{"link":"qrexec","tailnet_outbound":true}`,
-		"exit without identity":    `{"link":"routed","address":"10.0.0.1","internet":"full","exit_node":"x"}`,
-		"exit without internet":    `{"link":"routed","address":"10.0.0.1","identity":{"tags":["tag:a"]},"exit_node":"x"}`,
+		"exit_node is gone":        `{"link":"routed","address":"10.0.0.1","internet":"full","exit_node":"x"}`,
+		"egress not defined":       `{"link":"routed","address":"10.0.0.1","internet":"full","egress":"vpn"}`,
 		"untagged non-login":       `{"link":"qrexec","identity":{}}`,
 		"tagged login":             `{"link":"qrexec","identity":{"login":true,"tags":["tag:a"]}}`,
 		"bad tag":                  `{"link":"qrexec","identity":{"tags":["server"]}}`,
@@ -97,6 +97,68 @@ func TestProxyQubeItself(t *testing.T) {
 	} {
 		if _, err := Parse([]byte(`{"proxy_qube":"p","state_dir":"/s","workloads":{"p":` + w + `}}}`)); err == nil {
 			t.Errorf("%s accepted", name)
+		}
+	}
+}
+
+const egressConfig = `{
+  "proxy_qube": "sys-lintel", "state_dir": "/s",
+  "egresses": {"vpn": {"hostname": "m1-egress-vpn", "tags": ["tag:m1-egress"], "exits": ["exit-1", "exit-2"]}},
+  "unlisted": {"internet": "full", "egress": "vpn"},
+  "workloads": {
+    "browser": {"link": "routed", "address": "10.137.0.20", "internet": "full", "egress": "vpn"}
+  }
+}`
+
+func TestEgressAndUnlisted(t *testing.T) {
+	c, err := Parse([]byte(egressConfig))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if g := c.Egresses["vpn"]; g.FailbackAfter != DefaultFailbackAfter {
+		t.Errorf("failback default: %d", g.FailbackAfter)
+	}
+	// An egress workload needs no identity of its own.
+	if w := c.Workloads["browser"]; w.Identity != nil || c.EgressOf(w).Hostname != "m1-egress-vpn" {
+		t.Errorf("browser: %+v", w)
+	}
+	// A listed address is its workload; any other is unlisted.
+	if n, _, ok := c.ByAddress(mustAddr("10.137.0.20")); !ok || n != "browser" {
+		t.Errorf("listed: %q", n)
+	}
+	n, w, ok := c.ByAddress(mustAddr("10.137.0.99"))
+	if !ok || n != "unlisted:10.137.0.99" || w.Identity != nil || w.Egress != "vpn" || w.Internet != InternetFull {
+		t.Errorf("unlisted: %q %+v", n, w)
+	}
+	if lw, ok := c.Lookup(n); !ok || lw.Address != "10.137.0.99" {
+		t.Errorf("Lookup(%s) = %+v", n, lw)
+	}
+	// Without Unlisted, an unknown address is nobody.
+	c.Unlisted = nil
+	if _, _, ok := c.ByAddress(mustAddr("10.137.0.99")); ok {
+		t.Error("unlisted without config")
+	}
+	if _, ok := c.Lookup("unlisted:10.137.0.99"); ok {
+		t.Error("Lookup unlisted without config")
+	}
+}
+
+func TestEgressRefuses(t *testing.T) {
+	for name, tc := range map[string]string{
+		"no exits":           `"egresses": {"vpn": {"hostname": "h", "tags": ["tag:e"], "exits": []}}`,
+		"no tags":            `"egresses": {"vpn": {"hostname": "h", "exits": ["x"]}}`,
+		"bad probe":          `"egresses": {"vpn": {"hostname": "h", "tags": ["tag:e"], "exits": ["x"], "probe": "nope"}}`,
+		"unlisted no egress": `"unlisted": {"internet": "full", "egress": "nope"}`,
+		"unlisted none":      `"unlisted": {"internet": "none"}`,
+		"egress hostname twice": `"egresses": {"vpn": {"hostname": "w", "tags": ["tag:e"], "exits": ["x"]}},
+		                          "workloads": {"w": {"link": "qrexec", "identity": {"hostname": "w", "tags": ["tag:a"]}}}`,
+	} {
+		body := `{"proxy_qube": "p", "state_dir": "/s", ` + tc + `}`
+		if !strings.Contains(tc, `"workloads"`) {
+			body = `{"proxy_qube": "p", "state_dir": "/s", "workloads": {}, ` + tc + `}`
+		}
+		if _, err := Parse([]byte(body)); err == nil {
+			t.Errorf("%s: accepted", name)
 		}
 	}
 }

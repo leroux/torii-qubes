@@ -15,8 +15,9 @@ All run in dom0. `-f FILE` picks the machine file (default `~/lintel.yaml`).
 | `lintel show [QUBE] [--json]` | What each managed qube can reach and what can reach it, read from the live system |
 | `lintel check` | Where the live system and the file disagree |
 | `lintel log QUBE` | Its recent connection decisions: allowed, refused, and why |
+| `lintel log --egress NAME` | An egress's events: exit-node switches, nodes going down and coming back |
 | `lintel grants` | Proposed `tagOwners` and grants for the tailnet policy |
-| `lintel sign-in-key NAME < key` | Signs an identity in with a one-time auth key, which is stored only in the proxy qube |
+| `lintel sign-in-key NAME < key` | Signs an identity in with a one-time auth key, which is stored only in the proxy qube. NAME is a qube, a service, or `egress:<name>` (`egress:<name>@<proxy>` when several proxies carry it) |
 | `lintel install-client TEMPLATE` | Installs the client package that qubes with no network card need for outbound access |
 | `lintel snapshot` | Prints the live state that `plan` reads (for bug reports and tests) |
 
@@ -38,7 +39,9 @@ devices stay in the admin console until you remove them.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `proxy` | `sys-lintel` | The proxy qube: a name, or `{name, netvm, label}` (netvm `sys-firewall`). |
+| `proxy` | `sys-lintel` | The proxy qube: a name, or `{name, netvm, label, unlisted}` (netvm `sys-firewall`). |
+| `proxy.unlisted`, `proxies[].unlisted` | `refuse` | Qubes attached to that proxy but not listed under `qubes:`, disposables included: `refuse`, or `{internet, egress}` (`internet` as in `outbound.internet`). Never a tailnet identity. |
+| `egress.<name>` | | A way out through exit nodes: `exits` (in order, required), `failback-after` (`2m`), `tags` (`[egress]`), `hostname` (`<machine>-egress-<name>`; `-<proxy>` is added on other proxies), `probe` (`host:port`, none). See [`tailscale.md`](tailscale.md#exit-nodes). |
 | `proxies` | | More proxy qubes, chosen per qube with `proxy: <name>`. A proxy qube is created once something uses it; the main proxy is never removed by `apply`, since it holds identities. |
 | `template`, `base-template` | `lintel-<base-template>`, `fedora-44-minimal` | The tool's own template and what it's cloned from. A new base is a new template: `apply` creates it, moves the proxies onto it (one restart each) and removes the old one once nothing uses it. |
 | `tailnet.control-url` | Tailscale | A Headscale (or other) coordination server. |
@@ -55,7 +58,7 @@ Per qube:
 | `outbound.internet` | `none` \| `all` \| a list | Public addresses. List entries: `name`, `*.domain`, address or range, each with an optional `:port` and an optional `/tcp` or `/udp`. **An entry without a protocol is TCP only;** UDP (QUIC, DNS, VPNs) needs `/udp`: `example.com:443/udp`. A raw address nobody resolved and no entry covers is refused. The same entries work in `outbound.lan` and `outbound.tailnet`. |
 | `outbound.lan` | `none` \| `all` \| a list | This machine's private network (`192.168/16`, `172.16/12`, `10/8` outside Qubes', `fc00::/7`), never through an exit node. Default `none`: `internet: all` does not include it. |
 | `outbound.tailnet` | `yes` \| `no` | May open connections to the tailnet; where to is the grants'. |
-| `outbound.via` | `direct` \| exit node | Internet through an exit node, by tailnet name or address. |
+| `egress` | `direct` \| an egress | Its internet and DNS through that egress's exit nodes, failing closed. Needs `outbound.internet`. LAN traffic still goes direct. |
 | `tailnet.identity` | `none` \| `tagged` \| `login` | Tagged (owned by its tags), or signed in as a person. |
 | `adopt` | `force` | Lets the first `apply` move it off a netvm lintel doesn't know (not none, Qubes' default, or a lintel proxy), such as `sys-whonix` or a VPN qube. Without it, `plan` refuses. |
 | `disposables` | `yes` | Required to list a disposable template (`template_for_dispvms`): its netvm becomes every disposable's made from it. |

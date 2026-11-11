@@ -50,6 +50,8 @@ type Fake struct {
 	exit      string
 	offerExit bool
 	offline   bool
+	silent    bool // listed online, but nothing reaches it
+	uplink    bool // as an exit node: its own internet is down
 	closed    bool
 }
 
@@ -100,8 +102,37 @@ func (f *Fake) Approve() {
 // OfferExitNode makes this node an exit node.
 func (f *Fake) OfferExitNode() { f.mu.Lock(); f.offerExit = true; f.mu.Unlock() }
 
+// StopOfferingExitNode withdraws its exit route (fault injection). Traffic
+// already sent through it stops being relayed.
+func (f *Fake) StopOfferingExitNode() {
+	f.mu.Lock()
+	f.offerExit = false
+	f.uplink = true
+	f.mu.Unlock()
+}
+
 // SetOffline takes the node off the tailnet (fault injection).
 func (f *Fake) SetOffline(off bool) { f.mu.Lock(); f.offline = off; f.mu.Unlock() }
+
+// SetSilent leaves the node listed online but unreachable: no pings, no
+// traffic (fault injection: the control server lags).
+func (f *Fake) SetSilent(s bool) { f.mu.Lock(); f.silent = s; f.mu.Unlock() }
+
+// SetUplinkDown keeps the node answering pings while, as an exit node,
+// it relays nothing (fault injection: its own internet is down).
+func (f *Fake) SetUplinkDown(d bool) { f.mu.Lock(); f.uplink = d; f.mu.Unlock() }
+
+func (f *Fake) reachable() bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.running && !f.offline && !f.closed && !f.silent
+}
+
+func (f *Fake) relays() bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return !f.uplink
+}
 
 func (f *Fake) Hostname() string                { return f.hostname }
 func (f *Fake) Start(ctx context.Context) error { return nil }
@@ -172,8 +203,11 @@ func (f *Fake) Dial(ctx context.Context, dst netip.AddrPort) (net.Conn, error) {
 	n.mu.Lock()
 	en := n.nodes[exit]
 	n.mu.Unlock()
-	if en == nil || !en.up() {
+	if en == nil || !en.reachable() {
 		return nil, fmt.Errorf("fake: exit node %s unreachable", exit)
+	}
+	if !en.relays() {
+		return nil, fmt.Errorf("fake: exit node %s: no route out", exit)
 	}
 	if n.Internet == nil {
 		return nil, errors.New("fake: no internet")
@@ -223,7 +257,7 @@ func (f *Fake) DialUDP(ctx context.Context, dst netip.AddrPort) (net.Conn, error
 	n.mu.Lock()
 	en := n.nodes[exit]
 	n.mu.Unlock()
-	if en == nil || !en.up() || n.InternetUDP == nil {
+	if en == nil || !en.reachable() || !en.relays() || n.InternetUDP == nil {
 		return nil, fmt.Errorf("fake: exit node %s unreachable", exit)
 	}
 	return n.InternetUDP(ctx, dst)
@@ -336,6 +370,34 @@ func (f *Fake) SetExitNode(ctx context.Context, node string) error {
 	f.mu.Lock()
 	f.exit = short
 	f.mu.Unlock()
+	return nil
+}
+
+func (f *Fake) peer(node string) *Fake {
+	short := strings.TrimSuffix(strings.TrimSuffix(strings.ToLower(node), "."), "."+f.net.suffix())
+	f.net.mu.Lock()
+	defer f.net.mu.Unlock()
+	return f.net.nodes[short]
+}
+
+func (f *Fake) ExitPeer(ctx context.Context, node string) (Peer, error) {
+	en := f.peer(node)
+	if en == nil {
+		return Peer{}, nil
+	}
+	en.mu.Lock()
+	defer en.mu.Unlock()
+	return Peer{Found: true, Online: en.running && !en.offline && !en.closed, OffersExit: en.offerExit}, nil
+}
+
+func (f *Fake) Ping(ctx context.Context, node string) error {
+	if !f.up() {
+		return errors.New("fake: identity not running")
+	}
+	en := f.peer(node)
+	if en == nil || !en.reachable() {
+		return fmt.Errorf("fake: no reply from %s", node)
+	}
 	return nil
 }
 

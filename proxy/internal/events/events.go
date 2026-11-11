@@ -19,6 +19,8 @@ const (
 	Out Direction = "out"
 	In  Direction = "in"
 	DNS Direction = "dns"
+	// Egress: an egress's own events (workload "egress:<name>").
+	Egress Direction = "egress"
 )
 
 // Event is one decision.

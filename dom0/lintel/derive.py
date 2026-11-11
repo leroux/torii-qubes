@@ -77,8 +77,8 @@ def proxy_config(m: Machine, proxy: str, addresses: dict[str, str], version: str
                 w[zone] = "full" if mode == "all" else mode
             if allow:
                 w[f"{zone}_allow"] = list(allow)
-        if q.internet_via != "direct":
-            w["exit_node"] = q.internet_via
+        if q.egress != "direct":
+            w["egress"] = q.egress
         if q.forwards:
             w["forwards"] = [{"name": f.name, "to": f.to} for f in q.forwards]
         if q.socks_port:
@@ -103,6 +103,21 @@ def proxy_config(m: Machine, proxy: str, addresses: dict[str, str], version: str
         "log_dir": LOG_DIR,
         "workloads": workloads,
     }
+    egresses = {}
+    for g, p in m.egress_instances():
+        if p != proxy:
+            continue
+        e = m.egresses[g]
+        egresses[g] = {"hostname": e.hostname_on(p, m.default_proxy), "tags": list(e.tags), "exits": list(e.exits),
+                       "failback_after": e.failback_after, "auth_key_file": f"{KEY_DIR}/egress-{g}",
+                       **({"probe": e.probe} if e.probe else {})}
+    if egresses:
+        cfg["egresses"] = egresses
+    u = m.proxies[proxy].unlisted
+    if u is not None:
+        cfg["unlisted"] = {"internet": "full" if u.internet == "all" else u.internet,
+                           **({"internet_allow": list(u.internet_allow)} if u.internet_allow else {}),
+                           **({"egress": u.egress} if u.egress != "direct" else {})}
     if m.control_url:
         cfg["control_url"] = m.control_url
     return cfg
@@ -248,11 +263,15 @@ def grants(m: Machine) -> dict[str, Any]:
         if q.inbound and q.identity == "tagged":
             out.append({"src": ["autogroup:member"], "dst": list(q.tags),
                         "ip": [f"tcp:{i.port}" for i in q.inbound]})
-        if q.internet_via != "direct":
-            out.append({"src": list(q.tags) or ["autogroup:member"], "dst": ["autogroup:internet"], "ip": ["*"]})
+
     for x in sorted(m.services.values(), key=lambda x: x.name):
         tags.update(x.tags)
         out.append({"src": ["autogroup:member"], "dst": list(x.tags), "ip": [f"tcp:{i.port}" for i in x.ports]})
+    # An egress's identities may use exit nodes, and nothing else.
+    for g in sorted({g for g, _ in m.egress_instances()}):
+        e = m.egresses[g]
+        tags.update(e.tags)
+        out.append({"src": [t for t in e.tags if t != m.machine_tag], "dst": ["autogroup:internet"], "ip": ["*"]})
     return {"tagOwners": {t: list(m.tag_owners) for t in sorted(tags)}, "grants": out}
 
 

@@ -18,9 +18,12 @@ func testConfig(t *testing.T) *config.Config {
 	                "forwards": [{"name": "db", "to": "store:8000"}]},
 	    "browser": {"link": "routed", "address": "10.137.0.20", "identity": {"tags": ["tag:browser"]}, "tailnet_outbound": true},
 	    "web":     {"link": "routed", "address": "10.137.0.21", "internet": "full"},
-	    "work":    {"link": "routed", "address": "10.137.0.22", "identity": {"login": true}, "internet": "full", "exit_node": "exit-1"},
+	    "work":    {"link": "routed", "address": "10.137.0.22", "identity": {"login": true}, "tailnet_outbound": true, "internet": "full", "egress": "vpn"},
+	    "shop":    {"link": "routed", "address": "10.137.0.23", "internet": "full", "egress": "vpn"},
 	    "sys-lintel": {"link": "none", "internet": "full", "socks": true}
-	  }}`))
+	  },
+	  "egresses": {"vpn": {"hostname": "m1-egress-vpn", "tags": ["tag:m1-egress"], "exits": ["exit-1", "exit-2"]}},
+	  "unlisted": {"internet": "allowlist", "internet_allow": ["example.com"], "egress": "vpn"}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,8 +71,12 @@ func TestDecideOutbound(t *testing.T) {
 			}
 		})
 	}
-	if d := DecideOutbound(c, Outbound{Workload: "work", Entry: EntryIntercept, Addr: ip("8.8.8.8")}); d.Identity != "work" {
-		t.Errorf("exit path carries the workload's identity, got %q", d.Identity)
+	if d := DecideOutbound(c, Outbound{Workload: "work", Entry: EntryIntercept, Addr: ip("8.8.8.8")}); d.Identity != "m1-egress-vpn" {
+		t.Errorf("exit path carries the egress's identity, got %q", d.Identity)
+	}
+	// The workload's own identity still carries its tailnet traffic.
+	if d := DecideOutbound(c, Outbound{Workload: "work", Entry: EntryIntercept, Addr: ip("100.64.0.5"), Tailnet: true}); d.Path != PathTailnet || d.Identity != "work" {
+		t.Errorf("tailnet path: %+v", d)
 	}
 	if d := DecideOutbound(c, Outbound{Workload: "job", Entry: EntrySOCKS, Host: "pypi.org"}); d.Identity != "" {
 		t.Errorf("direct internet uses no identity, got %q", d.Identity)
@@ -126,5 +133,43 @@ func TestDecideNameAndInbound(t *testing.T) {
 	}
 	if to, ok := ForwardTarget(c, "job", "db"); !ok || to != "store:8000" {
 		t.Errorf("forward %q %v", to, ok)
+	}
+}
+
+// An egress identity is internet-only: a workload without an identity of
+// its own never reaches the tailnet through its egress, whatever it dials.
+func TestEgressNeverCarriesTheTailnet(t *testing.T) {
+	c := testConfig(t)
+	for _, wl := range []string{"shop", "unlisted:10.137.0.99"} {
+		for _, a := range []string{"100.64.0.5", "100.100.100.100", "fd7a:115c:a1e0::1"} {
+			d := DecideOutbound(c, Outbound{Workload: wl, Entry: EntryIntercept, Addr: netip.MustParseAddr(a), Port: 443})
+			if d.Verdict != Refuse {
+				t.Errorf("%s -> %s: %+v", wl, a, d)
+			}
+		}
+	}
+}
+
+func TestUnlistedSources(t *testing.T) {
+	c := testConfig(t)
+	u := "unlisted:10.137.0.99"
+	ip := netip.MustParseAddr
+	if d := DecideOutbound(c, Outbound{Workload: u, Entry: EntryIntercept, Addr: ip("93.184.216.34"), Port: 443,
+		ResolvedFrom: []string{"example.com"}}); d.Verdict != Allow || d.Path != PathExit || d.Identity != "m1-egress-vpn" {
+		t.Errorf("allowlisted: %+v", d)
+	}
+	if d := DecideOutbound(c, Outbound{Workload: u, Entry: EntryIntercept, Addr: ip("1.1.1.1"), Port: 443,
+		ResolvedFrom: []string{"other.org"}}); d.Verdict != Refuse {
+		t.Errorf("not allowlisted: %+v", d)
+	}
+	if d := DecideOutbound(c, Outbound{Workload: u, Entry: EntrySOCKS, Host: "example.com", Port: 443}); d.Reason != ReasonWrongEntry {
+		t.Errorf("an unlisted source is routed: %+v", d)
+	}
+	if d := DecideName(c, u, "example.com", false); d.Verdict != Allow || d.Path != PathExit {
+		t.Errorf("name: %+v", d)
+	}
+	c.Unlisted = nil
+	if d := DecideOutbound(c, Outbound{Workload: u, Entry: EntryIntercept, Addr: ip("93.184.216.34")}); d.Reason != ReasonUnknownWorkload {
+		t.Errorf("no unlisted: %+v", d)
 	}
 }
