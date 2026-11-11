@@ -1,19 +1,18 @@
 # The golden tests' machine: the design's example, on the recorded snapshot's qubes.
 machine: m1
-manage: listed
 proxy: sys-lintel
 defaults:
   network: none
   tailnet: { tags: [lintel-test] }
 qubes:
   lintel-probe:            # an airgapped service
-    tailnet: { identity: proxy, inbound: [443, {port: 8443, target: 8080}] }
+    tailnet: { identity: tagged, inbound: [443, {port: 8443, target: 8080}] }
   lintel-probe2:           # an airgapped job: allowlisted internet, a LAN host, the tailnet, a forward
     outbound:
       internet: [pypi.org, files.pythonhosted.org, "*.github.com:443"]
       lan: [192.168.1.20:5432]
       tailnet: yes
-    tailnet: { identity: proxy, inbound: [8080], tags: [lintel-job] }
+    tailnet: { identity: tagged, inbound: [8080], tags: [lintel-job] }
     forwards: { db: { to: "store.example.ts.net:8000", port: 5432 } }
   personal:               # routed, all of the internet, through an exit node
     network: proxy

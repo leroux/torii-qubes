@@ -12,6 +12,7 @@ only after nothing uses it.
 from __future__ import annotations
 
 import dataclasses
+import datetime
 from typing import Any
 
 from . import derive
@@ -21,6 +22,33 @@ from .machine import Machine
 
 class PlanError(Exception):
     """The file cannot be applied to this machine as it is."""
+
+
+def today() -> str:
+    """The date an adoption record carries (tests replace it)."""
+    return datetime.date.today().isoformat()
+
+
+def _effective_netvm(snap: Snapshot, netvm: str | None) -> str | None:
+    """A QubeState netvm as the qube it names: Qubes' default resolved."""
+    return snap.default_netvm if netvm == derive.DEFAULT_NETVM else netvm
+
+
+def _known_netvm(snap: Snapshot, info) -> bool:
+    """A netvm lintel may move a qube away from without being told: none,
+    Qubes' default, or one of the tool's own proxies."""
+    n = info.netvm
+    if n == "" or info.netvm_default or (snap.default_netvm and n == snap.default_netvm):
+        return True
+    p = snap.qubes.get(n)
+    return p is not None and derive.OWNED_TAG in p.tags
+
+
+def used_proxies(m: Machine, snap: Snapshot) -> list[str]:
+    """The proxies this plan sets up: those something in the file uses, and
+    those that exist already (kept, since they hold identities)."""
+    used = {q.proxy for q in m.qubes.values() if q.via_proxy} | {x.proxy for x in m.services.values()}
+    return sorted(p for p in m.proxies if p in used or p in snap.qubes)
 
 
 @dataclasses.dataclass
@@ -83,6 +111,16 @@ def make(m: Machine, snap: Snapshot, bundle_version: str) -> list[Step]:
             nv = q.get(wq.network)
             if nv is None or not nv.provides_network:
                 errors.append(f"{name}.network: {wq.network} is not a netvm on this machine")
+        if info.template_for_dispvms and not wq.disposables:
+            errors.append(f"{name} is a disposable template: listing it changes every disposable made from it; "
+                          "if you mean that, add `disposables: yes`")
+        if wq.disposables and not info.template_for_dispvms:
+            errors.append(f"{name} is not a disposable template; remove `disposables: yes`")
+        if MT not in info.tags and not wq.adopt_force:
+            target = _effective_netvm(snap, derive.qube_state(m, wq).netvm)
+            if target is not None and target != info.netvm and not _known_netvm(snap, info):
+                errors.append(f"{name}: its netvm is {info.netvm}, which lintel doesn't know; adopting it "
+                              f"would move it to {target or '(none)'}. If you mean that, add `adopt: force`")
         if wq.network_card and not info.address:
             errors.append(f"{name}: routed {info.klass}s are not supported (their address changes per start)")
         for li in wq.local_inbound:
@@ -104,18 +142,19 @@ def make(m: Machine, snap: Snapshot, bundle_version: str) -> list[Step]:
     if errors:
         raise PlanError("\n".join(errors))
 
-    # 1. The proxy template.
+    active = used_proxies(m, snap)
     tpl = m.template
-    if tpl not in q:
+    # 1. The proxy template, once a proxy needs it.
+    if active and tpl not in q:
         if m.base_template not in q:
             steps.append(Step("template-install", m.base_template,
                               "download the base template (qvm-template install)"))
         steps.append(Step("clone", tpl, f"create the proxy template, a clone of {m.base_template}",
                           {"source": m.base_template}))
-    elif derive.OWNED_TAG not in q[tpl].tags:
+    elif active and derive.OWNED_TAG not in q[tpl].tags:
         raise PlanError(f"template {tpl} exists and is not the tool's; name another in `template:`")
     have_v = q[tpl].features.get("lintel-version") if tpl in q else None
-    if have_v != bundle_version:
+    if active and have_v != bundle_version:
         steps.append(Step("template-package", tpl,
                           f"install the proxy package {bundle_version}" + (f" (has {have_v})" if have_v else ""),
                           {"version": bundle_version}))
@@ -126,7 +165,7 @@ def make(m: Machine, snap: Snapshot, bundle_version: str) -> list[Step]:
     package_changes = any(s.kind == "template-package" for s in steps)
 
     # 2. Proxy qubes.
-    for p in sorted(m.proxies.values(), key=lambda p: p.name):
+    for p in (m.proxies[n] for n in active):
         cur = q.get(p.name)
         # Running on another package than the bundle's: this apply upgrades
         # the template, or something else did since the proxy started.
@@ -190,12 +229,12 @@ def make(m: Machine, snap: Snapshot, bundle_version: str) -> list[Step]:
 
     # 3. The policy files: this mesh's, and the shared denies after them.
     want_pol = derive.policy(m)
-    if snap.policy != want_pol:
+    if (active or snap.policy is not None) and snap.policy != want_pol:
         steps.append(Step("policy", derive.policy_name(m),
                           "write the qrexec policy" if snap.policy is None else "replace the qrexec policy",
                           {"text": want_pol, "old": snap.policy or ""}))
     deny = derive.deny_policy()
-    if snap.other_policy.get(derive.DENY_POLICY) != deny:
+    if (active or derive.DENY_POLICY in snap.other_policy) and snap.other_policy.get(derive.DENY_POLICY) != deny:
         steps.append(Step("policy", derive.DENY_POLICY, "write the shared qrexec denies",
                           {"text": deny, "old": snap.other_policy.get(derive.DENY_POLICY, "")}))
 
@@ -212,40 +251,40 @@ def make(m: Machine, snap: Snapshot, bundle_version: str) -> list[Step]:
                               + (f" (was {info.netvm or '(none)'})"), {"key": "netvm", "value": st.netvm}))
         if MT not in info.tags:
             steps.append(Step("tag-add", name, f"tag {MT}", {"tag": MT}))
+            # First adoption: what it had, once. A qube already tagged was
+            # adopted before records existed; its netvm now is the tool's.
+            if derive.PRIOR_NETVM_FEATURE not in info.features:
+                prior = derive.DEFAULT_NETVM if info.netvm_default else (info.netvm or "none")
+                steps.append(Step("feature-set", name, f"set feature {derive.PRIOR_NETVM_FEATURE} = {prior}",
+                                  {"key": derive.PRIOR_NETVM_FEATURE, "value": prior}))
+                steps.append(Step("feature-set", name, f"set feature {derive.ADOPTED_FEATURE} = {today()}",
+                                  {"key": derive.ADOPTED_FEATURE, "value": today()}))
         if derive.KEEP_TAG in info.tags:
             steps.append(Step("tag-del", name, f"untag {derive.KEEP_TAG}", {"tag": derive.KEEP_TAG}))
         steps += _service_steps(name, info.features, st.services)
         steps += _features_steps(name, info.features, st.features, "feature")
 
-    # 5. Qubes the tool manages that left the file: the machine's safe default.
-    gone = sorted(n for n, i in q.items()
-                  if MT in i.tags and n not in m.qubes)
-    if m.manage == "all":
-        gone = sorted(set(gone) | {n for n, i in q.items()
-                                   if n not in m.qubes and i.klass in ("AppVM", "StandaloneVM")
-                                   and not i.provides_network and derive.OWNED_TAG not in i.tags
-                                   and not derive.is_managed(i.tags)})
+    # 5. Qubes the tool manages that left the file: no netvm, failing
+    # closed. The netvm it had before lintel is named, never restored: it
+    # may send direct what the file had since sent through the proxy.
+    gone = sorted(n for n, i in q.items() if MT in i.tags and n not in m.qubes)
     for name in gone:
         info = q[name]
-        safe = m.safe_default(name)
-        if m.manage == "all":
-            st = derive.qube_state(m, safe)
-        else:
-            st = derive.reset_state()
-            st.netvm = m.proxies[safe.proxy].name if safe.network_card else ""
+        st = derive.reset_state()
         if derive.KEEP_TAG in info.tags:
             st.netvm = info.netvm  # it was never the tool's to set
         if info.netvm != st.netvm:
-            steps.append(Step("pref", name, f"reset netvm = {st.netvm or '(none)'} (was {info.netvm or '(none)'})",
-                              {"key": "netvm", "value": st.netvm}))
+            prior = info.features.get(derive.PRIOR_NETVM_FEATURE)
+            text = f"set netvm = (none) (was {info.netvm}"
+            if prior and prior not in ("none", info.netvm):
+                restore = "--default" if prior == derive.DEFAULT_NETVM else prior
+                text += f"; before lintel: {prior}, `qvm-prefs {name} netvm {restore}` to restore"
+            steps.append(Step("pref", name, text + ")", {"key": "netvm", "value": st.netvm}))
         steps += _service_steps(name, info.features, st.services)
         steps += _features_steps(name, info.features, st.features, "feature")
-        if not st.managed and MT in info.tags:
-            steps.append(Step("tag-del", name, f"untag {MT} (left the file)", {"tag": MT}))
-            if derive.KEEP_TAG in info.tags:
-                steps.append(Step("tag-del", name, f"untag {derive.KEEP_TAG}", {"tag": derive.KEEP_TAG}))
-        elif st.managed and MT not in info.tags:
-            steps.append(Step("tag-add", name, f"tag {MT}", {"tag": MT}))
+        steps.append(Step("tag-del", name, f"untag {MT} (left the file)", {"tag": MT}))
+        if derive.KEEP_TAG in info.tags:
+            steps.append(Step("tag-del", name, f"untag {derive.KEEP_TAG}", {"tag": derive.KEEP_TAG}))
 
     # 6. The tool's own qubes the file no longer names.
     for name, info in sorted(q.items()):
@@ -270,6 +309,10 @@ def make(m: Machine, snap: Snapshot, bundle_version: str) -> list[Step]:
 def notes(m: Machine, snap: Snapshot) -> list[str]:
     """Things apply does not change but a person should know."""
     out = []
+    used = {q.proxy for q in m.qubes.values() if q.via_proxy} | {x.proxy for x in m.services.values()}
+    for p in sorted(m.proxies):
+        if p in snap.qubes and p not in used:
+            out.append(f"{p}: unused (kept: it holds identities)")
     need: dict[str, list[str]] = {}
     for name, wq in sorted(m.qubes.items()):
         info = snap.qubes.get(name)

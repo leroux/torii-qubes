@@ -100,7 +100,7 @@ class Qube:
     internet: str  # outbound.internet: none | all | allowlist
     internet_allow: tuple[str, ...]
     internet_via: str  # outbound.via: "direct" or an exit node
-    identity: str  # none | proxy | login
+    identity: str  # none | tagged | login
     proxy: str  # the proxy qube that carries its traffic
     hostname: str
     tags: tuple[str, ...]
@@ -113,6 +113,8 @@ class Qube:
     lan: str = "none"  # outbound.lan: none | all | allowlist
     lan_allow: tuple[str, ...] = ()
     tailnet_allow: tuple[str, ...] = ()  # outbound.tailnet as a list: only these devices
+    adopt_force: bool = False  # adopt: force: may move it off a netvm lintel doesn't know
+    disposables: bool = False  # disposables: yes: it is a disposable template, and that is meant
 
     @property
     def network_card(self) -> bool:
@@ -147,7 +149,6 @@ class Proxy:
 
 @dataclasses.dataclass(frozen=True)
 class Machine:
-    manage: str  # listed | all
     template: str
     base_template: str
     control_url: str
@@ -164,10 +165,6 @@ class Machine:
     @property
     def machine_tag(self) -> str:
         return f"tag:{self.name}"
-
-    def safe_default(self, name: str) -> Qube:
-        """What a qube not in the file gets: the machine defaults alone."""
-        return _resolve(name, {}, self.defaults, self.default_proxy, self.proxies, "defaults", self.name)
 
 
 def _check_keys(where: str, d: dict, allowed: set[str]) -> None:
@@ -201,7 +198,9 @@ def _qube_name(where: str, v: Any) -> str:
     return v
 
 
-QUBE_KEYS = {"network", "outbound", "tailnet", "forwards", "socks", "http-proxy", "local-inbound"}
+QUBE_KEYS = {"network", "proxy", "outbound", "tailnet", "forwards", "socks", "http-proxy", "local-inbound",
+             "adopt", "disposables"}
+ENTRY_ONLY_KEYS = {"forwards", "local-inbound", "adopt", "disposables"}  # not in defaults
 TAILNET_KEYS = {"identity", "hostname", "tags", "inbound"}
 OUTBOUND_KEYS = {"internet", "lan", "tailnet", "via"}
 
@@ -307,16 +306,18 @@ def _resolve(name: str, entry: dict, defaults: dict, default_proxy: str,
     dtn = defaults.get("tailnet") or {}
     _check_keys(f"{where}.tailnet", tn, TAILNET_KEYS)
 
+    if "network" not in entry and "network" not in defaults:
+        raise FileError(f"{where}.network: required (here or in defaults): none, proxy, default or a netvm")
     network = str(_merged(entry, defaults, "network", "none"))
-    net_proxy = None
+    proxy = str(_merged(entry, defaults, "proxy", default_proxy))
+    if proxy not in proxies:
+        raise FileError(f"{where}.proxy: no proxy {proxy!r} (the main proxy or one in proxies)")
     if network.startswith("proxy:"):
-        network, net_proxy = "proxy", network.split(":", 1)[1]
-        if net_proxy not in proxies:
-            raise FileError(f"{where}.network: no proxy {net_proxy!r} in proxies")
-    elif network not in ("none", "proxy", "default"):
+        raise FileError(f"{where}.network: write proxy: {network.split(':', 1)[1]} and network: proxy")
+    if network not in ("none", "proxy", "default"):
         _qube_name(f"{where}.network", network)
         if network in proxies:
-            raise FileError(f"{where}.network: write proxy or proxy:{network}, not the proxy's name")
+            raise FileError(f"{where}.network: write network: proxy and proxy: {network}, not the proxy's name")
     network_card = network == "proxy"
     behind = network in ("none", "proxy")
 
@@ -327,22 +328,17 @@ def _resolve(name: str, entry: dict, defaults: dict, default_proxy: str,
     lan, lan_n = _zone(f"{where}.outbound.lan", _merged(ob, dob, "lan", "none"))
     via = str(_merged(ob, dob, "via", "direct"))
     ident = str(_merged(tn, dtn, "identity", "none"))
-    proxy = net_proxy or default_proxy
     if ident.startswith("proxy:"):
-        ip = ident.split(":", 1)[1]
-        ident = "proxy"
-        if ip not in proxies:
-            raise FileError(f"{where}.tailnet.identity: no proxy {ip!r} in proxies")
-        if net_proxy and ip != net_proxy:
-            raise FileError(f"{where}: network is proxy:{net_proxy} but tailnet.identity is proxy:{ip}")
-        proxy = ip
-    if ident not in ("none", "proxy", "login"):
-        raise FileError(f"{where}.tailnet.identity: proxy, proxy:<name>, login or none, not {ident!r}")
+        raise FileError(f"{where}.tailnet.identity: write proxy: {ident.split(':', 1)[1]} and identity: tagged")
+    if ident == "proxy":
+        raise FileError(f"{where}.tailnet.identity: write identity: tagged (was proxy)")
+    if ident not in ("none", "tagged", "login"):
+        raise FileError(f"{where}.tailnet.identity: tagged, login or none, not {ident!r}")
     hostname = str(tn.get("hostname", f"{machine}-{name}"))
     tags = tags_of(f"{where}.tailnet.tags", _merged(tn, dtn, "tags", []), machine, False)
-    if ident == "proxy" and not tags:
+    if ident == "tagged" and not tags:
         raise FileError(f"{where}: a tagged identity needs tags (here or in defaults.tailnet.tags)")
-    if ident != "proxy":
+    if ident != "tagged":
         tags = ()
     else:
         tags = tags + (f"tag:{machine}",)  # every tagged device carries the machine's tag
@@ -416,11 +412,17 @@ def _resolve(name: str, entry: dict, defaults: dict, default_proxy: str,
         raise FileError(f"{where}: network: {network} is not carried by the proxy, so no tailnet identity, "
                         "outbound or forwards; reach it from the tailnet with services:")
 
+    adopt = entry.get("adopt")
+    if adopt not in (None, "force"):
+        raise FileError(f"{where}.adopt: adopt: force, or leave it out")
+    disposables = _bool(f"{where}.disposables", entry.get("disposables", False))
+
     return Qube(name=name, network=network, internet=internet,
                 internet_allow=tuple(allow_n), internet_via=via, lan=lan, lan_allow=tuple(lan_n), tailnet_allow=tailnet_allow, identity=ident, proxy=proxy,
                 hostname=hostname, tags=tuple(str(t) for t in tags), inbound=tuple(inbound),
                 tailnet_outbound=outbound, forwards=tuple(forwards), socks_port=socks,
-                http_port=http, local_inbound=tuple(local))
+                http_port=http, local_inbound=tuple(local),
+                adopt_force=adopt == "force", disposables=disposables)
 
 
 TOP_KEYS = {"mesh", "machine", "manage", "proxy", "proxies", "template", "base-template", "tailnet",
@@ -464,9 +466,8 @@ def parse(text: str) -> Machine:
     mesh = doc.get("mesh", "")
     if mesh != "" and (not isinstance(mesh, str) or not MACHINE_RE.match(mesh)):
         raise FileError("mesh: a name (lowercase letters, digits and -), for a file applied separately")
-    manage = doc.get("manage", "listed")
-    if manage not in ("listed", "all"):
-        raise FileError("manage: listed or all")
+    if "manage" in doc:
+        raise FileError("manage: removed; lintel only changes the qubes listed under qubes:")
 
     # proxy: NAME or {name, netvm, label}; proxies: more, dedicated.
     def proxy_of(where, v):
@@ -489,7 +490,7 @@ def parse(text: str) -> Machine:
     _check_keys("tailnet", tnet, {"control-url", "tag-owners"})
     defaults = doc.get("defaults", {}) or {}
     _moved("defaults", defaults)
-    _check_keys("defaults", defaults, QUBE_KEYS - {"forwards", "local-inbound"})
+    _check_keys("defaults", defaults, QUBE_KEYS - ENTRY_ONLY_KEYS)
     if "tailnet" in defaults:
         _check_keys("defaults.tailnet", defaults["tailnet"], {"identity", "tags"})
     if "outbound" in defaults:
@@ -524,15 +525,16 @@ def parse(text: str) -> Machine:
                     raise FileError(f"qubes.{q.name}.local-inbound: a qube is not its own source")
 
     base = _qube_name("base-template", doc.get("base-template", DEFAULT_BASE_TEMPLATE))
-    m = Machine(manage=manage,
-                template=_qube_name("template", doc.get("template", TEMPLATE_PREFIX + base)),
+    m = Machine(template=_qube_name("template", doc.get("template", TEMPLATE_PREFIX + base)),
                 base_template=base,
                 control_url=str(tnet.get("control-url", "")),
                 tag_owners=tuple(tnet.get("tag-owners", ["autogroup:admin"])),
                 proxies=proxies, default_proxy=main.name,
                 status_readers=tuple(_qube_name("status-readers", s) for s in doc.get("status-readers", []) or []),
                 qubes=qubes, defaults=defaults, services=services, name=mname, mesh=mesh)
-    m.safe_default("defaults-check")  # the defaults themselves must resolve
+    # The defaults themselves must resolve (network may come from entries).
+    _resolve("defaults-check", {} if "network" in defaults else {"network": "none"}, defaults, main.name,
+             proxies, "defaults", mname)
     return m
 
 

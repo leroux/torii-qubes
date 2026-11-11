@@ -26,18 +26,20 @@ written ones too), the config each proxy holds, and the identities' state.
 config, identities not signed in, and hand-written policy that widens what
 the tool set.
 
-A qube removed from the file is reset to the machine's defaults at the next
-`apply`. A qube that only hosts services, and isn't listed under `qubes:`, is
-never touched. Tailnet devices stay in the admin console until you remove
-them.
+lintel only changes the qubes listed under `qubes:`. The first `apply` that
+lists a qube records the netvm it had (features `lintel-prior-netvm` and
+`lintel-adopted`, written once). A qube removed from the file gets no netvm at
+the next `apply`, failing closed; `plan` names the netvm it had before lintel
+and the command to restore it, but never restores it itself. A qube that only
+hosts services, and isn't listed under `qubes:`, is never touched. Tailnet
+devices stay in the admin console until you remove them.
 
 ## The machine file
 
 | Key | Default | Meaning |
 |---|---|---|
-| `manage` | `listed` | `listed`: only the qubes in the file. `all`: every app qube gets the defaults. |
 | `proxy` | `sys-lintel` | The proxy qube: a name, or `{name, netvm, label}` (netvm `sys-firewall`). |
-| `proxies` | | More proxy qubes, used as `identity: proxy:<name>`. |
+| `proxies` | | More proxy qubes, chosen per qube with `proxy: <name>`. A proxy qube is created once something uses it; the main proxy is never removed by `apply`, since it holds identities. |
 | `template`, `base-template` | `lintel-<base-template>`, `fedora-44-minimal` | The tool's own template and what it's cloned from. A new base is a new template: `apply` creates it, moves the proxies onto it (one restart each) and removes the old one once nothing uses it. |
 | `tailnet.control-url` | Tailscale | A Headscale (or other) coordination server. |
 | `tailnet.tag-owners` | `[autogroup:admin]` | For `lintel grants`. |
@@ -48,12 +50,15 @@ Per qube:
 
 | Key | Values | |
 |---|---|---|
-| `network` | `none` \| `proxy` \| `proxy:<name>` \| `default` \| a netvm | Where its network comes from. `none`: no netvm, qrexec only. `proxy`: netvm is the proxy qube (or a named one). `default`: Qubes' default netvm. A netvm's name: that netvm. Only `none` and `proxy` can have a tailnet identity, `outbound:` and forwards. |
+| `network` | `none` \| `proxy` \| `default` \| a netvm | **Required**, in the entry or in `defaults`. Where its network comes from. `none`: no netvm, qrexec only. `proxy`: netvm is its proxy qube. `default`: Qubes' default netvm. A netvm's name: that netvm. Only `none` and `proxy` can have a tailnet identity, `outbound:` and forwards. |
+| `proxy` | a proxy qube | Which proxy handles it: its netvm when routed, its qrexec target otherwise, and where its identity lives. Default: the main `proxy:`. |
 | `outbound.internet` | `none` \| `all` \| a list | Public addresses. List entries: `name`, `*.domain`, address or range, each with an optional `:port` and an optional `/tcp` or `/udp`. **An entry without a protocol is TCP only;** UDP (QUIC, DNS, VPNs) needs `/udp`: `example.com:443/udp`. A raw address nobody resolved and no entry covers is refused. The same entries work in `outbound.lan` and `outbound.tailnet`. |
 | `outbound.lan` | `none` \| `all` \| a list | This machine's private network (`192.168/16`, `172.16/12`, `10/8` outside Qubes', `fc00::/7`), never through an exit node. Default `none`: `internet: all` does not include it. |
 | `outbound.tailnet` | `yes` \| `no` | May open connections to the tailnet; where to is the grants'. |
 | `outbound.via` | `direct` \| exit node | Internet through an exit node, by tailnet name or address. |
-| `tailnet.identity` | `none` \| `proxy` \| `proxy:<name>` \| `login` | Tagged, on a named proxy, or signed in as a person. |
+| `tailnet.identity` | `none` \| `tagged` \| `login` | Tagged (owned by its tags), or signed in as a person. |
+| `adopt` | `force` | Lets the first `apply` move it off a netvm lintel doesn't know (not none, Qubes' default, or a lintel proxy), such as `sys-whonix` or a VPN qube. Without it, `plan` refuses. |
+| `disposables` | `yes` | Required to list a disposable template (`template_for_dispvms`): its netvm becomes every disposable's made from it. |
 | `tailnet.tags`, `tailnet.hostname` | | Tags for a tagged identity (else `defaults.tailnet.tags`); hostname defaults to the qube's name. |
 | `tailnet.inbound` | ports, or `{port, target, tls}` | Ports on the identity, the qube's port behind each, HTTPS terminated if `tls`. |
 | `forwards` | `name: {to: host:port, port: N}` | Fixed destinations, on `127.0.0.1:N` in the qube (qubes with no network card). |

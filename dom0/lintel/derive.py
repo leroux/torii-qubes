@@ -33,6 +33,10 @@ CLIENT_VERSION_FEATURE = "lintel-client-version"  # on templates that carry the 
 # runs what its template had when it started, so a template upgraded by
 # another mesh (or by hand) leaves it on the old one until it restarts.
 STARTED_VERSION_FEATURE = "lintel-started-version"
+# On a workload, written once at its first adoption and never applied: the
+# netvm it had before lintel ("none", "<default>" or a name), and the date.
+PRIOR_NETVM_FEATURE = "lintel-prior-netvm"
+ADOPTED_FEATURE = "lintel-adopted"
 
 
 @dataclasses.dataclass
@@ -181,8 +185,9 @@ def qube_state(m: Machine, q: Qube) -> QubeState:
 
 
 def reset_state() -> QubeState:
-    """What a qube removed from the file gets, before machine defaults."""
-    return QubeState(netvm=None, services={CLIENT_SERVICE: False},
+    """What a qube leaving the file gets: no netvm (failing closed), and
+    nothing of the tool's. Its adoption record stays."""
+    return QubeState(netvm="", services={CLIENT_SERVICE: False},
                      features={CLIENT_FEATURE: None}, managed=False)
 
 
@@ -240,7 +245,7 @@ def grants(m: Machine) -> dict[str, Any]:
     out: list[dict[str, Any]] = []
     for q in sorted(m.qubes.values(), key=lambda q: q.name):
         tags.update(q.tags)
-        if q.inbound and q.identity == "proxy":
+        if q.inbound and q.identity == "tagged":
             out.append({"src": ["autogroup:member"], "dst": list(q.tags),
                         "ip": [f"tcp:{i.port}" for i in q.inbound]})
         if q.internet_via != "direct":

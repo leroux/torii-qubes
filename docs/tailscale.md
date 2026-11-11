@@ -9,7 +9,7 @@ the admin console).
 
 Every qube with an identity is a device on the tailnet, held by `sys-lintel`:
 
-- **Tagged** (`identity: proxy`, and every entry under `services:`):
+- **Tagged** (`identity: tagged`, and every entry under `services:`):
   a device with the file's tags, owned by the tags rather than a person.
   Tagged devices' keys don't expire by default, so they stay signed in.
 - **A person's** (`identity: login`): signs in as that person, like their

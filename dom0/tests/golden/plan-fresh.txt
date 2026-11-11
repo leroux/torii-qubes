@@ -12,8 +12,14 @@ sys-lintel: start it and wait until it runs config 26cdf62d71f3
 50-lintel: write the qrexec policy
 59-lintel-deny: write the shared qrexec denies
 lintel-probe: tag lintel-managed
+lintel-probe: set feature lintel-prior-netvm = none
+lintel-probe: set feature lintel-adopted = 2026-11-10
 lintel-probe2: tag lintel-managed
+lintel-probe2: set feature lintel-prior-netvm = none
+lintel-probe2: set feature lintel-adopted = 2026-11-10
 lintel-probe2: enable service lintel-client
 lintel-probe2: set feature vm-config.lintel-client = {"listen":[{"port":1080,"service":"lintel.Connect+socks",...
 personal: set netvm = sys-lintel (was sys-firewall)
 personal: tag lintel-managed
+personal: set feature lintel-prior-netvm = sys-firewall
+personal: set feature lintel-adopted = 2026-11-10

@@ -24,14 +24,14 @@ defaults:
   tailnet: { tags: [server] }
 qubes:
   wiki:                              # offline, but reachable from the tailnet on 443
-    tailnet: { identity: proxy, inbound: [{port: 443, target: 8080}] }
+    tailnet: { identity: tagged, inbound: [{port: 443, target: 8080}] }
   build:                             # offline; may fetch from PyPI and use the tailnet
     outbound: { internet: [pypi.org, files.pythonhosted.org], tailnet: yes }
-    tailnet: { identity: proxy, tags: [job] }
+    tailnet: { identity: tagged, tags: [job] }
   browser:                           # networked, its internet through an exit node
     network: proxy
     outbound: { internet: all, via: exit1 }
-    tailnet: { identity: proxy }
+    tailnet: { identity: tagged }
 ```
 
 ## Why
@@ -103,7 +103,7 @@ With lintel:
 
 | Pattern | In the file | What happens |
 |---|---|---|
-| An **offline service** reachable from the tailnet | `tailnet: {identity: proxy, inbound: [443]}` | The qube keeps no netvm. Its identity listens on 443, and each connection is a `qubes.ConnectTCP` call into the qube, allowed by dom0 on that port only. |
+| An **offline service** reachable from the tailnet | `tailnet: {identity: tagged, inbound: [443]}` | The qube keeps no netvm. Its identity listens on 443, and each connection is a `qubes.ConnectTCP` call into the qube, allowed by dom0 on that port only. |
 | An **offline job** that fetches packages and uses the tailnet | `outbound: {internet: [pypi.org], tailnet: yes}` | Inside the qube, `HTTPS_PROXY` and SOCKS are on loopback. The proxy allows only the names on the list, and tailnet destinations the grants allow. |
 | A **networked qube** behind the proxy | `network: proxy` | Its netvm becomes `sys-lintel`. All its traffic and DNS are intercepted and decided per destination, and tailnet traffic goes out on its own identity. |
 | Internet **through an exit node** | `outbound: {via: <exit node>}` | Its internet and DNS go to that exit node on its own identity, failing closed. |

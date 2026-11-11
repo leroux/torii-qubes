@@ -74,6 +74,9 @@ def qube_view(snap: Snapshot, name: str, proxy_states: dict[str, dict[str, Any]]
     proxies = {n for n, i in snap.qubes.items() if derive.OWNED_TAG in i.tags and i.klass == "AppVM"}
     v: dict[str, Any] = {"qube": name, "netvm": info.netvm or None,
                          "network_card": bool(info.netvm), "managed": derive.is_managed(info.tags)}
+    if derive.PRIOR_NETVM_FEATURE in info.features:
+        v["adopted"] = {"from": info.features[derive.PRIOR_NETVM_FEATURE],
+                        "on": info.features.get(derive.ADOPTED_FEATURE, "")}
     # Which proxy holds it, by its live config.
     cfg = None
     for p in sorted(proxies):
@@ -232,4 +235,7 @@ def format_view(v: dict[str, Any]) -> str:
         lines.append(f"  service        {x['hostname']} ({tags}) {x['state']}{addrs} via {x['proxy']}: in {ports}")
     if "active_connections" in v:
         lines.append(f"  connections    {v['active_connections']} active")
+    if v.get("adopted"):
+        a = v["adopted"]
+        lines.append(f"  adopted        from netvm {a['from']}" + (f" on {a['on']}" if a["on"] else ""))
     return "\n".join(lines)

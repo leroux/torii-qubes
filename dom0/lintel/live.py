@@ -28,6 +28,7 @@ class QubeInfo:
     tags: list[str]
     features: dict[str, str]
     netvm_default: bool = False  # its netvm follows Qubes' default
+    template_for_dispvms: bool = False  # a disposable template
 
     @property
     def address(self) -> str:
@@ -44,19 +45,22 @@ class Snapshot:
     qubes: dict[str, QubeInfo]
     policy: str | None  # the tool's policy file, None if absent
     other_policy: dict[str, str]  # hand-written files that mention lintel services; read only
+    default_netvm: str = ""  # Qubes' global default netvm
 
     def to_json(self) -> str:
         return json.dumps({
             "qubes": {n: dataclasses.asdict(q) for n, q in sorted(self.qubes.items())},
             "policy": self.policy,
             "other_policy": self.other_policy,
+            "default_netvm": self.default_netvm,
         }, indent=1, sort_keys=True)
 
     @classmethod
     def from_json(cls, text: str) -> "Snapshot":
         d = json.loads(text)
         return cls(qubes={n: QubeInfo(**q) for n, q in d["qubes"].items()},
-                   policy=d.get("policy"), other_policy=d.get("other_policy", {}))
+                   policy=d.get("policy"), other_policy=d.get("other_policy", {}),
+                   default_netvm=d.get("default_netvm", ""))
 
 
 def _prop(vm, name: str, default: Any = None) -> Any:
@@ -103,6 +107,7 @@ def take(app, policy_client, interesting: set[str], policy_name: str = derive.PO
             label=str(_prop(vm, "label", "")),
             tags=tags,
             netvm_default=_is_default(vm, "netvm"),
+            template_for_dispvms=bool(_prop(vm, "template_for_dispvms", False)),
             features={k: str(v) for k, v in vm.features.items()} if want else {},
         )
     policy = None
@@ -117,4 +122,5 @@ def take(app, policy_client, interesting: set[str], policy_name: str = derive.PO
             text, _ = policy_client.policy_get(f)
             if "lintel." in text or "qubes.ConnectTCP" in text:
                 other[f] = text
-    return Snapshot(qubes=qubes, policy=policy, other_policy=other)
+    dn = _prop(app, "default_netvm")
+    return Snapshot(qubes=qubes, policy=policy, other_policy=other, default_netvm=str(dn) if dn else "")

@@ -10,9 +10,18 @@ from lintel import derive, machine, plan
 
 
 def mparse(text: str):
-    """machine.parse with the machine's name added when a test leaves it out."""
+    """machine.parse with the machine's name added when a test leaves it out,
+    and `defaults: {network: none}` when it has no defaults (network is
+    required)."""
+    if "defaults:" not in text:
+        text = "defaults: {network: none}\n" + text
     return machine.parse(text if "machine:" in text else "machine: m1\n" + text)
+
+
 from lintel.live import Snapshot
+
+TODAY = "2026-11-10"
+plan.today = lambda: TODAY  # adoption records carry a date; keep goldens stable
 
 HERE = os.path.dirname(__file__)
 G = os.path.join(HERE, "golden")
@@ -121,7 +130,7 @@ class MachineFile(unittest.TestCase):
     def test_defaults_resolve(self):
         m = full_machine()
         p = m.qubes["lintel-probe"]
-        self.assertEqual((p.network_card, p.internet, p.identity, p.tags), (False, "none", "proxy", ("tag:m1-lintel-test", "tag:m1")))
+        self.assertEqual((p.network_card, p.internet, p.identity, p.tags), (False, "none", "tagged", ("tag:m1-lintel-test", "tag:m1")))
         self.assertEqual(p.inbound[1], machine.Inbound(8443, 8080))
         self.assertEqual((p.socks_port, p.http_port), (0, 0), "no outbound, no proxy ports")
         j = m.qubes["lintel-probe2"]
@@ -153,7 +162,7 @@ class MachineFile(unittest.TestCase):
                 doc = ("qubes:\n" + block) if first.startswith(" ") else block
                 with self.subTest(file=os.path.basename(path), block=i):
                     try:
-                        mparse("defaults: {tailnet: {tags: [t]}}\n" + doc if "defaults:" not in doc else doc)
+                        mparse("defaults: {network: none, tailnet: {tags: [t]}}\n" + doc if "defaults:" not in doc else doc)
                     except machine.FileError as e:
                         self.fail(f"{os.path.basename(path)} yaml block {i}: {e}\n{block}")
                 n += 1
@@ -168,13 +177,13 @@ class MachineFile(unittest.TestCase):
         self.bad("qubes: {a: {outbound: {internet: ['pypi.org:99999']}}}", "bad port")
         self.bad("qubes: {a: {outbound: {lan: ['10.0.0.0/33']}}}", "not a host")
         self.bad("qubes: {a: {outbound: {wan: all}}}", "unknown key 'wan'")
-        self.bad("qubes: {a: {tailnet: {identity: proxy}}}", "needs tags")
+        self.bad("qubes: {a: {tailnet: {identity: tagged}}}", "needs tags")
         self.bad("qubes: {a: {tailnet: {inbound: [80]}}}", "need an identity")
         self.bad("qubes: {a: {outbound: {tailnet: yes}}}", "need an identity")
         self.bad("qubes: {a: {network: proxy, forwards: {x: 'h:1'}}}", "forwards are for qubes without")
         self.bad("qubes: {a: {outbound: {via: ex, internet: all}}}", "needs an identity")
         self.bad("qubes: {sys-lintel: {}}", "is a proxy qube")
-        self.bad("qubes: {a: {tailnet: {identity: 'proxy:nope', tags: [x]}}}", "no proxy 'nope'")
+        self.bad("qubes: {a: {proxy: nope}}", "no proxy 'nope'")
         self.bad("defaults: {tailnet: {inbound: [1]}}", "unknown key 'inbound'")
 
     def test_protocols(self):
@@ -187,8 +196,8 @@ class MachineFile(unittest.TestCase):
 qubes:
   j:
     outbound: {tailnet: [notes, "chat:443", "100.64.0.0/10:22"]}
-    tailnet: {identity: proxy, tags: [job]}
-  k: {outbound: {tailnet: yes}, tailnet: {identity: proxy, tags: [job]}}
+    tailnet: {identity: tagged, tags: [job]}
+  k: {outbound: {tailnet: yes}, tailnet: {identity: tagged, tags: [job]}}
 """)
         j, k = m.qubes["j"], m.qubes["k"]
         self.assertEqual((j.tailnet_outbound, j.tailnet_allow), (True, ("notes", "chat:443", "100.64.0.0/10:22")))
@@ -196,8 +205,8 @@ qubes:
         cfg = derive.proxy_config(m, "sys-lintel", {}, "v")["workloads"]
         self.assertEqual(cfg["j"]["tailnet_allow"], ["notes", "chat:443", "100.64.0.0/10:22"])
         self.assertNotIn("tailnet_allow", cfg["k"])
-        self.bad("qubes: {a: {outbound: {tailnet: []}, tailnet: {identity: proxy, tags: [x]}}}", "a list of devices")
-        self.bad("qubes: {a: {outbound: {tailnet: ['notes:0']}, tailnet: {identity: proxy, tags: [x]}}}", "bad port")
+        self.bad("qubes: {a: {outbound: {tailnet: []}, tailnet: {identity: tagged, tags: [x]}}}", "a list of devices")
+        self.bad("qubes: {a: {outbound: {tailnet: ['notes:0']}, tailnet: {identity: tagged, tags: [x]}}}", "bad port")
         self.bad("qubes: {a: {outbound: {tailnet: [notes]}}}", "need an identity")
 
     def test_machine_and_tags(self):
@@ -205,10 +214,10 @@ qubes:
             machine.parse("qubes: {}")
         self.assertIn("machine: required", str(e.exception))
         m = mparse("""
-defaults: {tailnet: {tags: [server]}}
+defaults: {network: none, tailnet: {tags: [server]}}
 qubes:
-  job-1: {tailnet: {identity: proxy, tags: [job]}}
-  w: {tailnet: {identity: proxy, hostname: wiki}}
+  job-1: {tailnet: {identity: tagged, tags: [job]}}
+  w: {tailnet: {identity: tagged, hostname: wiki}}
   me: {network: proxy, tailnet: {identity: login}}
 services:
   chat: {qube: g, tags: [tag:chat], ports: [443]}
@@ -221,8 +230,8 @@ services:
         self.assertEqual((x["chat"].hostname, x["chat"].tags), ("chat", ("tag:chat", "tag:m1")))
         self.assertEqual(x["backup"].tags, ("tag:m1-backup", "tag:m1"))
         self.assertIn("tag:m1", derive.grants(m)["tagOwners"])
-        self.bad("qubes: {a: {tailnet: {identity: proxy, tags: [tag:server]}}}", "full tag")
-        self.bad("qubes: {a: {tailnet: {identity: proxy, tags: [Server]}}}", "is not a tag")
+        self.bad("qubes: {a: {tailnet: {identity: tagged, tags: [tag:server]}}}", "full tag")
+        self.bad("qubes: {a: {tailnet: {identity: tagged, tags: [Server]}}}", "is not a tag")
         with self.assertRaises(machine.FileError):
             machine.parse("machine: M_1\nqubes: {}")
 
@@ -235,7 +244,7 @@ services:
 
     def test_zones(self):
         m = mparse("""
-defaults: {tailnet: {tags: [t]}, outbound: {lan: none}}
+defaults: {network: none, tailnet: {tags: [t]}, outbound: {lan: none}}
 qubes:
   a: {outbound: {internet: all}}
   b: {outbound: {internet: [pypi.org, "*.hf.co:443", "93.184.215.0/24:80"], lan: ["192.168.1.20:5432", "[fd00::1]:80"]}}
@@ -366,7 +375,7 @@ proxies: [{name: sys-lintel-vpn, netvm: sys-net}]
 qubes:
   a: {network: none}
   b: {network: proxy}
-  c: {network: "proxy:sys-lintel-vpn", outbound: {internet: all}}
+  c: {network: proxy, proxy: sys-lintel-vpn, outbound: {internet: all}}
   d: {network: default}
   e: {network: sys-net}
 """)
@@ -375,7 +384,7 @@ qubes:
         self.assertEqual(m.qubes["c"].proxy, "sys-lintel-vpn")
 
     def test_not_carried_by_the_proxy(self):
-        for e in ("{network: default, outbound: {internet: all}}", "{network: sys-net, tailnet: {identity: proxy, tags: [x]}}",
+        for e in ("{network: default, outbound: {internet: all}}", "{network: sys-net, tailnet: {identity: tagged, tags: [x]}}",
                   "{network: default, forwards: {x: 'h:1'}}"):
             with self.assertRaises(machine.FileError) as c:
                 mparse("qubes: {a: %s}" % e)
@@ -389,7 +398,7 @@ qubes:
 
     def test_service_names(self):
         with self.assertRaises(machine.FileError):
-            mparse("defaults: {tailnet: {tags: [t]}}\nqubes: {q: {tailnet: {identity: proxy, hostname: m}}}\n"
+            mparse("defaults: {network: none, tailnet: {tags: [t]}}\nqubes: {q: {tailnet: {identity: tagged, hostname: m}}}\n"
                    "services: {m: {qube: x, ports: [1]}}")  # tailnet name m twice
         with self.assertRaises(machine.FileError):
             mparse("services: {m: {qube: x, tags: [t]}}")  # no ports
@@ -400,7 +409,7 @@ qubes:
 mesh: test
 machine: m1-test
 proxy: {name: sys-lintel-test}
-qubes: {lintel-probe2: {}}
+qubes: {lintel-probe2: {tailnet: {identity: tagged, tags: [t]}}}
 """)
         snap1 = simulate(snap(), plan.make(main, snap(), VERSION))
         steps = plan.make(test, as_mesh(snap1, test), VERSION)
@@ -425,7 +434,7 @@ qubes: {lintel-probe2: {}}
         self.assertIn("another mesh", str(e.exception))
 
     def test_workload_must_exist(self):
-        m = mparse("defaults: {tailnet: {tags: [t]}}\nqubes: {nosuch: {}}")
+        m = mparse("defaults: {network: none, tailnet: {tags: [t]}}\nqubes: {nosuch: {}}")
         with self.assertRaises(plan.PlanError) as e:
             plan.make(m, snap(), VERSION)
         self.assertIn("never creates workloads", str(e.exception))
@@ -436,7 +445,147 @@ qubes: {lintel-probe2: {}}
 
     def test_foreign_template_name(self):
         with self.assertRaises(plan.PlanError):
-            plan.make(mparse("template: fedora-43-xfce\nqubes: {}"), snap(), VERSION)
+            plan.make(mparse("template: fedora-43-xfce\nqubes: {personal: {network: proxy}}"), snap(), VERSION)
+
+
+class Schema(unittest.TestCase):
+    """The file says each fact once: a qube's proxy in proxy:, the kind of
+    identity in tailnet.identity, its network explicitly."""
+
+    def bad(self, text, msg):
+        with self.assertRaises(machine.FileError) as e:
+            mparse(text)
+        self.assertIn(msg, str(e.exception))
+
+    def test_network_is_required(self):
+        with self.assertRaises(machine.FileError) as e:
+            machine.parse("machine: m1\nqubes: {a: {outbound: {internet: all}}}")
+        self.assertIn("qubes.a.network: required", str(e.exception))
+        m = machine.parse("machine: m1\nqubes: {a: {network: proxy}}")
+        self.assertEqual(m.qubes["a"].network, "proxy")
+        machine.parse("machine: m1\nqubes: {}")  # no qubes, nothing required
+
+    def test_removed_keys_say_what_to_write(self):
+        self.bad("manage: all\nqubes: {}", "manage: removed")
+        self.bad("manage: listed\nqubes: {}", "manage: removed")
+        self.bad("qubes: {a: {tailnet: {identity: proxy, tags: [x]}}}", "write identity: tagged")
+        self.bad("proxies: [{name: p2}]\nqubes: {a: {tailnet: {identity: 'proxy:p2', tags: [x]}}}", "write proxy: p2")
+        self.bad("proxies: [{name: p2}]\nqubes: {a: {network: 'proxy:p2'}}", "write proxy: p2")
+
+    def test_proxy_key(self):
+        m = mparse("""
+proxies: [{name: p2}]
+qubes:
+  a: {network: none, proxy: p2, outbound: {internet: all}}
+  b: {network: proxy, proxy: p2, tailnet: {identity: tagged, tags: [x]}}
+  c: {network: proxy}
+""")
+        self.assertEqual({n: q.proxy for n, q in m.qubes.items()}, {"a": "p2", "b": "p2", "c": "sys-lintel"})
+        self.assertEqual(derive.qube_state(m, m.qubes["b"]).netvm, "p2")
+        self.bad("qubes: {a: {proxy: sys-lintel-x}}", "no proxy 'sys-lintel-x'")
+
+    def test_adopt_and_disposables_keys(self):
+        m = mparse("qubes: {a: {adopt: force}, b: {disposables: yes}, c: {}}")
+        self.assertEqual([(q.adopt_force, q.disposables) for q in m.qubes.values()],
+                         [(True, False), (False, True), (False, False)])
+        self.bad("qubes: {a: {adopt: yes}}", "adopt: force")
+        self.bad("defaults: {network: none, adopt: force}\nqubes: {}", "unknown key 'adopt'")
+
+
+def with_qube(s: Snapshot, name, netvm="", provides_network=False, dvm=False, tags=None, qid=60) -> Snapshot:
+    from lintel.live import QubeInfo
+    s = copy.deepcopy(s)
+    s.qubes[name] = QubeInfo(name, "AppVM", "Halted", "fedora-43-xfce", netvm, provides_network, qid, "", False,
+                             "red", list(tags or []), {}, template_for_dispvms=dvm)
+    return s
+
+
+class Adoption(unittest.TestCase):
+    """lintel only changes qubes named in the file; it records what it found
+    the first time, refuses moves it cannot judge, and anything leaving its
+    control fails closed."""
+
+    def test_empty_file_plans_nothing(self):
+        self.assertEqual([str(s) for s in plan.make(mparse("qubes: {}"), snap(), VERSION)], [])
+
+    def test_no_proxy_until_something_uses_one(self):
+        steps = plan.make(mparse("qubes: {lintel-probe: {network: none}}"), snap(), VERSION)
+        self.assertEqual([str(s) for s in steps], [
+            "lintel-probe: tag lintel-managed",
+            "lintel-probe: set feature lintel-prior-netvm = none",
+            f"lintel-probe: set feature lintel-adopted = {TODAY}",
+        ])
+
+    def test_first_adoption_records_the_netvm_once(self):
+        m = full_machine()
+        steps = plan.make(m, snap(), VERSION)
+        texts = [str(s) for s in steps]
+        self.assertIn("personal: set feature lintel-prior-netvm = sys-firewall", texts)
+        self.assertIn("lintel-probe: set feature lintel-prior-netvm = none", texts)
+        after = simulate(snap(), steps)
+        self.assertEqual(after.qubes["personal"].features["lintel-adopted"], TODAY)
+        # Leaving and coming back keeps the first record.
+        gone = simulate(after, plan.make(mparse("qubes: {}"), after, VERSION))
+        self.assertEqual(gone.qubes["personal"].features["lintel-prior-netvm"], "sys-firewall")
+        back = plan.make(m, gone, VERSION)
+        self.assertFalse([s for s in back if "lintel-prior-netvm" in str(s)], back)
+
+    def test_qube_adopted_before_records_existed_is_not_guessed(self):
+        s = snap()
+        s.qubes["personal"].tags.append(derive.MANAGED_TAG)
+        s.qubes["personal"].netvm = "sys-lintel"
+        steps = plan.make(full_machine(), s, VERSION)
+        self.assertFalse([x for x in steps if x.target == "personal" and "lintel-prior" in str(x)])
+
+    def test_leaving_the_file_fails_closed_and_names_the_old_netvm(self):
+        m = full_machine()
+        after = simulate(snap(), plan.make(m, snap(), VERSION))
+        steps = plan.make(mparse("qubes: {lintel-probe: {network: none}}"), after, VERSION)
+        line = next(str(s) for s in steps if s.target == "personal" and s.kind == "pref")
+        self.assertEqual(line, "personal: set netvm = (none) (was sys-lintel; before lintel: sys-firewall, "
+                               "`qvm-prefs personal netvm sys-firewall` to restore)")
+        self.assertEqual(simulate(after, steps).qubes["personal"].netvm, "")
+
+    def test_main_proxy_is_kept_when_unused(self):
+        after = simulate(snap(), plan.make(full_machine(), snap(), VERSION))
+        steps = plan.make(mparse("qubes: {}"), after, VERSION)
+        self.assertFalse([s for s in steps if s.kind == "remove"], steps)
+        self.assertIn("sys-lintel: unused (kept: it holds identities)", plan.notes(mparse("qubes: {}"), after))
+
+    def test_unknown_netvm_needs_adopt_force(self):
+        s = with_qube(with_qube(snap(), "sys-whonix", "sys-firewall", provides_network=True, qid=61),
+                      "anon-whonix", "sys-whonix")
+        with self.assertRaises(plan.PlanError) as e:
+            plan.make(mparse("qubes: {anon-whonix: {network: proxy}}"), s, VERSION)
+        self.assertIn("anon-whonix: its netvm is sys-whonix, which lintel doesn't know", str(e.exception))
+        self.assertIn("adopt: force", str(e.exception))
+        plan.make(mparse("qubes: {anon-whonix: {network: proxy, adopt: force}}"), s, VERSION)
+        # Writing its netvm changes nothing, so nothing to refuse.
+        plan.make(mparse("qubes: {anon-whonix: {network: sys-whonix}}"), s, VERSION)
+
+    def test_known_netvms_are_adopted_without_force(self):
+        s = with_qube(snap(), "w", "")  # no netvm
+        plan.make(mparse("qubes: {w: {network: proxy}, personal: {network: proxy}}"), s, VERSION)  # sys-firewall: the default
+        after = simulate(snap(), plan.make(full_machine(), snap(), VERSION))
+        after = with_qube(after, "w2", "sys-lintel")  # already behind a lintel proxy
+        plan.make(mparse("qubes: {w2: {network: none}}"), after, VERSION)
+
+    def test_show_names_the_adoption(self):
+        from lintel import show
+        after = simulate(snap(), plan.make(full_machine(), snap(), VERSION))
+        v = show.qube_view(after, "personal", {})
+        self.assertEqual(v["adopted"], {"from": "sys-firewall", "on": TODAY})
+        self.assertIn(f"  adopted        from netvm sys-firewall on {TODAY}", show.format_view(dict(v, pattern="x")))
+
+    def test_disposable_templates_need_disposables_yes(self):
+        s = with_qube(snap(), "browser-dvm", "sys-firewall", dvm=True)
+        with self.assertRaises(plan.PlanError) as e:
+            plan.make(mparse("qubes: {browser-dvm: {network: proxy}}"), s, VERSION)
+        self.assertIn("browser-dvm is a disposable template", str(e.exception))
+        plan.make(mparse("qubes: {browser-dvm: {network: proxy, disposables: yes}}"), s, VERSION)
+        with self.assertRaises(plan.PlanError) as e:
+            plan.make(mparse("qubes: {personal: {network: proxy, disposables: yes}}"), s, VERSION)
+        self.assertIn("personal is not a disposable template", str(e.exception))
 
 
 class Chunks(unittest.TestCase):

@@ -73,7 +73,7 @@ A proxy qube, `sys-lintel` by default, holds the identities of every workload
 on the machine and carries their traffic. This is the shape of Istio's
 ambient mode: one connection-level proxy per node holding that node's
 workload identities. Workloads that need stronger separation get a dedicated
-proxy qube (`proxies:`, `identity: proxy:<name>`), much as Istio adds
+proxy qube (`proxies:`, `proxy: <name>`), much as Istio adds
 sidecars only where they are needed.
 
 ### Our own `tsnet` program rather than stock `tailscaled`

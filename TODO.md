@@ -10,7 +10,7 @@
   already supports it (a qrexec workload whose qube has a network card);
   the machine file has no way to say it. Until then, the transparent way is
   a proxy in front of that netvm: `proxies: [{name: sys-lintel-vpn, netvm: sys-vpn}]`
-  and `network: proxy:sys-lintel-vpn`.
+  and `network: proxy` with `proxy: sys-lintel-vpn`.
 - **Services as real Tailscale Services** (`svc:chat`): today each service
   is its own tsnet device; the file would not change.
 - `lintel check` lists tailnet devices left behind by qubes and services that
@@ -22,8 +22,9 @@
 
 ## Not yet tried on a real machine
 
-- `identity: login`, dedicated proxies (`proxies:`, `network: proxy:<name>`),
-  `network: default` and `network: <netvm>`, `local-inbound`, `manage: all`.
+- `identity: login`, dedicated proxies (`proxies:`, `proxy: <name>`),
+  `network: default` and `network: <netvm>`, `local-inbound`, adoption
+  records and refusals (`adopt: force`, `disposables: yes`).
 - Qubes 4.2.
 - In the simulation (`proxy/internal/engine/sim_test.go`): UDP cells, DNS
   questions as cells, and the `local-inbound` and qrexec-policy cells (dom0's,

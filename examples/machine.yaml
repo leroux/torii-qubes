@@ -5,11 +5,12 @@
 machine: m1               # this machine's name: prefixes its tags (server -> tag:m1-server)
                           # and its qubes' device names (job-1 -> m1-job-1); every tagged
                           # device also carries tag:m1
-manage: listed            # only the qubes below; `all` applies defaults to every app qube
+# lintel only changes the qubes listed under qubes:. The first apply that lists one
+# records its netvm (feature lintel-prior-netvm); a qube leaving the file gets no netvm.
 
 proxy: sys-lintel          # the proxy qube the tool creates: tailnet identities and outbound relay
 # proxy: { name: sys-lintel, netvm: sys-firewall, label: orange }
-# proxies:                # dedicated proxies, used as `identity: proxy:<name>`
+# proxies:                # dedicated proxies, chosen per qube with `proxy: <name>`
 #   - { name: sys-lintel-admin }
 # template: lintel-fedora-44-minimal  # the tool's own template (lintel-<base>), cloned from:
 # base-template: fedora-44-minimal
@@ -19,7 +20,8 @@ tailnet:
   tag-owners: [autogroup:admin]                  # for `lintel grants`
 
 defaults:                 # for every qube in the file unless it says otherwise
-  network: none           # none: no network card, qrexec only | proxy (or proxy:<name>): routed through it
+  network: none           # required, here or per qube. none: no network card, qrexec only
+                          # | proxy: routed through its proxy (proxy:, default the main one)
                           # | default: Qubes' default netvm | <netvm>: that netvm. Not listed: untouched.
   # outbound: every destination is in one zone, decided by the address really dialled:
   #   internet: public addresses        lan: this machine's private network (192.168/16, ...)
@@ -34,7 +36,7 @@ defaults:                 # for every qube in the file unless it says otherwise
 qubes:
   # A service with no network card: reachable from the tailnet on 443 (its port 8443), nothing else.
   wiki:
-    tailnet: { identity: proxy, inbound: [{port: 443, target: 8443}] }
+    tailnet: { identity: tagged, inbound: [{port: 443, target: 8443}] }
 
   # A job with no network card: pip and GitHub by name, the tailnet, and a fixed forward.
   # Inside it: HTTPS_PROXY=http://127.0.0.1:3128, SOCKS on 1080, the db on 127.0.0.1:5432.
@@ -43,7 +45,7 @@ qubes:
       internet: [pypi.org, files.pythonhosted.org, github.com, "*.github.com:443", "github.com:443/udp"]
       lan: [192.168.1.20:9000]          # one host on the home network, one port
       tailnet: yes
-    tailnet: { identity: proxy, inbound: [8080], tags: [job] }
+    tailnet: { identity: tagged, inbound: [8080], tags: [job] }
     forwards:
       db: { to: "store.example.ts.net:8000", port: 5432 }
 
@@ -51,7 +53,7 @@ qubes:
   store:
     network: proxy
     outbound: { internet: all }
-    tailnet: { identity: proxy, inbound: [8000] }
+    tailnet: { identity: tagged, inbound: [8000] }
 
   # A laptop work qube: signs in as its person, internet through an exit node.
   work:

@@ -51,7 +51,7 @@ lintel:
   machine:
     machine: alice-laptop
     defaults:
-      tailnet: { identity: proxy, tags: [work] }
+      tailnet: { identity: tagged, tags: [work] }
     qubes:
       work:     { network: proxy, outbound: { internet: all, tailnet: yes } }
       build:    { outbound: { internet: [pypi.org, files.pythonhosted.org] } }

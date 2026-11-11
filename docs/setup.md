@@ -73,14 +73,13 @@ In dom0, `~/lintel.yaml`:
 
 ```yaml
 machine: m1
-manage: listed
 proxy: sys-lintel
 defaults:
   network: none
   tailnet: { tags: [server] }
 qubes:
   wiki:
-    tailnet: { identity: proxy, inbound: [{port: 80, target: 8080}] }
+    tailnet: { identity: tagged, inbound: [{port: 80, target: 8080}] }
 ```
 
 That reads: `wiki` has no network card and no internet, and has a tailnet
@@ -109,14 +108,18 @@ sys-lintel: start it and wait until it runs config 1a2b3c4d5e6f
 50-lintel: write the qrexec policy
 wiki: set netvm = (none) (was sys-firewall)
 wiki: tag lintel-managed
+wiki: set feature lintel-prior-netvm = sys-firewall
+wiki: set feature lintel-adopted = 2026-11-10
 
-13 changes. Run `lintel apply` to make them.
+15 changes. Run `lintel apply` to make them.
 ```
 
 `lintel plan --diff` also shows the policy file it would write. If `plan`
 refuses with `cannot apply ... to this machine`, the message says why: a qube
 that isn't there, a netvm named as a workload, a `sys-lintel` you made
-yourself, and so on.
+yourself, and so on. Two refusals protect setups lintel can't judge: a qube
+on a netvm it doesn't know (`sys-whonix`, a VPN qube) needs `adopt: force`
+before lintel moves it, and a disposable template needs `disposables: yes`.
 
 ## 6. Apply
 
@@ -209,7 +212,7 @@ in [`examples/machine.yaml`](../examples/machine.yaml) show each in full.
 ```yaml
   job-1:
     outbound: { internet: [pypi.org, files.pythonhosted.org], tailnet: yes }
-    tailnet: { identity: proxy }
+    tailnet: { identity: tagged }
 ```
 
 `plan` will note that `job-1`'s template lacks the client:
@@ -232,7 +235,7 @@ installing it in a shared template is harmless.
   browser:
     network: proxy
     outbound: { internet: [example.com, "*.example.com"], tailnet: yes }
-    tailnet: { identity: proxy }
+    tailnet: { identity: tagged }
 ```
 
 Its netvm becomes `sys-lintel`. Inside it, reach tailnet devices by their
@@ -278,7 +281,8 @@ node and its grant are in [`tailscale.md`, "Exit nodes"](tailscale.md#exit-nodes
 ## Undo everything
 
 1. Empty `qubes:` in `~/lintel.yaml` and `lintel apply`. Every managed qube is
-   reset; keep a note of the netvms you want them to have back.
+   left with no netvm; the plan names the netvm each had before lintel and
+   the `qvm-prefs` command that puts it back.
 2. `qvm-shutdown --wait sys-lintel && qvm-remove -f sys-lintel lintel-fedora-44-minimal`.
 3. `sudo rm /etc/qubes/policy.d/50-lintel.policy && sudo dnf remove lintel-dom0`.
 4. Remove the devices in the Tailscale admin console.

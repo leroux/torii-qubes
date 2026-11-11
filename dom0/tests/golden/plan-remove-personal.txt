@@ -2,5 +2,5 @@ sys-lintel: set its config dcb5ab81b64f: 2 workloads
 sys-lintel: wait until it has loaded config dcb5ab81b64f
 50-lintel: replace the qrexec policy
 lintel-probe2: set feature vm-config.lintel-client = {"listen":[{"port":1080,"service":"lintel.Connect+socks",...
-personal: reset netvm = (none) (was sys-lintel)
+personal: set netvm = (none) (was sys-lintel; before lintel: sys-firewall, `qvm-prefs personal netvm sys-firewall` to restore)
 personal: untag lintel-managed (left the file)
