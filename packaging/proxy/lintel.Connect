@@ -1,0 +1,5 @@
+#!/bin/sh
+# Outbound from a qrexec workload: lintel.Connect+socks or +f.<forward>.
+# qrexec puts the caller (named by dom0) and the argument in the
+# environment; the helper hands both to the daemon's socket.
+exec /usr/lib/lintel/lintel-proxy connect-service

@@ -1,0 +1,23 @@
+# Written by lintel apply from the machine file. Do not edit: the next
+# apply replaces it. Hand-written policy belongs in other files.
+
+# Inbound: the proxy qube calls into the workload, on listed ports only.
+qubes.ConnectTCP  +443  sys-lintel  lintel-probe  allow
+qubes.ConnectTCP  +8080  sys-lintel  lintel-probe  allow
+qubes.ConnectTCP  +8080  sys-lintel  lintel-probe2  allow
+
+# Outbound: workloads that declare outbound access call their proxy qube.
+lintel.Connect  +socks  lintel-probe2  @default  allow target=sys-lintel
+lintel.Connect  +socks  lintel-probe2  sys-lintel  allow
+lintel.Connect  +http  lintel-probe2  @default  allow target=sys-lintel
+lintel.Connect  +http  lintel-probe2  sys-lintel  allow
+lintel.Connect  +f.db  lintel-probe2  @default  allow target=sys-lintel
+lintel.Connect  +f.db  lintel-probe2  sys-lintel  allow
+
+# local-inbound: qubes on this machine, by port.
+qubes.ConnectTCP  +22  lintel-probe2  personal  allow
+
+# dom0 and the named admin qubes read status and the decision log.
+lintel.Status  *  dom0  sys-lintel  allow user=root
+
+# Everything else is denied by 59-lintel-deny.policy, after every mesh's file.

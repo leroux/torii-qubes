@@ -1,0 +1,89 @@
+# lintel machine file: one per machine, in dom0 at ~/lintel.yaml.
+# `lintel plan` shows every change, `lintel apply` makes them,
+# `lintel show` reads back what each qube can reach, `lintel check` reports drift.
+
+machine: m1               # this machine's name: prefixes its tags (server -> tag:m1-server)
+                          # and its qubes' device names (job-1 -> m1-job-1); every tagged
+                          # device also carries tag:m1
+manage: listed            # only the qubes below; `all` applies defaults to every app qube
+
+proxy: sys-lintel          # the proxy qube the tool creates: tailnet identities and outbound relay
+# proxy: { name: sys-lintel, netvm: sys-firewall, label: orange }
+# proxies:                # dedicated proxies, used as `identity: proxy:<name>`
+#   - { name: sys-lintel-admin }
+# template: lintel-fedora-44-minimal  # the tool's own template (lintel-<base>), cloned from:
+# base-template: fedora-44-minimal
+
+tailnet:
+  # control-url: https://headscale.example.org   # empty: Tailscale
+  tag-owners: [autogroup:admin]                  # for `lintel grants`
+
+defaults:                 # for every qube in the file unless it says otherwise
+  network: none           # none: no network card, qrexec only | proxy (or proxy:<name>): routed through it
+                          # | default: Qubes' default netvm | <netvm>: that netvm. Not listed: untouched.
+  # outbound: every destination is in one zone, decided by the address really dialled:
+  #   internet: public addresses        lan: this machine's private network (192.168/16, ...)
+  #   tailnet:  yes or no (where to: the grants)        via: direct, or an exit node
+  # Each of internet and lan is none, all, or a list of names, addresses or ranges,
+  # each with an optional :port and /tcp or /udp (none: TCP only; QUIC and other UDP
+  # need /udp). Other qubes' addresses are never reachable this way.
+  outbound: { internet: none, lan: none, tailnet: no }
+  tailnet:
+    tags: [server]        # tagged identities get these: tag:m1-server
+
+qubes:
+  # A service with no network card: reachable from the tailnet on 443 (its port 8443), nothing else.
+  wiki:
+    tailnet: { identity: proxy, inbound: [{port: 443, target: 8443}] }
+
+  # A job with no network card: pip and GitHub by name, the tailnet, and a fixed forward.
+  # Inside it: HTTPS_PROXY=http://127.0.0.1:3128, SOCKS on 1080, the db on 127.0.0.1:5432.
+  job-1:
+    outbound:
+      internet: [pypi.org, files.pythonhosted.org, github.com, "*.github.com:443", "github.com:443/udp"]
+      lan: [192.168.1.20:9000]          # one host on the home network, one port
+      tailnet: yes
+    tailnet: { identity: proxy, inbound: [8080], tags: [job] }
+    forwards:
+      db: { to: "store.example.ts.net:8000", port: 5432 }
+
+  # A networked qube behind the proxy qube: all of the internet (not the LAN), its own identity, port 8000 in.
+  store:
+    network: proxy
+    outbound: { internet: all }
+    tailnet: { identity: proxy, inbound: [8000] }
+
+  # A laptop work qube: signs in as its person, internet through an exit node.
+  work:
+    network: proxy
+    outbound: { internet: all, tailnet: yes, via: exit1 }
+    tailnet: { identity: login }
+
+  # A qube with no network card that hosts the services below.
+  infra:
+    network: none
+
+  # A qube on Qubes' default netvm, or a named one: not carried by the proxy, so no
+  # tailnet identity or outbound here; services can still point at it.
+  personal:
+    network: default
+  vpn-work:
+    network: sys-vpn
+
+  # A database other qubes on this machine reach over qrexec, on 5432 only.
+  db:
+    local-inbound:
+      - { port: 5432, from: [job-1] }
+
+# Named endpoints on the tailnet: a device each (a Tailscale Service later),
+# reached on their ports and carried to a qube's ports over qrexec. Any qube
+# can host them, whatever its network, listed under qubes: or not.
+services:
+  notes:
+    qube: infra
+    tags: [tag:notes]
+    ports: [{port: 443, target: 3000, tls: yes}, {port: 8443, target: 3000, tls: yes}]
+  chat:
+    qube: infra
+    tags: [tag:chat]
+    ports: [{port: 443, target: 8008, tls: yes}]

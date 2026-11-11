@@ -1,0 +1,38 @@
+{
+  "version": "example-1",
+  "proxy_qube": "sys-lintel",
+  "state_dir": "/rw/lintel/state",
+  "log_dir": "/rw/lintel/log",
+  "workloads": {
+    "infra": {
+      "link": "qrexec",
+      "identity": {"tags": ["tag:server"]},
+      "inbound": [{"port": 443}]
+    },
+    "job-1": {
+      "link": "qrexec",
+      "identity": {"tags": ["tag:job"]},
+      "inbound": [{"port": 8080}],
+      "tailnet_outbound": true,
+      "socks": true,
+      "internet": "allowlist",
+      "internet_allow": ["pypi.org", "files.pythonhosted.org", "github.com", "*.github.com"],
+      "forwards": [{"name": "db", "to": "store.example.ts.net:8000"}]
+    },
+    "store": {
+      "link": "routed",
+      "address": "10.137.0.12",
+      "identity": {"tags": ["tag:server"]},
+      "inbound": [{"port": 8000}],
+      "internet": "full"
+    },
+    "work": {
+      "link": "routed",
+      "address": "10.137.0.30",
+      "identity": {"login": true},
+      "tailnet_outbound": true,
+      "internet": "full",
+      "exit_node": "exit1"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+#!/bin/sh
+# Run shell commands in dom0 from the dev qube, through qubes.VMShell
+# (granted by setup-dev-access.sh in the same directory).
+#
+#   d0 'qvm-ls; id'        one command line
+#   d0 < script.sh         a script
+#   d0 <<'EOF' ... EOF     a here-document (quote EOF so $vars expand in dom0)
+#
+# stdout, stderr and the exit status are dom0's. Commands run as dom0's
+# user, with passwordless sudo. Inside the script, give commands that read
+# stdin (qvm-run, ssh) </dev/null, or they eat the rest of the script.
+if [ $# -gt 0 ]; then
+    printf '%s\n' "$*" | qrexec-client-vm dom0 qubes.VMShell
+else
+    exec qrexec-client-vm dom0 qubes.VMShell
+fi

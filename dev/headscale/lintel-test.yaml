@@ -1,0 +1,28 @@
+# The test mesh: lintel-* test qubes on a local Headscale (lintel-headscale),
+# applied separately from the main mesh (~/lintel.yaml):
+#   lintel -f ~/lintel-test.yaml plan | apply | show | check
+mesh: test
+machine: m1-test
+tailnet:
+  control-url: http://198.18.0.1:8080
+proxy: { name: sys-lintel-test, netvm: lintel-headscale }
+defaults:
+  network: none
+qubes:
+  lintel-svc:              # no network card, a service: 80 -> its 8080 (granted), 81 (declared, not granted)
+    tailnet: { identity: proxy, tags: [svc], inbound: [{port: 80, target: 8080}, 81] }
+  lintel-job:              # no network card: listed names, only the peer on the tailnet, a forward to it
+    outbound: { internet: [example.com, pypi.org, files.pythonhosted.org], tailnet: [lintel-peer] }
+    tailnet: { identity: proxy, tags: [job] }
+    forwards: { peer: { to: "lintel-peer:7000", port: 7000 } }
+  lintel-job2:             # no network card, all of the internet
+    outbound: { internet: all }
+  lintel-djob:             # no network card, Debian template: the client from the .deb
+    outbound: { internet: [example.com] }
+  lintel-routed:           # routed: one name (and QUIC to it), the tailnet, through the peer's exit node, 8000 in
+    network: proxy
+    outbound: { internet: [example.com, "example.com:443/udp"], tailnet: yes, via: lintel-peer }
+    tailnet: { identity: proxy, tags: [routed], inbound: [8000] }
+  lintel-routed2:          # routed: one name and one LAN host, no identity
+    network: proxy
+    outbound: { internet: [example.com, "example.com:443/udp"], lan: [192.168.1.254:80] }

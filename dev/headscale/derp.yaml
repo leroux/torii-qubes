@@ -1,0 +1,17 @@
+# One relay, derper in this qube: TLS with its own certificate, pinned below.
+regions:
+  900:
+    regionid: 900
+    regioncode: lintel
+    regionname: lintel-headscale
+    nodes:
+      - name: 900a
+        regionid: 900
+        hostname: 198.18.0.1
+        ipv4: 198.18.0.1
+        ipv6: none
+        stunport: 3478
+        derpport: 3340
+        insecurefortests: true
+        stuntestip: 198.18.0.1
+        certname: sha256-raw:REPLACE  # the relay prints this hash at start (journalctl -u lintel-derper)

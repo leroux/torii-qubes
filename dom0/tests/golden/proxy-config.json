@@ -1,0 +1,74 @@
+{
+ "log_dir": "/rw/lintel/log",
+ "proxy_qube": "sys-lintel",
+ "state_dir": "/rw/lintel/state",
+ "version": "v1",
+ "workloads": {
+  "lintel-probe": {
+   "identity": {
+    "auth_key_file": "/rw/lintel/keys/lintel-probe",
+    "hostname": "m1-lintel-probe",
+    "tags": [
+     "tag:m1-lintel-test",
+     "tag:m1"
+    ]
+   },
+   "inbound": [
+    {
+     "port": 443
+    },
+    {
+     "port": 8443,
+     "target": 8080
+    }
+   ],
+   "link": "qrexec"
+  },
+  "lintel-probe2": {
+   "forwards": [
+    {
+     "name": "db",
+     "to": "store.example.ts.net:8000"
+    }
+   ],
+   "http": true,
+   "identity": {
+    "auth_key_file": "/rw/lintel/keys/lintel-probe2",
+    "hostname": "m1-lintel-probe2",
+    "tags": [
+     "tag:m1-lintel-job",
+     "tag:m1"
+    ]
+   },
+   "inbound": [
+    {
+     "port": 8080
+    }
+   ],
+   "internet": "allowlist",
+   "internet_allow": [
+    "pypi.org",
+    "files.pythonhosted.org",
+    "*.github.com:443"
+   ],
+   "lan": "allowlist",
+   "lan_allow": [
+    "192.168.1.20:5432"
+   ],
+   "link": "qrexec",
+   "socks": true,
+   "tailnet_outbound": true
+  },
+  "personal": {
+   "address": "10.137.0.15",
+   "exit_node": "exit1",
+   "identity": {
+    "auth_key_file": "/rw/lintel/keys/personal",
+    "hostname": "m1-personal",
+    "login": true
+   },
+   "internet": "full",
+   "link": "routed"
+  }
+ }
+}

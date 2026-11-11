@@ -1,0 +1,19 @@
+// The test mesh's policy (machine file ~/lintel-test.yaml: mesh test, machine
+// m1-test): the same grants the Tailscale test tailnet had. Every tag is owned by the headscale user lintel.
+{
+  "tagOwners": {
+    "tag:m1-test":              ["lintel@"],
+    "tag:m1-test-svc":    ["lintel@"],
+    "tag:m1-test-job":    ["lintel@"],
+    "tag:m1-test-routed": ["lintel@"],
+    "tag:lintel-peer":      ["lintel@"],
+    "tag:lintel-exit":      ["lintel@"]
+  },
+  "grants": [
+    {"src": ["tag:lintel-peer"], "dst": ["tag:m1-test-svc"],    "ip": ["tcp:80"]},
+    {"src": ["tag:lintel-peer"], "dst": ["tag:m1-test-routed"], "ip": ["tcp:8000"]},
+    {"src": ["tag:m1-test-job", "tag:m1-test-routed"], "dst": ["tag:lintel-peer"], "ip": ["tcp:7000", "udp:7001"]},
+    {"src": ["tag:m1-test-job", "tag:m1-test-routed"], "dst": ["autogroup:internet"], "ip": ["*"]}
+  ],
+  "autoApprovers": {"exitNode": ["tag:lintel-exit"]}
+}

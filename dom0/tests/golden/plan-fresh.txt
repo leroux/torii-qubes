@@ -1,0 +1,19 @@
+fedora-44-minimal: download the base template (qvm-template install)
+lintel-fedora-44-minimal: create the proxy template, a clone of fedora-44-minimal
+lintel-fedora-44-minimal: install the proxy package 0.1.0-test
+sys-lintel: create the proxy qube (template lintel-fedora-44-minimal, netvm sys-firewall, provides network)
+sys-lintel: turn Qubes' IPv6 off for it and its clients
+sys-lintel: set netvm = sys-firewall
+sys-lintel: set provides_network = True
+sys-lintel: set autostart = True
+sys-lintel: enable service lintel-proxy
+sys-lintel: set its config 26cdf62d71f3: 3 workloads
+sys-lintel: start it and wait until it runs config 26cdf62d71f3
+50-lintel: write the qrexec policy
+59-lintel-deny: write the shared qrexec denies
+lintel-probe: tag lintel-managed
+lintel-probe2: tag lintel-managed
+lintel-probe2: enable service lintel-client
+lintel-probe2: set feature vm-config.lintel-client = {"listen":[{"port":1080,"service":"lintel.Connect+socks",...
+personal: set netvm = sys-lintel (was sys-firewall)
+personal: tag lintel-managed

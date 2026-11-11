@@ -1,0 +1,36 @@
+# The simulated machine (internal/engine/sim_test.go): every kind of qube and
+# path, run through the real proxy engine with a fake tailnet, internet, LAN
+# and qubes. Grants: tailnet-policy.json next to this file.
+machine: m1
+manage: listed
+proxy: sys-lintel
+defaults:
+  network: none
+qubes:
+  lintel-svc:              # no network card, a service: 80 -> its 8080 (granted), 81 (declared, not granted)
+    tailnet: { identity: proxy, tags: [lintel-svc], inbound: [{port: 80, target: 8080}, 81] }
+  lintel-job:              # no network card, a job: listed internet names, only notes on the tailnet, a forward
+    outbound: { internet: [example.com, pypi.org], tailnet: [notes] }
+    tailnet: { identity: proxy, tags: [lintel-job] }
+    forwards: { peer: { to: "lintel-peer:7000", port: 7000 } }
+  lintel-job2:             # no network card, all of the internet
+    outbound: { internet: all }
+  lintel-routed:           # routed: one name, the tailnet, through an exit node, 8000 in
+    network: proxy
+    outbound: { internet: [example.com], tailnet: yes, via: lintel-peer }
+    tailnet: { identity: proxy, tags: [lintel-routed], inbound: [8000] }
+  lintel-routed2:          # routed: one name and one LAN host, no identity
+    network: proxy
+    outbound: { internet: [example.com], lan: [192.168.1.254:80] }
+  infra:             # no network card; hosts the services
+    network: none
+
+services:
+  notes:
+    qube: infra
+    tags: [tag:notes]
+    ports: [{port: 443, target: 3000, tls: yes}, {port: 8443, target: 3000, tls: yes}]
+  chat:
+    qube: infra
+    tags: [tag:chat]
+    ports: [{port: 443, target: 8008, tls: yes}]

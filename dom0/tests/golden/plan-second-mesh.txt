@@ -1,0 +1,10 @@
+sys-lintel-test: create the proxy qube (template lintel-fedora-44-minimal, netvm sys-firewall, provides network)
+sys-lintel-test: turn Qubes' IPv6 off for it and its clients
+sys-lintel-test: set netvm = sys-firewall
+sys-lintel-test: set provides_network = True
+sys-lintel-test: set autostart = True
+sys-lintel-test: enable service lintel-proxy
+sys-lintel-test: set its config cd559be1c934: 0 workloads
+sys-lintel-test: start it and wait until it runs config cd559be1c934
+50-lintel-test: write the qrexec policy
+lintel-probe2: tag lintel-managed-test

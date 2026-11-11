@@ -1,0 +1,23 @@
+name: lintel-client
+arch: amd64
+platform: linux
+version: ${LINTEL_VERSION}
+maintainer: Gaia PBC
+description: |
+  lintel client for workload qubes without a network card: loopback SOCKS,
+  HTTP proxy and forward ports, each connection one qrexec call to the
+  qube's proxy qube. Off unless dom0 enables the lintel-client service.
+homepage: https://github.com/Gaia-PBC/lintel-qubes
+license: MIT
+contents:
+  - src: ../../LICENSE   # a plain file: nfpm puts type: license in RPMs only
+    dst: /usr/share/doc/lintel-client/LICENSE
+  - src: ../../build/lintel-client
+    dst: /usr/lib/lintel/lintel-client
+    file_info: {mode: 0755}
+  - src: ./lintel-client.service
+    dst: /usr/lib/systemd/system/lintel-client.service
+  - src: ./lintel-env.sh
+    dst: /etc/profile.d/lintel.sh
+scripts:
+  postinstall: ./postinstall.sh

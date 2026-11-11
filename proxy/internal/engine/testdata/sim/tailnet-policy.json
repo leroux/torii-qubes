@@ -1,0 +1,126 @@
+{
+ "tagOwners": {
+  "tag:lintel-peer": [
+   "autogroup:admin"
+  ],
+  "tag:lintel-exit": [
+   "autogroup:admin"
+  ],
+  "tag:notes": [
+   "autogroup:admin"
+  ],
+  "tag:chat": [
+   "autogroup:admin"
+  ],
+  "tag:m1-lintel-svc": [
+   "autogroup:admin"
+  ],
+  "tag:m1-lintel-job": [
+   "autogroup:admin"
+  ],
+  "tag:m1-lintel-routed": [
+   "autogroup:admin"
+  ],
+  "tag:m1": [
+   "autogroup:admin"
+  ]
+ },
+ "grants": [
+  {
+   "src": [
+    "tag:lintel-peer"
+   ],
+   "dst": [
+    "tag:m1-lintel-svc"
+   ],
+   "ip": [
+    "tcp:80"
+   ]
+  },
+  {
+   "src": [
+    "tag:lintel-peer"
+   ],
+   "dst": [
+    "tag:m1-lintel-routed"
+   ],
+   "ip": [
+    "tcp:8000"
+   ]
+  },
+  {
+   "src": [
+    "tag:m1-lintel-job",
+    "tag:m1-lintel-routed"
+   ],
+   "dst": [
+    "tag:lintel-peer"
+   ],
+   "ip": [
+    "tcp:7000",
+    "udp:7001"
+   ]
+  },
+  {
+   "src": [
+    "tag:m1-lintel-job",
+    "tag:m1-lintel-routed"
+   ],
+   "dst": [
+    "autogroup:internet"
+   ],
+   "ip": [
+    "*"
+   ]
+  },
+  {
+   "src": [
+    "autogroup:member",
+    "tag:lintel-peer"
+   ],
+   "dst": [
+    "tag:notes"
+   ],
+   "ip": [
+    "tcp:443",
+    "tcp:8443"
+   ]
+  },
+  {
+   "src": [
+    "autogroup:member",
+    "tag:lintel-peer"
+   ],
+   "dst": [
+    "tag:chat"
+   ],
+   "ip": [
+    "tcp:443"
+   ]
+  },
+  {
+   "src": [
+    "tag:m1-lintel-job"
+   ],
+   "dst": [
+    "tag:notes"
+   ],
+   "ip": [
+    "tcp:443",
+    "tcp:8443"
+   ]
+  },
+  {
+   "src": [
+    "tag:m1-lintel-job"
+   ],
+   "dst": [
+    "tag:chat"
+   ],
+   "ip": [
+    "tcp:443"
+   ]
+  }
+ ],
+ "ssh": []
+}

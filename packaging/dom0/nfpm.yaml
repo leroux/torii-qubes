@@ -1,0 +1,27 @@
+name: lintel-dom0
+arch: noarch
+platform: linux
+version: ${LINTEL_VERSION}
+maintainer: Gaia PBC
+description: |
+  lintel, declarative and visible connectivity for qubes: one file per
+  machine, plan / apply / show / check. Carries the proxy and client
+  packages that it installs into templates, so they need no repository.
+homepage: https://github.com/Gaia-PBC/lintel-qubes
+license: MIT
+depends: [python3-qubesadmin, python3-pyyaml, qubes-core-qrexec]
+contents:
+  - src: ../../LICENSE
+    dst: /usr/share/licenses/lintel-dom0/LICENSE
+    type: license
+  - src: ./lintel
+    dst: /usr/bin/lintel
+    file_info: {mode: 0755}
+  - src: ../../build/python/lintel
+    dst: /usr/share/lintel/python/lintel
+  - src: ../../build/bundle/
+    dst: /usr/share/lintel/
+    type: tree
+  - src: ../../examples/
+    dst: /usr/share/doc/lintel/examples/
+    type: tree
