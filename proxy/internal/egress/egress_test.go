@@ -63,7 +63,7 @@ func newRig(t *testing.T, names ...string) *rig {
 		r.exits[n].OfferExitNode()
 	}
 	r.s = New("vpn", &config.Egress{Hostname: "m1-egress-vpn", Exits: names, FailbackAfter: 120}, r.id, Options{
-		Now: r.clk.now, Log: r.log,
+		Now: r.clk.now, Log: r.log, CheckTimeout: 20 * time.Millisecond,
 	})
 	return r
 }

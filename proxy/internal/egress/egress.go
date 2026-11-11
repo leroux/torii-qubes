@@ -30,6 +30,9 @@ const (
 	FailedProbes = 3
 	// Interval is how often each exit node is checked.
 	Interval = 10 * time.Second
+	// CheckTimeout bounds each check: a TSMP ping to a dead peer never
+	// returns by itself, it only ends with its context.
+	CheckTimeout = 5 * time.Second
 )
 
 // Options are the selector's dependencies.
@@ -40,6 +43,8 @@ type Options struct {
 	// Probe, when set, is the end-to-end check through the active exit
 	// node (the egress's probe address); nil error is a pass.
 	Probe func(ctx context.Context) error
+	// CheckTimeout bounds each check (default CheckTimeout).
+	CheckTimeout time.Duration
 }
 
 // node is what is known of one exit node.
@@ -109,6 +114,9 @@ func New(name string, cfg *config.Egress, id tailnet.Identity, opt Options) *Sel
 	if opt.Logf == nil {
 		opt.Logf = func(string, ...any) {}
 	}
+	if opt.CheckTimeout <= 0 {
+		opt.CheckTimeout = CheckTimeout
+	}
 	s := &Selector{name: name, cfg: cfg, id: id, opt: opt, kick: make(chan struct{}, 1),
 		st: map[string]*node{}, fails: map[string]time.Time{}}
 	for _, e := range cfg.Exits {
@@ -138,34 +146,43 @@ func (s *Selector) Run(ctx context.Context) {
 	}
 }
 
-// Tick checks every exit node once, then uses the one choose picks.
+// Tick checks every exit node once, at the same time and each within
+// CheckTimeout, then uses the one choose picks.
 func (s *Selector) Tick(ctx context.Context) {
 	type check struct {
 		peer    tailnet.Peer
 		peerErr error
 		pingErr error
 	}
-	checks := map[string]check{}
-	for _, e := range s.cfg.Exits {
-		var c check
-		c.peer, c.peerErr = s.id.ExitPeer(ctx, e)
-		if c.peerErr == nil && c.peer.Found && c.peer.Online && c.peer.OffersExit {
-			c.pingErr = s.id.Ping(ctx, e)
-		}
-		checks[e] = c
+	bounded := func(f func(context.Context) error) error {
+		cctx, cancel := context.WithTimeout(ctx, s.opt.CheckTimeout)
+		defer cancel()
+		return f(cctx)
 	}
 	s.mu.Lock()
 	active := s.active
 	s.mu.Unlock()
+	checks := make([]check, len(s.cfg.Exits))
 	var probeErr error
-	if s.opt.Probe != nil && active != "" {
-		probeErr = s.opt.Probe(ctx)
+	var wg sync.WaitGroup
+	for i, e := range s.cfg.Exits {
+		wg.Go(func() {
+			c := &checks[i]
+			c.peerErr = bounded(func(ctx context.Context) (err error) { c.peer, err = s.id.ExitPeer(ctx, e); return })
+			if c.peerErr == nil && c.peer.Found && c.peer.Online && c.peer.OffersExit {
+				c.pingErr = bounded(func(ctx context.Context) error { return s.id.Ping(ctx, e) })
+			}
+		})
 	}
+	if s.opt.Probe != nil && active != "" {
+		wg.Go(func() { probeErr = bounded(s.opt.Probe) })
+	}
+	wg.Wait()
 
 	s.mu.Lock()
 	now := s.opt.Now()
-	for _, e := range s.cfg.Exits {
-		n, c := s.st[e], checks[e]
+	for i, e := range s.cfg.Exits {
+		n, c := s.st[e], checks[i]
 		was := n.seen && n.healthy(now)
 		n.listed, n.why = false, ""
 		switch {

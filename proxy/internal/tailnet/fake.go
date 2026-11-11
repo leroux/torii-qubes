@@ -395,8 +395,14 @@ func (f *Fake) Ping(ctx context.Context, node string) error {
 		return errors.New("fake: identity not running")
 	}
 	en := f.peer(node)
-	if en == nil || !en.reachable() {
-		return fmt.Errorf("fake: no reply from %s", node)
+	if en == nil {
+		return fmt.Errorf("fake: %s not found", node)
+	}
+	if !en.reachable() {
+		// As tsnet's TSMP ping does: no answer means no return, only the
+		// context ending.
+		<-ctx.Done()
+		return ctx.Err()
 	}
 	return nil
 }

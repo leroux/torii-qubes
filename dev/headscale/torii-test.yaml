@@ -7,7 +7,7 @@ tailnet:
   control-url: http://198.18.0.1:8080
 proxy: { name: sys-torii-test, netvm: torii-headscale }
 egress:
-  peer: { exits: [torii-peer] }
+  peer: { exits: [torii-peer, torii-peer2] }   # two exit nodes in torii-peer, in order
 defaults:
   network: none
 qubes:

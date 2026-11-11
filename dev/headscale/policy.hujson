@@ -6,6 +6,7 @@
     "tag:m1-test-svc":    ["torii@"],
     "tag:m1-test-job":    ["torii@"],
     "tag:m1-test-routed": ["torii@"],
+    "tag:m1-test-egress": ["torii@"],
     "tag:torii-peer":      ["torii@"],
     "tag:torii-exit":      ["torii@"]
   },
@@ -13,7 +14,9 @@
     {"src": ["tag:torii-peer"], "dst": ["tag:m1-test-svc"],    "ip": ["tcp:80"]},
     {"src": ["tag:torii-peer"], "dst": ["tag:m1-test-routed"], "ip": ["tcp:8000"]},
     {"src": ["tag:m1-test-job", "tag:m1-test-routed"], "dst": ["tag:torii-peer"], "ip": ["tcp:7000", "udp:7001"]},
-    {"src": ["tag:m1-test-job", "tag:m1-test-routed"], "dst": ["autogroup:internet"], "ip": ["*"]}
+    {"src": ["tag:m1-test-job", "tag:m1-test-routed"], "dst": ["autogroup:internet"], "ip": ["*"]},
+    // The egress identity: internet only, through torii-peer or torii-peer2.
+    {"src": ["tag:m1-test-egress"], "dst": ["autogroup:internet"], "ip": ["*"]}
   ],
   "autoApprovers": {"exitNode": ["tag:torii-exit"]}
 }
