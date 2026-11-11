@@ -6,20 +6,20 @@ limits. For a walkthrough, see [`setup.md`](setup.md); for the tailnet side,
 
 ## Commands
 
-All run in dom0. `-f FILE` picks the machine file (default `~/lintel.yaml`).
+All run in dom0. `-f FILE` picks the machine file (default `~/torii.yaml`).
 
 | Command | What it does |
 |---|---|
-| `lintel plan [--diff]` | Every change `apply` would make, in order; `--diff` shows the policy file's diff |
-| `lintel apply [-y]` | Makes those changes, after asking (`-y`: without asking). Stops at the first failing step; run it again after fixing the problem, and it picks up where it stopped |
-| `lintel show [QUBE] [--json]` | What each managed qube can reach and what can reach it, read from the live system |
-| `lintel check` | Where the live system and the file disagree |
-| `lintel log QUBE` | Its recent connection decisions: allowed, refused, and why |
-| `lintel log --egress NAME` | An egress's events: exit-node switches, nodes going down and coming back |
-| `lintel grants` | Proposed `tagOwners` and grants for the tailnet policy |
-| `lintel sign-in-key NAME < key` | Signs an identity in with a one-time auth key, which is stored only in the proxy qube. NAME is a qube, a service, or `egress:<name>` (`egress:<name>@<proxy>` when several proxies carry it) |
-| `lintel install-client TEMPLATE` | Installs the client package that qubes with no network card need for outbound access |
-| `lintel snapshot` | Prints the live state that `plan` reads (for bug reports and tests) |
+| `torii plan [--diff]` | Every change `apply` would make, in order; `--diff` shows the policy file's diff |
+| `torii apply [-y]` | Makes those changes, after asking (`-y`: without asking). Stops at the first failing step; run it again after fixing the problem, and it picks up where it stopped |
+| `torii show [QUBE] [--json]` | What each managed qube can reach and what can reach it, read from the live system |
+| `torii check` | Where the live system and the file disagree |
+| `torii log QUBE` | Its recent connection decisions: allowed, refused, and why |
+| `torii log --egress NAME` | An egress's events: exit-node switches, nodes going down and coming back |
+| `torii grants` | Proposed `tagOwners` and grants for the tailnet policy |
+| `torii sign-in-key NAME < key` | Signs an identity in with a one-time auth key, which is stored only in the proxy qube. NAME is a qube, a service, or `egress:<name>` (`egress:<name>@<proxy>` when several proxies carry it) |
+| `torii install-client TEMPLATE` | Installs the client package that qubes with no network card need for outbound access |
+| `torii snapshot` | Prints the live state that `plan` reads (for bug reports and tests) |
 
 `show` reads the live system, not the file: prefs, every policy file (hand-
 written ones too), the config each proxy holds, and the identities' state.
@@ -27,10 +27,10 @@ written ones too), the config each proxy holds, and the identities' state.
 config, identities not signed in, and hand-written policy that widens what
 the tool set.
 
-lintel only changes the qubes listed under `qubes:`. The first `apply` that
-lists a qube records the netvm it had (features `lintel-prior-netvm` and
-`lintel-adopted`, written once). A qube removed from the file gets no netvm at
-the next `apply`, failing closed; `plan` names the netvm it had before lintel
+torii only changes the qubes listed under `qubes:`. The first `apply` that
+lists a qube records the netvm it had (features `torii-prior-netvm` and
+`torii-adopted`, written once). A qube removed from the file gets no netvm at
+the next `apply`, failing closed; `plan` names the netvm it had before torii
 and the command to restore it, but never restores it itself. A qube that only
 hosts services, and isn't listed under `qubes:`, is never touched. Tailnet
 devices stay in the admin console until you remove them.
@@ -39,14 +39,14 @@ devices stay in the admin console until you remove them.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `proxy` | `sys-lintel` | The proxy qube: a name, or `{name, netvm, label, unlisted}` (netvm `sys-firewall`). |
+| `proxy` | `sys-torii` | The proxy qube: a name, or `{name, netvm, label, unlisted}` (netvm `sys-firewall`). |
 | `proxy.unlisted`, `proxies[].unlisted` | `refuse` | Qubes attached to that proxy but not listed under `qubes:`, disposables included: `refuse`, or `{internet, egress}` (`internet` as in `outbound.internet`). Never a tailnet identity. |
 | `egress.<name>` | | A way out through exit nodes: `exits` (in order, required), `failback-after` (`2m`), `tags` (`[egress]`), `hostname` (`<machine>-egress-<name>`; `-<proxy>` is added on other proxies), `probe` (`host:port`, none). See [`tailscale.md`](tailscale.md#exit-nodes). |
 | `proxies` | | More proxy qubes, chosen per qube with `proxy: <name>`. A proxy qube is created once something uses it; the main proxy is never removed by `apply`, since it holds identities. |
-| `template`, `base-template` | `lintel-<base-template>`, `fedora-44-minimal` | The tool's own template and what it's cloned from. A new base is a new template: `apply` creates it, moves the proxies onto it (one restart each) and removes the old one once nothing uses it. |
+| `template`, `base-template` | `torii-<base-template>`, `fedora-44-minimal` | The tool's own template and what it's cloned from. A new base is a new template: `apply` creates it, moves the proxies onto it (one restart each) and removes the old one once nothing uses it. |
 | `tailnet.control-url` | Tailscale | A Headscale (or other) coordination server. |
-| `tailnet.tag-owners` | `[autogroup:admin]` | For `lintel grants`. |
-| `status-readers` | | Admin qubes that may read `lintel.Status` besides dom0. |
+| `tailnet.tag-owners` | `[autogroup:admin]` | For `torii grants`. |
+| `status-readers` | | Admin qubes that may read `torii.Status` besides dom0. |
 | `defaults` | | Any per-qube key below except `forwards` and `local-inbound`. |
 
 Per qube:
@@ -60,7 +60,7 @@ Per qube:
 | `outbound.tailnet` | `yes` \| `no` | May open connections to the tailnet; where to is the grants'. |
 | `egress` | `direct` \| an egress | Its internet and DNS through that egress's exit nodes, failing closed. Needs `outbound.internet`. LAN traffic still goes direct. |
 | `tailnet.identity` | `none` \| `tagged` \| `login` | Tagged (owned by its tags), or signed in as a person. |
-| `adopt` | `force` | Lets the first `apply` move it off a netvm lintel doesn't know (not none, Qubes' default, or a lintel proxy), such as `sys-whonix` or a VPN qube. Without it, `plan` refuses. |
+| `adopt` | `force` | Lets the first `apply` move it off a netvm torii doesn't know (not none, Qubes' default, or a torii proxy), such as `sys-whonix` or a VPN qube. Without it, `plan` refuses. |
 | `disposables` | `yes` | Required to list a disposable template (`template_for_dispvms`): its netvm becomes every disposable's made from it. |
 | `tailnet.tags`, `tailnet.hostname` | | Tags for a tagged identity (else `defaults.tailnet.tags`); hostname defaults to the qube's name. |
 | `tailnet.inbound` | ports, or `{port, target, tls}` | Ports on the identity, the qube's port behind each, HTTPS terminated if `tls`. |
@@ -79,30 +79,30 @@ Services (top level, `services:`):
 
 ## What the tool owns
 
-- **Creates, changes and deletes:** its template (`lintel-fedora-44-minimal`), the proxy qubes
-  (tagged `lintel-owned`), and `/etc/qubes/policy.d/50-lintel.policy`. Don't
+- **Creates, changes and deletes:** its template (`torii-fedora-44-minimal`), the proxy qubes
+  (tagged `torii-owned`), and `/etc/qubes/policy.d/50-torii.policy`. Don't
   hand-edit that file; `apply` replaces it.
-- **On your qubes, only:** netvm, the `lintel-client` service, the feature
-  `vm-config.lintel-client`, and the tags `lintel-managed` and
-  `lintel-netvm-kept`.
+- **On your qubes, only:** netvm, the `torii-client` service, the feature
+  `vm-config.torii-client`, and the tags `torii-managed` and
+  `torii-netvm-kept`.
 - **Reads, never writes:** every other policy file. Grants to
-  `qubes.ConnectTCP` or `lintel.*` written by hand show up in `show` and
+  `qubes.ConnectTCP` or `torii.*` written by hand show up in `show` and
   `check`.
-- **The proxy's config** goes to it as the features `vm-config.lintel*`
+- **The proxy's config** goes to it as the features `vm-config.torii*`
   (compressed and split, since QubesDB caps a value under 3 KB). The proxy
   reloads when they change.
 
 ## Troubleshooting
 
-- **In the proxy qube:** `journalctl -u lintel-proxy`, and
-  `/usr/lib/lintel/lintel-proxy status|log|explain -workload Q -dest host:port`.
+- **In the proxy qube:** `journalctl -u torii-proxy`, and
+  `/usr/lib/torii/torii-proxy status|log|explain -workload Q -dest host:port`.
 - **A networked qube can't resolve a tailnet short name** such as `peer`.
   Use the full name (`peer.tailXXXX.ts.net`). Fedora's `systemd-resolved`
   doesn't send single-label names to the DNS server, and Qubes can't push a
   search domain.
 - **"connected" then closed, for a networked qube:** connections are
   intercepted, so the connection opens first and closes when the proxy
-  refuses or can't reach the destination. `lintel log QUBE` says which.
+  refuses or can't reach the destination. `torii log QUBE` says which.
 - **The proxy qube can't shut down:** a netvm with running clients won't.
   `apply` detaches and reattaches them when it must restart the proxy.
 
@@ -129,7 +129,7 @@ Services (top level, `services:`):
   call the proxy over qrexec are not supported.
 - A disposable's netvm is its disposable template's, not that of the qube
   that opened it. `check` warns when a qube on an egress has a
-  `default_dispvm` whose netvm isn't a lintel proxy; lintel never sets
+  `default_dispvm` whose netvm isn't a torii proxy; torii never sets
   `default_dispvm` itself.
 - With an egress, LAN traffic (`outbound.lan`) still goes direct through the
   proxy's netvm; `plan` notes it. Connections open through an exit node break

@@ -1,16 +1,16 @@
-"""lintel: declarative, visible connectivity for qubes.
+"""torii: declarative, visible connectivity for qubes.
 
-    lintel plan     [-f FILE]          every change apply would make
-    lintel apply    [-f FILE] [-y]     make them (asks first unless -y)
-    lintel show     [QUBE ...] [--json] what each qube can reach and what can reach it, live
-    lintel check    [-f FILE]          where the live system and the file disagree
-    lintel grants   [-f FILE]          proposed Tailscale tag owners and grants
-    lintel log      QUBE [-n N]        recent connection decisions for a qube
-    lintel log      --egress NAME      an egress's exit-node events: switches, nodes down and back
-    lintel sign-in-key NAME < key       a one-time key for a qube's, a service's or an egress's (egress:NAME)
+    torii plan     [-f FILE]          every change apply would make
+    torii apply    [-f FILE] [-y]     make them (asks first unless -y)
+    torii show     [QUBE ...] [--json] what each qube can reach and what can reach it, live
+    torii check    [-f FILE]          where the live system and the file disagree
+    torii grants   [-f FILE]          proposed Tailscale tag owners and grants
+    torii log      QUBE [-n N]        recent connection decisions for a qube
+    torii log      --egress NAME      an egress's exit-node events: switches, nodes down and back
+    torii sign-in-key NAME < key       a one-time key for a qube's, a service's or an egress's (egress:NAME)
                                         identity, stored in its proxy qube
-    lintel install-client TEMPLATE     the workload-side client, into a template
-    lintel snapshot                    the live state plan reads, as JSON (for bug reports and tests)
+    torii install-client TEMPLATE     the workload-side client, into a template
+    torii snapshot                    the live state plan reads, as JSON (for bug reports and tests)
 """
 
 from __future__ import annotations
@@ -23,8 +23,8 @@ import sys
 
 from . import __version__, derive, live, machine, plan, show, status
 
-DEFAULT_FILE = os.path.expanduser("~/lintel.yaml")
-BUNDLE_DIR = os.environ.get("LINTEL_BUNDLE", "/usr/share/lintel")
+DEFAULT_FILE = os.path.expanduser("~/torii.yaml")
+BUNDLE_DIR = os.environ.get("TORII_BUNDLE", "/usr/share/torii")
 
 
 def _app():
@@ -87,7 +87,7 @@ def cmd_plan(a) -> int:
             import difflib  # noqa: PLC0415
             sys.stdout.writelines("    " + l for l in difflib.unified_diff(
                 s.data["old"].splitlines(True), s.data["text"].splitlines(True), "live", "planned"))
-    print(f"\n{len(steps)} change{'s' if len(steps) != 1 else ''}. Run `lintel apply` to make them.")
+    print(f"\n{len(steps)} change{'s' if len(steps) != 1 else ''}. Run `torii apply` to make them.")
     return 0
 
 
@@ -112,7 +112,7 @@ def cmd_apply(a) -> int:
     try:
         Applier(app, _policy_client(), BUNDLE_DIR).run(steps)
     except ApplyError as e:
-        print(f"\napply stopped: {e}\nFix it and run `lintel apply` again; finished steps are kept.", file=sys.stderr)
+        print(f"\napply stopped: {e}\nFix it and run `torii apply` again; finished steps are kept.", file=sys.stderr)
         return 1
     print("Done.")
     for n in notes:
@@ -199,7 +199,7 @@ def cmd_check(a) -> int:
     for r in show.rules(snap):
         if r.file.startswith(derive.POLICY_NAME) or r.file == derive.DENY_POLICY or r.action != "allow":
             continue
-        if r.service in ("lintel.Connect", "lintel.Status") or \
+        if r.service in ("torii.Connect", "torii.Status") or \
                 (r.service == "qubes.ConnectTCP" and (r.target in m.qubes or r.source in m.proxies)):
             problems.append(f"policy {r.file}: also allows {r.service} {r.arg} {r.source} -> {r.target}")
     if not problems:
@@ -276,7 +276,7 @@ def cmd_sign_in_key(a) -> int:
     try:
         ap._root(vm, f"install -d -m 0700 {derive.KEY_DIR} && umask 077 && cat > {path}", s, "writing the key",
                  input=(key + "\n").encode())
-        ap._root(vm, f"rm -rf {derive.STATE_DIR}/{workload} && systemctl restart lintel-proxy", s,
+        ap._root(vm, f"rm -rf {derive.STATE_DIR}/{workload} && systemctl restart torii-proxy", s,
                  "restarting the proxy")
     except ApplyError as e:
         print(e, file=sys.stderr)
@@ -286,7 +286,7 @@ def cmd_sign_in_key(a) -> int:
 
 
 def cmd_install_client(a) -> int:
-    """Install the lintel client package into a template (or standalone qube)."""
+    """Install the torii client package into a template (or standalone qube)."""
     from .apply import DEPS, INSTALL, Applier, ApplyError  # noqa: PLC0415,F401
     from .plan import Step  # noqa: PLC0415
     app = _app()
@@ -294,7 +294,7 @@ def cmd_install_client(a) -> int:
     dist = vm.features.get("os-distribution", "")
     ext = "deb" if dist in ("debian", "ubuntu", "kali", "whonix") else "rpm"
     inst = INSTALL["debian" if ext == "deb" else "fedora"]
-    with open(os.path.join(BUNDLE_DIR, f"lintel-client.{ext}"), "rb") as f:
+    with open(os.path.join(BUNDLE_DIR, f"torii-client.{ext}"), "rb") as f:
         data = f.read()
     ap = Applier(app, None, BUNDLE_DIR)
     s = Step("install-client", a.template, "install the client")
@@ -302,8 +302,8 @@ def cmd_install_client(a) -> int:
     try:
         if not running:
             vm.start()
-        ap._root(vm, f"cat > /tmp/lintel-client.{ext}", s, "copying the package in", input=data)
-        ap._root(vm, inst.format(f=f"/tmp/lintel-client.{ext}"), s, "installing it")
+        ap._root(vm, f"cat > /tmp/torii-client.{ext}", s, "copying the package in", input=data)
+        ap._root(vm, inst.format(f=f"/tmp/torii-client.{ext}"), s, "installing it")
     except ApplyError as e:
         print(e, file=sys.stderr)
         return 1
@@ -311,7 +311,7 @@ def cmd_install_client(a) -> int:
         if not running and vm.klass == "TemplateVM":
             vm.shutdown()
     vm.features[derive.CLIENT_VERSION_FEATURE] = _bundle_version()
-    print(f"{a.template}: lintel client {_bundle_version()} installed; restart the qubes based on it")
+    print(f"{a.template}: torii client {_bundle_version()} installed; restart the qubes based on it")
     return 0
 
 
@@ -330,9 +330,9 @@ def _bundle_version() -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="lintel", description="Declarative, visible connectivity for qubes.")
+    ap = argparse.ArgumentParser(prog="torii", description="Declarative, visible connectivity for qubes.")
     ap.add_argument("--version", action="version", version=__version__)
-    # -f may come before the command (lintel -f ~/lintel-test.yaml plan) or after it.
+    # -f may come before the command (torii -f ~/torii-test.yaml plan) or after it.
     ap.add_argument("-f", "--file", dest="top_file", default=None, help=f"machine file (default {DEFAULT_FILE})")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
@@ -358,7 +358,7 @@ def main(argv: list[str] | None = None) -> int:
     p = add("sign-in-key", cmd_sign_in_key,
             "give an identity (a QUBE, a SERVICE, or egress:NAME) a one-time key from stdin")
     p.add_argument("qube")
-    p = add("install-client", cmd_install_client, "install the lintel client into a workload template")
+    p = add("install-client", cmd_install_client, "install the torii client into a workload template")
     p.add_argument("template")
     add("snapshot", cmd_snapshot, "the live state, as JSON")
     a = ap.parse_args(argv)
@@ -372,7 +372,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"cannot apply {a.file} to this machine:\n{e}", file=sys.stderr)
         return 2
     except FileNotFoundError as e:
-        print(f"lintel: {e}", file=sys.stderr)
+        print(f"torii: {e}", file=sys.stderr)
         return 2
 
 

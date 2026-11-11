@@ -43,11 +43,11 @@ def tags_of(where: str, raw: Any, machine: str, full_ok: bool) -> tuple[str, ...
 FORWARD_RE = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
 HOST_RE = re.compile(r"^(\*\.)?[a-z0-9_]([a-z0-9_-]{0,62})(\.[a-z0-9_]([a-z0-9_-]{0,62}))*$")
 
-DEFAULT_PROXY = "sys-lintel"
+DEFAULT_PROXY = "sys-torii"
 DEFAULT_BASE_TEMPLATE = "fedora-44-minimal"
 # The tool's template is named after its base, so a new base is a new
 # template: plan creates it, moves the proxies onto it and removes the old.
-TEMPLATE_PREFIX = "lintel-"
+TEMPLATE_PREFIX = "torii-"
 DEFAULT_PROXY_NETVM = "sys-firewall"
 DEFAULT_SOCKS_PORT = 1080
 DEFAULT_HTTP_PORT = 3128
@@ -113,7 +113,7 @@ class Qube:
     lan: str = "none"  # outbound.lan: none | all | allowlist
     lan_allow: tuple[str, ...] = ()
     tailnet_allow: tuple[str, ...] = ()  # outbound.tailnet as a list: only these devices
-    adopt_force: bool = False  # adopt: force: may move it off a netvm lintel doesn't know
+    adopt_force: bool = False  # adopt: force: may move it off a netvm torii doesn't know
     disposables: bool = False  # disposables: yes: it is a disposable template, and that is meant
 
     @property
@@ -559,7 +559,7 @@ def parse(text: str) -> Machine:
     if mesh != "" and (not isinstance(mesh, str) or not MACHINE_RE.match(mesh)):
         raise FileError("mesh: a name (lowercase letters, digits and -), for a file applied separately")
     if "manage" in doc:
-        raise FileError("manage: removed; lintel only changes the qubes listed under qubes:")
+        raise FileError("manage: removed; torii only changes the qubes listed under qubes:")
 
     egresses = {}
     raw_egress = doc.get("egress", {}) or {}

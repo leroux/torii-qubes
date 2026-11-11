@@ -1,3 +1,3 @@
 #!/bin/sh
 # Read-only status and recent decisions, for dom0's show and check.
-exec /usr/lib/lintel/lintel-proxy status-service
+exec /usr/lib/torii/torii-proxy status-service

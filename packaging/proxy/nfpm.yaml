@@ -1,34 +1,34 @@
-name: lintel-proxy
+name: torii-proxy
 arch: amd64
 platform: linux
-version: ${LINTEL_VERSION}
+version: ${TORII_VERSION}
 maintainer: Gaia PBC
 description: |
-  lintel proxy program for a Qubes proxy qube: one tailnet identity per
+  torii proxy program for a Qubes proxy qube: one tailnet identity per
   workload, qrexec and routed workloads, decisions per connection.
-  Installed into the proxy template by the dom0 tool, lintel.
-homepage: https://github.com/Gaia-PBC/lintel-qubes
+  Installed into the proxy template by the dom0 tool, torii.
+homepage: https://github.com/Gaia-PBC/torii-qubes
 license: MIT
 contents:
   - src: ../../LICENSE   # a plain file: nfpm puts type: license in RPMs only
-    dst: /usr/share/doc/lintel-proxy/LICENSE
-  - src: ../../build/lintel-proxy
-    dst: /usr/lib/lintel/lintel-proxy
+    dst: /usr/share/doc/torii-proxy/LICENSE
+  - src: ../../build/torii-proxy
+    dst: /usr/lib/torii/torii-proxy
     file_info: {mode: 0755}
-  - src: ./lintel.Connect
-    dst: /etc/qubes-rpc/lintel.Connect
+  - src: ./torii.Connect
+    dst: /etc/qubes-rpc/torii.Connect
     file_info: {mode: 0755}
-  - src: ./lintel.Status
-    dst: /etc/qubes-rpc/lintel.Status
+  - src: ./torii.Status
+    dst: /etc/qubes-rpc/torii.Status
     file_info: {mode: 0755}
-  - src: ./lintel-proxy.service
-    dst: /usr/lib/systemd/system/lintel-proxy.service
-  - src: ./lintel-guard.service
-    dst: /usr/lib/systemd/system/lintel-guard.service
-  - src: ./lintel-guard.nft
-    dst: /usr/lib/lintel/lintel-guard.nft
+  - src: ./torii-proxy.service
+    dst: /usr/lib/systemd/system/torii-proxy.service
+  - src: ./torii-guard.service
+    dst: /usr/lib/systemd/system/torii-guard.service
+  - src: ./torii-guard.nft
+    dst: /usr/lib/torii/torii-guard.nft
   - src: ./qubes-network-requires-guard.conf
-    dst: /usr/lib/systemd/system/qubes-network.service.d/lintel-guard.conf
+    dst: /usr/lib/systemd/system/qubes-network.service.d/torii-guard.conf
 overrides:
   deb:
     depends: [qubes-core-agent-networking, nftables, kmod, procps]

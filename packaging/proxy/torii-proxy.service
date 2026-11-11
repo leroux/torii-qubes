@@ -1,10 +1,10 @@
 [Unit]
-Description=lintel proxy program (tailnet identities for this machine's qubes)
-# Enabled per proxy qube by dom0: qvm-service <proxy-qube> lintel-proxy on
-ConditionPathExists=/run/qubes-service/lintel-proxy
-After=qubes-db.service qubes-network-uplink.service qubes-qrexec-agent.service lintel-guard.service
+Description=torii proxy program (tailnet identities for this machine's qubes)
+# Enabled per proxy qube by dom0: qvm-service <proxy-qube> torii-proxy on
+ConditionPathExists=/run/qubes-service/torii-proxy
+After=qubes-db.service qubes-network-uplink.service qubes-qrexec-agent.service torii-guard.service
 Wants=qubes-db.service
-Requires=lintel-guard.service
+Requires=torii-guard.service
 
 [Service]
 # The kernel sizes the connection-tracking table from the memory the qube
@@ -16,9 +16,9 @@ Requires=lintel-guard.service
 # 20 MB if full).
 ExecStartPre=-/usr/sbin/modprobe nf_conntrack
 ExecStartPre=-/usr/sbin/sysctl -q -w net.netfilter.nf_conntrack_max=65536
-# Config comes from the per-qube features vm-config.lintel*, set by dom0.
+# Config comes from the per-qube features vm-config.torii*, set by dom0.
 # The program waits for a valid one and reloads when dom0 changes it.
-ExecStart=/usr/lib/lintel/lintel-proxy run -config qubesdb:lintel -install-rules -downstream vif*
+ExecStart=/usr/lib/torii/torii-proxy run -config qubesdb:torii -install-rules -downstream vif*
 Restart=always
 RestartSec=2
 

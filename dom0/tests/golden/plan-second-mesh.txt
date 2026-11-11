@@ -1,12 +1,12 @@
-sys-lintel-test: create the proxy qube (template lintel-fedora-44-minimal, netvm sys-firewall, provides network)
-sys-lintel-test: turn Qubes' IPv6 off for it and its clients
-sys-lintel-test: set netvm = sys-firewall
-sys-lintel-test: set provides_network = True
-sys-lintel-test: set autostart = True
-sys-lintel-test: enable service lintel-proxy
-sys-lintel-test: set its config 4ebc8eb30ce9: 1 workload
-sys-lintel-test: start it and wait until it runs config 4ebc8eb30ce9
-50-lintel-test: write the qrexec policy
-lintel-probe2: tag lintel-managed-test
-lintel-probe2: set feature lintel-prior-netvm = none
-lintel-probe2: set feature lintel-adopted = 2026-11-10
+sys-torii-test: create the proxy qube (template torii-fedora-44-minimal, netvm sys-firewall, provides network)
+sys-torii-test: turn Qubes' IPv6 off for it and its clients
+sys-torii-test: set netvm = sys-firewall
+sys-torii-test: set provides_network = True
+sys-torii-test: set autostart = True
+sys-torii-test: enable service torii-proxy
+sys-torii-test: set its config dd623918932e: 1 workload
+sys-torii-test: start it and wait until it runs config dd623918932e
+50-torii-test: write the qrexec policy
+torii-probe2: tag torii-managed-test
+torii-probe2: set feature torii-prior-netvm = none
+torii-probe2: set feature torii-adopted = 2026-11-10

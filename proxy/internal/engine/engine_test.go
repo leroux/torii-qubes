@@ -18,14 +18,14 @@ import (
 	"golang.org/x/net/dns/dnsmessage"
 	"golang.org/x/net/proxy"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/policy"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/tailnet"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/tailnet"
 )
 
 const testCfg = `{
-  "version": "t1", "proxy_qube": "sys-lintel", "state_dir": "/unused",
+  "version": "t1", "proxy_qube": "sys-torii", "state_dir": "/unused",
   "workloads": {
     "airgap":  {"link": "qrexec", "identity": {"tags": ["tag:server"]}, "inbound": [{"port": 443, "target": 8443}]},
     "airgap.web": {"link": "qrexec", "qube": "airgap", "identity": {"hostname": "airgap-web", "tags": ["tag:web"]},

@@ -1,10 +1,10 @@
-# lintel: the tsnet proxy program for Qubes proxy qubes.
+# torii: the tsnet proxy program for Qubes proxy qubes.
 HEADSCALE ?= $(shell command -v headscale)
 
 .PHONY: build test test-unit test-race test-netns test-headscale test-all vet
 
 build:
-	go build -o bin/lintel-proxy ./cmd/lintel-proxy
+	go build -o bin/torii-proxy ./cmd/torii-proxy
 
 vet:
 	go vet ./...

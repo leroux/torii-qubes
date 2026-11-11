@@ -128,9 +128,9 @@ def qube_view(snap: Snapshot, name: str, proxy_states: dict[str, dict[str, Any]]
         v["internet"] = "none"
     if v["link"] == "qrexec":
         calls = {}
-        for a, f in _allowed(rs, "lintel.Connect", name, v["proxy"]).items():
+        for a, f in _allowed(rs, "torii.Connect", name, v["proxy"]).items():
             calls[a] = f
-        for a, f in _allowed(rs, "lintel.Connect", name, "@default").items():
+        for a, f in _allowed(rs, "torii.Connect", name, "@default").items():
             calls.setdefault(a, f)
         v["outbound_calls"] = sorted(calls)
     # Local: qubes.ConnectTCP between qubes on this machine (any file).
@@ -272,7 +272,7 @@ def egress_lines(st: dict[str, Any]) -> list[str]:
 
 def unlisted_lines(snap: Snapshot, read: dict[str, Any]) -> list[str]:
     """Qubes attached to a proxy but not in its config, from its recent log
-    (read: what lintel.Status returned):
+    (read: what torii.Status returned):
     refused ones (workload "-") and those its unlisted: lets through. dom0
     names them by address; the proxy never knows their names."""
     by_ip = {i.address: n for n, i in snap.qubes.items() if i.address}
@@ -315,7 +315,7 @@ def egress_problems(proxy: str, st: dict[str, Any], now) -> list[str]:
 def dispvm_escapes(m, snap: Snapshot) -> list[str]:
     """Listed qubes on an egress whose disposables would go out another way:
     a disposable's netvm is its disposable template's, not its opener's. A
-    template behind a lintel proxy, or with no netvm, is no escape."""
+    template behind a torii proxy, or with no netvm, is no escape."""
     out = []
     for name, q in sorted(m.qubes.items()):
         info = snap.qubes.get(name)

@@ -7,7 +7,7 @@ import os
 import textwrap
 import unittest
 
-from lintel import derive, machine, plan
+from torii import derive, machine, plan
 
 
 def mparse(text: str):
@@ -19,7 +19,7 @@ def mparse(text: str):
     return machine.parse(text if "machine:" in text else "machine: m1\n" + text)
 
 
-from lintel.live import Snapshot
+from torii.live import Snapshot
 
 TODAY = "2026-11-10"
 plan.today = lambda: TODAY  # adoption records carry a date; keep goldens stable
@@ -51,7 +51,7 @@ def full_machine() -> machine.Machine:
 def simulate(s: Snapshot, steps) -> Snapshot:
     """What apply would leave behind, as a snapshot: replays each step."""
     s = copy.deepcopy(s)
-    from lintel.live import QubeInfo
+    from torii.live import QubeInfo
     for st in steps:
         q = s.qubes.get(st.target)
         if st.kind == "template-install":
@@ -64,7 +64,7 @@ def simulate(s: Snapshot, steps) -> Snapshot:
                                           [derive.OWNED_TAG] + ([st.data["mesh_tag"]] if st.data.get("mesh_tag") else []),
                                           {})
         elif st.kind == "template-package":
-            q.features["lintel-version"] = st.data["version"]
+            q.features["torii-version"] = st.data["version"]
         elif st.kind == "pref":
             setattr(q, st.data["key"], st.data["value"])
         elif st.kind == "feature-set":
@@ -130,19 +130,19 @@ class MachineFile(unittest.TestCase):
 
     def test_defaults_resolve(self):
         m = full_machine()
-        p = m.qubes["lintel-probe"]
-        self.assertEqual((p.network_card, p.internet, p.identity, p.tags), (False, "none", "tagged", ("tag:m1-lintel-test", "tag:m1")))
+        p = m.qubes["torii-probe"]
+        self.assertEqual((p.network_card, p.internet, p.identity, p.tags), (False, "none", "tagged", ("tag:m1-torii-test", "tag:m1")))
         self.assertEqual(p.inbound[1], machine.Inbound(8443, 8080))
         self.assertEqual((p.socks_port, p.http_port), (0, 0), "no outbound, no proxy ports")
-        j = m.qubes["lintel-probe2"]
-        self.assertEqual((j.socks_port, j.http_port, j.tags), (1080, 3128, ("tag:m1-lintel-job", "tag:m1")))
+        j = m.qubes["torii-probe2"]
+        self.assertEqual((j.socks_port, j.http_port, j.tags), (1080, 3128, ("tag:m1-torii-job", "tag:m1")))
         r = m.qubes["personal"]
         self.assertEqual((r.link, r.identity, r.tags, r.socks_port), ("routed", "login", (), 0))
 
     def test_example_file_parses(self):
         machine.load(os.path.join(HERE, "..", "..", "examples", "machine.yaml"))
         machine.load(os.path.join(HERE, "..", "..", "proxy", "internal", "engine", "testdata", "sim", "machine.yaml"))
-        machine.load(os.path.join(HERE, "..", "..", "dev", "headscale", "lintel-test.yaml"))
+        machine.load(os.path.join(HERE, "..", "..", "dev", "headscale", "torii-test.yaml"))
 
     def test_every_machine_file_in_the_docs_parses(self):
         """Every ```yaml block in the README and docs/ parses with the tool's
@@ -187,7 +187,7 @@ class MachineFile(unittest.TestCase):
         self.bad("qubes: {a: {outbound: {tailnet: yes}}}", "need an identity")
         self.bad("qubes: {a: {network: proxy, forwards: {x: 'h:1'}}}", "forwards are for qubes without")
         self.bad("qubes: {a: {outbound: {via: ex, internet: all}}}", "outbound.via: removed")
-        self.bad("qubes: {sys-lintel: {}}", "is a proxy qube")
+        self.bad("qubes: {sys-torii: {}}", "is a proxy qube")
         self.bad("qubes: {a: {proxy: nope}}", "no proxy 'nope'")
         self.bad("defaults: {tailnet: {inbound: [1]}}", "unknown key 'inbound'")
 
@@ -207,7 +207,7 @@ qubes:
         j, k = m.qubes["j"], m.qubes["k"]
         self.assertEqual((j.tailnet_outbound, j.tailnet_allow), (True, ("notes", "chat:443", "100.64.0.0/10:22")))
         self.assertEqual((k.tailnet_outbound, k.tailnet_allow), (True, ()))
-        cfg = derive.proxy_config(m, "sys-lintel", {}, "v")["workloads"]
+        cfg = derive.proxy_config(m, "sys-torii", {}, "v")["workloads"]
         self.assertEqual(cfg["j"]["tailnet_allow"], ["notes", "chat:443", "100.64.0.0/10:22"])
         self.assertNotIn("tailnet_allow", cfg["k"])
         self.bad("qubes: {a: {outbound: {tailnet: []}, tailnet: {identity: tagged, tags: [x]}}}", "a list of devices")
@@ -260,7 +260,7 @@ qubes:
         self.assertEqual((b.internet, b.lan), ("allowlist", "allowlist"))
         self.assertEqual(b.lan_allow, ("192.168.1.20:5432", "[fd00::1]:80"))
         self.assertEqual((c.internet, c.lan, c.has_outbound), ("none", "none", False))
-        cfg = derive.proxy_config(m, "sys-lintel", {}, "v")["workloads"]
+        cfg = derive.proxy_config(m, "sys-torii", {}, "v")["workloads"]
         self.assertEqual((cfg["a"]["internet"], "lan" in cfg["a"]), ("full", False))
         self.assertEqual(cfg["b"]["lan_allow"], ["192.168.1.20:5432", "[fd00::1]:80"])
         self.assertNotIn("c", cfg)
@@ -277,7 +277,7 @@ class Plans(unittest.TestCase):
     def test_proxy_config(self):
         s = snap()
         addrs = {"personal": s.qubes["personal"].address}
-        cfg = derive.proxy_config(full_machine(), "sys-lintel", addrs, "v1")
+        cfg = derive.proxy_config(full_machine(), "sys-torii", addrs, "v1")
         golden("proxy-config.json", json.dumps(cfg, indent=1, sort_keys=True) + "\n")
 
     def test_second_apply_changes_nothing(self):
@@ -304,8 +304,8 @@ class Plans(unittest.TestCase):
         after.qubes["personal"].state = "Running"
         steps = plan.make(m, after, VERSION + ".1")
         self.assertEqual([str(s) for s in steps], [
-            "lintel-fedora-44-minimal: install the proxy package 0.1.0-test.1 (has 0.1.0-test)",
-            "sys-lintel: restart it on the new package (detaching and reattaching personal)",
+            "torii-fedora-44-minimal: install the proxy package 0.1.0-test.1 (has 0.1.0-test)",
+            "sys-torii: restart it on the new package (detaching and reattaching personal)",
         ])
 
     def test_proxy_started_on_an_older_package_is_restarted(self):
@@ -314,48 +314,48 @@ class Plans(unittest.TestCase):
         though the template has nothing left to install."""
         m = full_machine()
         old = simulate(snap(), plan.make(m, snap(), VERSION))
-        old.qubes["sys-lintel"].state = "Running"
-        old.qubes[m.template].features["lintel-version"] = VERSION + ".1"  # by the other mesh
+        old.qubes["sys-torii"].state = "Running"
+        old.qubes[m.template].features["torii-version"] = VERSION + ".1"  # by the other mesh
         steps = plan.make(m, old, VERSION + ".1")
         self.assertEqual([str(s) for s in steps], [
-            "sys-lintel: restart it on the new package",
+            "sys-torii: restart it on the new package",
         ])
         self.assertEqual(plan.make(m, simulate(old, steps), VERSION + ".1"), [])
 
     def test_new_base_template_moves_the_proxies(self):
-        """A machine whose file named another template (Debian, lintel-template)
+        """A machine whose file named another template (Debian, torii-template)
         moves to the new base with plain apply: a new template, each proxy
         moved onto it with one restart, the old template removed."""
         with open(os.path.join(G, "full.yaml"), encoding="utf-8") as f:
             text = f.read()
-        old_m = mparse("template: lintel-template\nbase-template: debian-13-minimal\n" + text)
+        old_m = mparse("template: torii-template\nbase-template: debian-13-minimal\n" + text)
         before = simulate(snap(), plan.make(old_m, snap(), VERSION))
-        before.qubes["sys-lintel"].state = "Running"
+        before.qubes["sys-torii"].state = "Running"
         before.qubes["personal"].state = "Running"
         m = full_machine()
         steps = plan.make(m, before, VERSION)
         self.assertEqual([str(s) for s in steps], [
             "fedora-44-minimal: download the base template (qvm-template install)",
-            "lintel-fedora-44-minimal: create the proxy template, a clone of fedora-44-minimal",
-            "lintel-fedora-44-minimal: install the proxy package 0.1.0-test",
-            "sys-lintel: move it to lintel-fedora-44-minimal and restart it (detaching and reattaching personal)",
-            "lintel-template: remove the tool's old template (nothing uses it now; lintel-fedora-44-minimal replaces it)",
+            "torii-fedora-44-minimal: create the proxy template, a clone of fedora-44-minimal",
+            "torii-fedora-44-minimal: install the proxy package 0.1.0-test",
+            "sys-torii: move it to torii-fedora-44-minimal and restart it (detaching and reattaching personal)",
+            "torii-template: remove the tool's old template (nothing uses it now; torii-fedora-44-minimal replaces it)",
         ])
         after = simulate(before, steps)
-        self.assertEqual(after.qubes["sys-lintel"].template, "lintel-fedora-44-minimal")
-        self.assertNotIn("lintel-template", after.qubes)
+        self.assertEqual(after.qubes["sys-torii"].template, "torii-fedora-44-minimal")
+        self.assertNotIn("torii-template", after.qubes)
         self.assertIn("debian-13-minimal", after.qubes, "the base template is the person's, not the tool's")
         self.assertEqual(plan.make(m, after, VERSION), [])
 
     def test_old_template_another_mesh_uses_stays(self):
         m = full_machine()
         after = simulate(snap(), plan.make(m, snap(), VERSION))
-        after.qubes["lintel-template"] = copy.deepcopy(after.qubes["lintel-fedora-44-minimal"])
-        after.qubes["lintel-template"].name = "lintel-template"
-        other = copy.deepcopy(after.qubes["sys-lintel"])
-        other.name, other.template = "sys-lintel-other", "lintel-template"
+        after.qubes["torii-template"] = copy.deepcopy(after.qubes["torii-fedora-44-minimal"])
+        after.qubes["torii-template"].name = "torii-template"
+        other = copy.deepcopy(after.qubes["sys-torii"])
+        other.name, other.template = "sys-torii-other", "torii-template"
         other.tags = [derive.OWNED_TAG, derive.MESH_TAG + "other"]  # another mesh's proxy
-        after.qubes["sys-lintel-other"] = other
+        after.qubes["sys-torii-other"] = other
         self.assertEqual(plan.make(m, after, VERSION), [])
 
     def test_services_on_a_qube_the_file_does_not_manage(self):
@@ -363,10 +363,10 @@ class Plans(unittest.TestCase):
         steps = plan.make(m, snap(), VERSION)
         golden("plan-services.txt", "\n".join(str(s) for s in steps) + "\n")
         self.assertFalse([s for s in steps if s.target == "personal"], "its network is not the tool's")
-        cfg = derive.proxy_config(m, "sys-lintel", {}, "v")
+        cfg = derive.proxy_config(m, "sys-torii", {}, "v")
         self.assertEqual(sorted(cfg["workloads"]), ["personal.chat", "personal.notes"])
         self.assertEqual(cfg["workloads"]["personal.chat"]["inbound"], [{"port": 443, "target": 8008, "tls": True}])
-        self.assertIn("qubes.ConnectTCP  +8008  sys-lintel  personal  allow", derive.policy(m))
+        self.assertIn("qubes.ConnectTCP  +8008  sys-torii  personal  allow", derive.policy(m))
         self.assertIn("tag:chat", derive.grants(m)["tagOwners"])
         # Dropping the services leaves the qube's netvm as it was.
         after = simulate(snap(), steps)
@@ -376,17 +376,17 @@ class Plans(unittest.TestCase):
 
     def test_network_values(self):
         m = mparse("""
-proxies: [{name: sys-lintel-vpn, netvm: sys-net}]
+proxies: [{name: sys-torii-vpn, netvm: sys-net}]
 qubes:
   a: {network: none}
   b: {network: proxy}
-  c: {network: proxy, proxy: sys-lintel-vpn, outbound: {internet: all}}
+  c: {network: proxy, proxy: sys-torii-vpn, outbound: {internet: all}}
   d: {network: default}
   e: {network: sys-net}
 """)
         st = {n: derive.qube_state(m, q).netvm for n, q in m.qubes.items()}
-        self.assertEqual(st, {"a": "", "b": "sys-lintel", "c": "sys-lintel-vpn", "d": derive.DEFAULT_NETVM, "e": "sys-net"})
-        self.assertEqual(m.qubes["c"].proxy, "sys-lintel-vpn")
+        self.assertEqual(st, {"a": "", "b": "sys-torii", "c": "sys-torii-vpn", "d": derive.DEFAULT_NETVM, "e": "sys-net"})
+        self.assertEqual(m.qubes["c"].proxy, "sys-torii-vpn")
 
     def test_not_carried_by_the_proxy(self):
         for e in ("{network: default, outbound: {internet: all}}", "{network: sys-net, tailnet: {identity: tagged, tags: [x]}}",
@@ -409,33 +409,33 @@ qubes:
             mparse("services: {m: {qube: x, tags: [t]}}")  # no ports
 
     def test_two_meshes_keep_to_their_own(self):
-        main = mparse("qubes: {lintel-probe: {}, personal: {network: proxy, outbound: {internet: all}}}")
+        main = mparse("qubes: {torii-probe: {}, personal: {network: proxy, outbound: {internet: all}}}")
         test = mparse("""
 mesh: test
 machine: m1-test
-proxy: {name: sys-lintel-test}
-qubes: {lintel-probe2: {tailnet: {identity: tagged, tags: [t]}}}
+proxy: {name: sys-torii-test}
+qubes: {torii-probe2: {tailnet: {identity: tagged, tags: [t]}}}
 """)
         snap1 = simulate(snap(), plan.make(main, snap(), VERSION))
         steps = plan.make(test, as_mesh(snap1, test), VERSION)
         golden("plan-second-mesh.txt", "\n".join(str(s) for s in steps) + "\n")
         targets = {s.target for s in steps}
-        self.assertFalse(targets & {"lintel-probe", "personal", "sys-lintel", "50-lintel"}, "the test mesh touched the main mesh")
-        self.assertIn("50-lintel-test", targets)
-        self.assertEqual(derive.policy_name(test), "50-lintel-test")
+        self.assertFalse(targets & {"torii-probe", "personal", "sys-torii", "50-torii"}, "the test mesh touched the main mesh")
+        self.assertIn("50-torii-test", targets)
+        self.assertEqual(derive.policy_name(test), "50-torii-test")
         snap2 = simulate(as_mesh(snap1, test), steps)
-        created = snap2.qubes["sys-lintel-test"]
-        self.assertEqual(set(created.tags) >= {derive.OWNED_TAG, "lintel-mesh-test"}, True)
+        created = snap2.qubes["sys-torii-test"]
+        self.assertEqual(set(created.tags) >= {derive.OWNED_TAG, "torii-mesh-test"}, True)
         # Each mesh's next plan is empty: neither undoes the other.
         self.assertEqual(plan.make(main, as_mesh(snap2, main), VERSION), [])
         self.assertEqual(plan.make(test, as_mesh(snap2, test), VERSION), [])
         # A qube managed by one mesh cannot be claimed by the other.
         with self.assertRaises(plan.PlanError) as e:
-            plan.make(mpatched(test, "lintel-probe"), as_mesh(snap2, test), VERSION)
+            plan.make(mpatched(test, "torii-probe"), as_mesh(snap2, test), VERSION)
         self.assertIn("managed by another mesh", str(e.exception))
         # A mesh's own proxy name cannot be taken by another mesh.
         with self.assertRaises(plan.PlanError) as e:
-            plan.make(mparse("mesh: other\nproxy: {name: sys-lintel-test}\nqubes: {}"), snap2, VERSION)
+            plan.make(mparse("mesh: other\nproxy: {name: sys-torii-test}\nqubes: {}"), snap2, VERSION)
         self.assertIn("another mesh", str(e.exception))
 
     def test_workload_must_exist(self):
@@ -485,9 +485,9 @@ qubes:
   b: {network: proxy, proxy: p2, tailnet: {identity: tagged, tags: [x]}}
   c: {network: proxy}
 """)
-        self.assertEqual({n: q.proxy for n, q in m.qubes.items()}, {"a": "p2", "b": "p2", "c": "sys-lintel"})
+        self.assertEqual({n: q.proxy for n, q in m.qubes.items()}, {"a": "p2", "b": "p2", "c": "sys-torii"})
         self.assertEqual(derive.qube_state(m, m.qubes["b"]).netvm, "p2")
-        self.bad("qubes: {a: {proxy: sys-lintel-x}}", "no proxy 'sys-lintel-x'")
+        self.bad("qubes: {a: {proxy: sys-torii-x}}", "no proxy 'sys-torii-x'")
 
     def test_adopt_and_disposables_keys(self):
         m = mparse("qubes: {a: {adopt: force}, b: {disposables: yes}, c: {}}")
@@ -499,7 +499,7 @@ qubes:
 
 def with_qube(s: Snapshot, name, netvm="", provides_network=False, dvm=False, tags=None, qid=60,
               default_dispvm="") -> Snapshot:
-    from lintel.live import QubeInfo
+    from torii.live import QubeInfo
     s = copy.deepcopy(s)
     s.qubes[name] = QubeInfo(name, "AppVM", "Halted", "fedora-43-xfce", netvm, provides_network, qid, "", False,
                              "red", list(tags or []), {}, template_for_dispvms=dvm, default_dispvm=default_dispvm)
@@ -507,7 +507,7 @@ def with_qube(s: Snapshot, name, netvm="", provides_network=False, dvm=False, ta
 
 
 class Adoption(unittest.TestCase):
-    """lintel only changes qubes named in the file; it records what it found
+    """torii only changes qubes named in the file; it records what it found
     the first time, refuses moves it cannot judge, and anything leaving its
     control fails closed."""
 
@@ -515,40 +515,40 @@ class Adoption(unittest.TestCase):
         self.assertEqual([str(s) for s in plan.make(mparse("qubes: {}"), snap(), VERSION)], [])
 
     def test_no_proxy_until_something_uses_one(self):
-        steps = plan.make(mparse("qubes: {lintel-probe: {network: none}}"), snap(), VERSION)
+        steps = plan.make(mparse("qubes: {torii-probe: {network: none}}"), snap(), VERSION)
         self.assertEqual([str(s) for s in steps], [
-            "lintel-probe: tag lintel-managed",
-            "lintel-probe: set feature lintel-prior-netvm = none",
-            f"lintel-probe: set feature lintel-adopted = {TODAY}",
+            "torii-probe: tag torii-managed",
+            "torii-probe: set feature torii-prior-netvm = none",
+            f"torii-probe: set feature torii-adopted = {TODAY}",
         ])
 
     def test_first_adoption_records_the_netvm_once(self):
         m = full_machine()
         steps = plan.make(m, snap(), VERSION)
         texts = [str(s) for s in steps]
-        self.assertIn("personal: set feature lintel-prior-netvm = sys-firewall", texts)
-        self.assertIn("lintel-probe: set feature lintel-prior-netvm = none", texts)
+        self.assertIn("personal: set feature torii-prior-netvm = sys-firewall", texts)
+        self.assertIn("torii-probe: set feature torii-prior-netvm = none", texts)
         after = simulate(snap(), steps)
-        self.assertEqual(after.qubes["personal"].features["lintel-adopted"], TODAY)
+        self.assertEqual(after.qubes["personal"].features["torii-adopted"], TODAY)
         # Leaving and coming back keeps the first record.
         gone = simulate(after, plan.make(mparse("qubes: {}"), after, VERSION))
-        self.assertEqual(gone.qubes["personal"].features["lintel-prior-netvm"], "sys-firewall")
+        self.assertEqual(gone.qubes["personal"].features["torii-prior-netvm"], "sys-firewall")
         back = plan.make(m, gone, VERSION)
-        self.assertFalse([s for s in back if "lintel-prior-netvm" in str(s)], back)
+        self.assertFalse([s for s in back if "torii-prior-netvm" in str(s)], back)
 
     def test_qube_adopted_before_records_existed_is_not_guessed(self):
         s = snap()
         s.qubes["personal"].tags.append(derive.MANAGED_TAG)
-        s.qubes["personal"].netvm = "sys-lintel"
+        s.qubes["personal"].netvm = "sys-torii"
         steps = plan.make(full_machine(), s, VERSION)
-        self.assertFalse([x for x in steps if x.target == "personal" and "lintel-prior" in str(x)])
+        self.assertFalse([x for x in steps if x.target == "personal" and "torii-prior" in str(x)])
 
     def test_leaving_the_file_fails_closed_and_names_the_old_netvm(self):
         m = full_machine()
         after = simulate(snap(), plan.make(m, snap(), VERSION))
-        steps = plan.make(mparse("qubes: {lintel-probe: {network: none}}"), after, VERSION)
+        steps = plan.make(mparse("qubes: {torii-probe: {network: none}}"), after, VERSION)
         line = next(str(s) for s in steps if s.target == "personal" and s.kind == "pref")
-        self.assertEqual(line, "personal: set netvm = (none) (was sys-lintel; before lintel: sys-firewall, "
+        self.assertEqual(line, "personal: set netvm = (none) (was sys-torii; before torii: sys-firewall, "
                                "`qvm-prefs personal netvm sys-firewall` to restore)")
         self.assertEqual(simulate(after, steps).qubes["personal"].netvm, "")
 
@@ -556,14 +556,14 @@ class Adoption(unittest.TestCase):
         after = simulate(snap(), plan.make(full_machine(), snap(), VERSION))
         steps = plan.make(mparse("qubes: {}"), after, VERSION)
         self.assertFalse([s for s in steps if s.kind == "remove"], steps)
-        self.assertIn("sys-lintel: unused (kept: it holds identities)", plan.notes(mparse("qubes: {}"), after))
+        self.assertIn("sys-torii: unused (kept: it holds identities)", plan.notes(mparse("qubes: {}"), after))
 
     def test_unknown_netvm_needs_adopt_force(self):
         s = with_qube(with_qube(snap(), "sys-whonix", "sys-firewall", provides_network=True, qid=61),
                       "anon-whonix", "sys-whonix")
         with self.assertRaises(plan.PlanError) as e:
             plan.make(mparse("qubes: {anon-whonix: {network: proxy}}"), s, VERSION)
-        self.assertIn("anon-whonix: its netvm is sys-whonix, which lintel doesn't know", str(e.exception))
+        self.assertIn("anon-whonix: its netvm is sys-whonix, which torii doesn't know", str(e.exception))
         self.assertIn("adopt: force", str(e.exception))
         plan.make(mparse("qubes: {anon-whonix: {network: proxy, adopt: force}}"), s, VERSION)
         # Writing its netvm changes nothing, so nothing to refuse.
@@ -573,11 +573,11 @@ class Adoption(unittest.TestCase):
         s = with_qube(snap(), "w", "")  # no netvm
         plan.make(mparse("qubes: {w: {network: proxy}, personal: {network: proxy}}"), s, VERSION)  # sys-firewall: the default
         after = simulate(snap(), plan.make(full_machine(), snap(), VERSION))
-        after = with_qube(after, "w2", "sys-lintel")  # already behind a lintel proxy
+        after = with_qube(after, "w2", "sys-torii")  # already behind a torii proxy
         plan.make(mparse("qubes: {w2: {network: none}}"), after, VERSION)
 
     def test_show_names_the_adoption(self):
-        from lintel import show
+        from torii import show
         after = simulate(snap(), plan.make(full_machine(), snap(), VERSION))
         v = show.qube_view(after, "personal", {})
         self.assertEqual(v["adopted"], {"from": "sys-firewall", "on": TODAY})
@@ -597,7 +597,7 @@ class Adoption(unittest.TestCase):
 EGRESS = """
 egress:
   vpn: {exits: [exit-nyc, exit-ams], failback-after: 90s}
-proxies: [{name: sys-lintel-dvm, unlisted: {internet: all, egress: vpn}}]
+proxies: [{name: sys-torii-dvm, unlisted: {internet: all, egress: vpn}}]
 qubes:
   browser: {network: proxy, egress: vpn, outbound: {internet: all}}
   build:
@@ -620,7 +620,7 @@ class Egresses(unittest.TestCase):
                          (("exit-nyc", "exit-ams"), 90, ("tag:m1-egress", "tag:m1"), "m1-egress-vpn"))
         self.assertEqual(mparse("egress: {e: {exits: [x]}}\nqubes: {}").egresses["e"].failback_after, 120)
         self.assertEqual(m.qubes["browser"].identity, "none", "an egress needs no identity of the qube's")
-        self.assertEqual(m.egress_instances(), [("vpn", "sys-lintel"), ("vpn", "sys-lintel-dvm")])
+        self.assertEqual(m.egress_instances(), [("vpn", "sys-torii"), ("vpn", "sys-torii-dvm")])
 
     def test_errors(self):
         self.bad("qubes: {a: {network: proxy, egress: vpn, outbound: {internet: all}}}", "no egress 'vpn'")
@@ -630,10 +630,10 @@ class Egresses(unittest.TestCase):
         self.bad("egress: {vpn: {exits: [a], via: b}}\nqubes: {}", "unknown key 'via'")
         self.bad("egress: {vpn: {exits: [a], probe: example.com}}\nqubes: {}", "host:port")
         self.bad("egress: {vpn: {exits: [a]}}\nqubes: {a: {network: proxy, egress: vpn}}", "outbound.internet: none")
-        self.bad("egress: {vpn: {exits: [a]}}\nproxy: {name: sys-lintel, unlisted: {internet: none}}\nqubes: {}",
+        self.bad("egress: {vpn: {exits: [a]}}\nproxy: {name: sys-torii, unlisted: {internet: none}}\nqubes: {}",
                  "`unlisted: refuse`")
-        self.bad("proxy: {name: sys-lintel, unlisted: {internet: all, egress: nope}}\nqubes: {}", "no egress 'nope'")
-        self.bad("egress: {vpn: {exits: [a]}}\nproxy: {name: sys-lintel, unlisted: {internet: all, tailnet: yes}}\nqubes: {}",
+        self.bad("proxy: {name: sys-torii, unlisted: {internet: all, egress: nope}}\nqubes: {}", "no egress 'nope'")
+        self.bad("egress: {vpn: {exits: [a]}}\nproxy: {name: sys-torii, unlisted: {internet: all, tailnet: yes}}\nqubes: {}",
                  "unknown key 'tailnet'")
         self.bad("egress: {vpn: {exits: [a]}}\nqubes: {a: {network: default, egress: vpn, outbound: {internet: all}}}",
                  "not carried by the proxy")
@@ -643,15 +643,15 @@ class Egresses(unittest.TestCase):
 
     def test_proxy_config(self):
         m = mparse(EGRESS)
-        main = derive.proxy_config(m, "sys-lintel", {"browser": "10.137.0.20"}, "v")
+        main = derive.proxy_config(m, "sys-torii", {"browser": "10.137.0.20"}, "v")
         self.assertEqual(main["egresses"], {"vpn": {
             "hostname": "m1-egress-vpn", "tags": ["tag:m1-egress", "tag:m1"], "exits": ["exit-nyc", "exit-ams"],
-            "failback_after": 90, "auth_key_file": "/rw/lintel/keys/egress-vpn"}})
+            "failback_after": 90, "auth_key_file": "/rw/torii/keys/egress-vpn"}})
         self.assertEqual(main["workloads"]["browser"]["egress"], "vpn")
         self.assertNotIn("identity", main["workloads"]["browser"])
         self.assertNotIn("unlisted", main, "the main proxy refuses unlisted qubes by default")
-        dvm = derive.proxy_config(m, "sys-lintel-dvm", {}, "v")
-        self.assertEqual(dvm["egresses"]["vpn"]["hostname"], "m1-egress-vpn-sys-lintel-dvm")
+        dvm = derive.proxy_config(m, "sys-torii-dvm", {}, "v")
+        self.assertEqual(dvm["egresses"]["vpn"]["hostname"], "m1-egress-vpn-sys-torii-dvm")
         self.assertEqual(dvm["unlisted"], {"internet": "full", "egress": "vpn"})
         self.assertEqual(dvm["workloads"], {})
 
@@ -662,19 +662,19 @@ class Egresses(unittest.TestCase):
         self.assertFalse([x for x in g["grants"] if "tag:m1-egress" in x["src"] and x["dst"] != ["autogroup:internet"]])
 
     def test_unlisted_makes_a_proxy_used(self):
-        m = mparse("egress: {vpn: {exits: [a]}}\nproxies: [{name: sys-lintel-dvm, unlisted: {internet: all, egress: vpn}}]\nqubes: {}")
+        m = mparse("egress: {vpn: {exits: [a]}}\nproxies: [{name: sys-torii-dvm, unlisted: {internet: all, egress: vpn}}]\nqubes: {}")
         steps = [str(s) for s in plan.make(m, snap(), VERSION)]
-        self.assertTrue(any(s.startswith("sys-lintel-dvm: create the proxy qube") for s in steps), steps)
-        self.assertFalse(any(s.startswith("sys-lintel: create") for s in steps), "the main proxy is not used")
+        self.assertTrue(any(s.startswith("sys-torii-dvm: create the proxy qube") for s in steps), steps)
+        self.assertFalse(any(s.startswith("sys-torii: create") for s in steps), "the main proxy is not used")
 
     def test_lan_with_an_egress_is_noted(self):
         s = with_qube(snap(), "build", "")
         notes = plan.notes(mparse(EGRESS), s)
-        self.assertIn("build: its LAN access goes direct through sys-lintel's netvm, never through egress vpn", notes)
+        self.assertIn("build: its LAN access goes direct through sys-torii's netvm, never through egress vpn", notes)
 
 
 PROXY_STATUS = {"status": {
-    "config_version": "v", "proxy_qube": "sys-lintel", "workloads": {},
+    "config_version": "v", "proxy_qube": "sys-torii", "workloads": {},
     "egresses": {"vpn": {
         "name": "vpn", "active": "exit-ams", "active_since": "2026-11-08T10:02:00Z", "usable": True,
         "exits": [{"name": "exit-nyc", "healthy": False, "why": "ping: missed 3"},
@@ -696,11 +696,11 @@ class Disposables(unittest.TestCase):
     a disposable that goes out direct."""
 
     def test_escape_through_default_dispvm(self):
-        from lintel import show
+        from torii import show
         m = mparse(EGRESS)
-        after = simulate(snap(), plan.make(full_machine(), snap(), VERSION))  # sys-lintel exists, owned
+        after = simulate(snap(), plan.make(full_machine(), snap(), VERSION))  # sys-torii exists, owned
         s = with_qube(after, "default-dvm", "sys-firewall", dvm=True, qid=70)
-        s = with_qube(s, "browser-dvm", "sys-lintel", dvm=True, qid=71)
+        s = with_qube(s, "browser-dvm", "sys-torii", dvm=True, qid=71)
         s = with_qube(s, "offline-dvm", "", dvm=True, qid=72)
         for name, dvm in (("browser", "default-dvm"), ("build", "offline-dvm")):
             s = with_qube(s, name, "", default_dispvm=dvm, qid=80 + len(name))
@@ -708,16 +708,16 @@ class Disposables(unittest.TestCase):
             "browser uses egress vpn, but its default_dispvm (default-dvm) has netvm sys-firewall: "
             "disposables opened from browser go out directly"])
         s.qubes["browser"].default_dispvm = "browser-dvm"
-        self.assertEqual(show.dispvm_escapes(m, s), [], "a disposable template behind a lintel proxy")
+        self.assertEqual(show.dispvm_escapes(m, s), [], "a disposable template behind a torii proxy")
 
 
 class EgressStatus(unittest.TestCase):
     def test_sign_in_links_include_egresses(self):
-        from lintel import status
+        from torii import status
         self.assertEqual(status.sign_in_links(PROXY_STATUS), {"egress vpn": "https://login/x"})
 
     def test_show_egress(self):
-        from lintel import show
+        from torii import show
         self.assertEqual(show.egress_lines(PROXY_STATUS["status"]), [
             "  egress vpn: active exit-ams since 2026-11-08 10:02 UTC",
             "    exit-nyc  down (ping: missed 3)",
@@ -728,8 +728,8 @@ class EgressStatus(unittest.TestCase):
         self.assertEqual(show.egress_lines(down)[0], "  egress vpn: NO HEALTHY EXIT NODE (connections refused; last exit-ams)")
 
     def test_unlisted_sources_are_named_by_dom0(self):
-        from lintel import show
-        s = with_qube(with_qube(snap(), "shopping", "sys-lintel", qid=50), "disp1234", "sys-lintel", qid=51)
+        from torii import show
+        s = with_qube(with_qube(snap(), "shopping", "sys-torii", qid=50), "disp1234", "sys-torii", qid=51)
         self.assertEqual(s.qubes["shopping"].address, "10.137.0.50")
         self.assertEqual(show.unlisted_lines(s, PROXY_STATUS), [
             "  unlisted disp1234 (10.137.0.51): 1 allowed, 0 refused",
@@ -737,18 +737,18 @@ class EgressStatus(unittest.TestCase):
         ])
 
     def test_check_egress(self):
-        from lintel import show
+        from torii import show
         import datetime
         now = datetime.datetime(2026, 11, 10, 12, 0, tzinfo=datetime.timezone.utc)
-        self.assertEqual(show.egress_problems("sys-lintel", PROXY_STATUS["status"], now), [
-            "egress vpn on sys-lintel: identity m1-egress-vpn is NeedsLogin; sign in: https://login/x",
-            "egress vpn on sys-lintel: on fallback exit-ams since 2026-11-08 10:02 UTC (exit-nyc: ping: missed 3)",
+        self.assertEqual(show.egress_problems("sys-torii", PROXY_STATUS["status"], now), [
+            "egress vpn on sys-torii: identity m1-egress-vpn is NeedsLogin; sign in: https://login/x",
+            "egress vpn on sys-torii: on fallback exit-ams since 2026-11-08 10:02 UTC (exit-nyc: ping: missed 3)",
         ])
         st = copy.deepcopy(PROXY_STATUS["status"])
         st["egresses"]["vpn"].update(usable=False)
         st["egresses"]["vpn"]["identity"]["state"] = "Running"
-        self.assertEqual(show.egress_problems("sys-lintel", st, now),
-                         ["egress vpn on sys-lintel: no healthy exit node; its qubes' internet is refused "
+        self.assertEqual(show.egress_problems("sys-torii", st, now),
+                         ["egress vpn on sys-torii: no healthy exit node; its qubes' internet is refused "
                           "(exit-nyc: ping: missed 3)"])
 
 
@@ -757,7 +757,7 @@ class Chunks(unittest.TestCase):
         m = full_machine()
         big = {"workloads": {f"q{i}": {"internet_allow": [f"h{i}-{j}.example.org" for j in range(40)]}
                              for i in range(40)}}
-        for cfg in (derive.proxy_config(m, "sys-lintel", {}, "v"), big):
+        for cfg in (derive.proxy_config(m, "sys-torii", {}, "v"), big):
             f = derive.encode_chunks(cfg)
             self.assertTrue(all(len(v) < 3072 for v in f.values()))
             self.assertEqual(derive.decode_chunks(f), json.loads(json.dumps(cfg)))

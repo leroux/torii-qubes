@@ -1,8 +1,8 @@
-# Using lintel from Salt
+# Using torii from Salt
 
-For configuring lintel on many Qubes machines from Salt. Salt keeps
+For configuring torii on many Qubes machines from Salt. Salt keeps
 each machine's file and the tool's version; the tool does the rest:
-`lintel apply` works out what differs and changes only that, like a state
+`torii apply` works out what differs and changes only that, like a state
 run. No Salt module is needed.
 
 Salt in Qubes runs in dom0 with `qubesctl`, on each machine by itself (no
@@ -12,28 +12,28 @@ the way anything reaches dom0: from a qube, by `qvm-run --pass-io`.
 ## The states
 
 ```yaml
-# not a machine file: /srv/user_salt/lintel/init.sls
-lintel-package:
+# not a machine file: /srv/user_salt/torii/init.sls
+torii-package:
   cmd.run:   # dom0 has no repositories: install the RPM shipped with the states
-    - name: dnf install -y --disablerepo='*' /srv/user_salt/lintel/lintel-dom0-{{ pillar.lintel.version }}-1.noarch.rpm
-    - unless: rpm -q lintel-dom0-{{ pillar.lintel.version }}
+    - name: dnf install -y --disablerepo='*' /srv/user_salt/torii/torii-dom0-{{ pillar.torii.version }}-1.noarch.rpm
+    - unless: rpm -q torii-dom0-{{ pillar.torii.version }}
 
-/etc/lintel/machine.yaml:
+/etc/torii/machine.yaml:
   file.serialize:   # this machine's file, from its pillar
-    - dataset_pillar: lintel:machine
+    - dataset_pillar: torii:machine
     - serializer: yaml
     - makedirs: true
     - mode: '0644'
 
-lintel-apply:
+torii-apply:
   cmd.run:
-    - name: lintel -f /etc/lintel/machine.yaml apply --yes
+    - name: torii -f /etc/torii/machine.yaml apply --yes
     # Runs when the file changed or the machine drifted from it (a netvm
     # changed by hand): `plan` compares the machine, not just the file.
-    - unless: lintel -f /etc/lintel/machine.yaml plan | grep -q '^No changes'
+    - unless: torii -f /etc/torii/machine.yaml plan | grep -q '^No changes'
     - require:
-      - cmd: lintel-package
-      - file: /etc/lintel/machine.yaml
+      - cmd: torii-package
+      - file: /etc/torii/machine.yaml
 ```
 
 The first `apply` on a machine downloads the base template and builds the
@@ -41,12 +41,12 @@ tool's own; it takes minutes. Later ones take seconds.
 
 ## The pillar
 
-Each machine's pillar holds its machine file under `lintel:machine`, exactly
+Each machine's pillar holds its machine file under `torii:machine`, exactly
 as in [`setup.md`](setup.md) and [`reference.md`](reference.md):
 
 ```yaml
 # not a machine file: pillar/laptops/alice.sls
-lintel:
+torii:
   version: 0.1.0.58
   machine:
     machine: alice-laptop
@@ -59,26 +59,26 @@ lintel:
 
 Shared parts (`defaults`, `tailnet`, `tag-owners`) can come from a common
 pillar merged in, or a Jinja import. Several meshes on one machine: one file
-and one `lintel-apply` state each (`mesh:` in each file).
+and one `torii-apply` state each (`mesh:` in each file).
 
 ## Signing identities in without a person
 
 A new identity waits for someone to open its sign-in link. On a fleet, give
 it a tagged auth key instead (Tailscale: a pre-approved, tagged key; Headscale:
-`headscale preauthkeys create`). `lintel sign-in-key` reads it from stdin. It
+`headscale preauthkeys create`). `torii sign-in-key` reads it from stdin. It
 throws away the identity's state and signs in again, a new device each time,
 so run it only while the identity is waiting:
 
 ```yaml
 # not a machine file
-{% for q in pillar.lintel.get('sign_in', []) %}
-lintel-sign-in-{{ q }}:
+{% for q in pillar.torii.get('sign_in', []) %}
+torii-sign-in-{{ q }}:
   cmd.run:
-    - name: lintel -f /etc/lintel/machine.yaml sign-in-key {{ q }}
-    - stdin: {{ pillar.lintel.authkey }}
-    - onlyif: lintel -f /etc/lintel/machine.yaml show --json | python3 -c "import json,sys; sys.exit(0 if any(i['hostname']=='{{ q }}' and i['state']=='NeedsLogin' for v in json.load(sys.stdin)['qubes'] for i in v.get('identities',[])) else 1)"
+    - name: torii -f /etc/torii/machine.yaml sign-in-key {{ q }}
+    - stdin: {{ pillar.torii.authkey }}
+    - onlyif: torii -f /etc/torii/machine.yaml show --json | python3 -c "import json,sys; sys.exit(0 if any(i['hostname']=='{{ q }}' and i['state']=='NeedsLogin' for v in json.load(sys.stdin)['qubes'] for i in v.get('identities',[])) else 1)"
     - require:
-      - cmd: lintel-apply
+      - cmd: torii-apply
 {% endfor %}
 ```
 
@@ -88,16 +88,16 @@ encrypted pillar; the tool stores it only in the proxy qube.
 
 ## What to keep out of other states
 
-On the qubes in a machine's file, lintel owns `netvm`, the `ipv6` feature and
-the `lintel-*` tags and features; on its own qubes (the proxy qubes and its
+On the qubes in a machine's file, torii owns `netvm`, the `ipv6` feature and
+the `torii-*` tags and features; on its own qubes (the proxy qubes and its
 template), everything. Another state that sets these
-would undo `apply`, and `apply` would undo it. `lintel check` lists such
+would undo `apply`, and `apply` would undo it. `torii check` lists such
 drift.
 
 ## Not there yet
 
-- `lintel plan` exits 0 whether or not there are changes; the `unless` above
+- `torii plan` exits 0 whether or not there are changes; the `unless` above
   reads its output instead. An exit code for "changes pending" would be
   cleaner.
-- In `test=True`, Salt shows only that `lintel-apply` would run, not the plan.
-  Run `lintel -f /etc/lintel/machine.yaml plan` to see it.
+- In `test=True`, Salt shows only that `torii-apply` would run, not the plan.
+  Run `torii -f /etc/torii/machine.yaml plan` to see it.

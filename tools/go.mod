@@ -1,5 +1,5 @@
 // Build tools, pinned. Not linked into anything; make builds build/nfpm from here.
-module github.com/Gaia-PBC/lintel-qubes/tools
+module github.com/Gaia-PBC/torii-qubes/tools
 
 go 1.27.3
 

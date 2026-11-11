@@ -59,13 +59,13 @@
    ],
    "template": "fedora-43-xfce"
   },
-  "lintel-probe": {
+  "torii-probe": {
    "autostart": false,
    "features": {},
    "ip": "",
    "klass": "AppVM",
    "label": "gray",
-   "name": "lintel-probe",
+   "name": "torii-probe",
    "netvm": "",
    "provides_network": false,
    "qid": 21,
@@ -77,13 +77,13 @@
    ],
    "template": "fedora-43-xfce"
   },
-  "lintel-probe2": {
+  "torii-probe2": {
    "autostart": false,
    "features": {},
    "ip": "",
    "klass": "AppVM",
    "label": "gray",
-   "name": "lintel-probe2",
+   "name": "torii-probe2",
    "netvm": "",
    "provides_network": false,
    "qid": 22,

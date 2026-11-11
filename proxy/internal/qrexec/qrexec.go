@@ -1,6 +1,6 @@
 // Package qrexec is the program's side of qrexec.
 //
-// Outbound, the workload calls the proxy: lintel.Connect+<arg> arrives at
+// Outbound, the workload calls the proxy: torii.Connect+<arg> arrives at
 // a unix socket the daemon listens on, either directly as a Qubes
 // socket-based service (qrexec-agent writes the header) or through the
 // exec helper (ExecService), which writes the same header from the
@@ -28,7 +28,7 @@ import (
 )
 
 // Service is the service name workloads call.
-const Service = "lintel.Connect"
+const Service = "torii.Connect"
 
 // Header is what precedes the data on the connect socket:
 // "<service>+<arg> <caller>\0". This is the header qrexec-agent sends to
@@ -121,7 +121,7 @@ func dirOf(p string) string {
 	return "."
 }
 
-// ExecService is the body of /etc/qubes-rpc/lintel.Connect when it is a
+// ExecService is the body of /etc/qubes-rpc/torii.Connect when it is a
 // program: it forwards stdin and stdout to the daemon's socket, with the
 // caller and argument qrexec put in the environment.
 func ExecService(socket string, env func(string) string, stdin io.Reader, stdout io.Writer) error {

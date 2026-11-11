@@ -1,6 +1,6 @@
-sys-lintel: set its config dcb5ab81b64f: 2 workloads
-sys-lintel: wait until it has loaded config dcb5ab81b64f
-50-lintel: replace the qrexec policy
-lintel-probe2: set feature vm-config.lintel-client = {"listen":[{"port":1080,"service":"lintel.Connect+socks",...
-personal: set netvm = (none) (was sys-lintel; before lintel: sys-firewall, `qvm-prefs personal netvm sys-firewall` to restore)
-personal: untag lintel-managed (left the file)
+sys-torii: set its config 1809c88586d7: 2 workloads
+sys-torii: wait until it has loaded config 1809c88586d7
+50-torii: replace the qrexec policy
+torii-probe2: set feature vm-config.torii-client = {"listen":[{"port":1080,"service":"torii.Connect+socks","...
+personal: set netvm = (none) (was sys-torii; before torii: sys-firewall, `qvm-prefs personal netvm sys-firewall` to restore)
+personal: untag torii-managed (left the file)

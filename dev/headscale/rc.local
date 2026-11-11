@@ -1,5 +1,5 @@
 #!/bin/sh
-# lintel-headscale: Headscale and its relay for lintel testing.
+# torii-headscale: Headscale and its relay for torii testing.
 # Its clients (the qubes whose netvm this is) reach them at 198.18.0.1.
 ip addr add 198.18.0.1/32 dev lo 2>/dev/null
 # Qubes' input chain rejects what clients send to the netvm itself; let
@@ -8,9 +8,9 @@ nft add rule ip qubes custom-input iifgroup 2 ip daddr 198.18.0.1 tcp dport '{ 8
 nft add rule ip qubes custom-input iifgroup 2 ip daddr 198.18.0.1 udp dport 3478 accept
 # SELinux will not let a service run a binary from /home; run copies.
 install -m 0755 /home/user/hs/headscale /usr/local/bin/headscale
-install -m 0755 /home/user/hs/derper /usr/local/bin/lintel-derper
+install -m 0755 /home/user/hs/derper /usr/local/bin/torii-derper
 systemd-run --quiet --unit=headscale --uid=user /usr/local/bin/headscale serve -c /home/user/hs/config.yaml
 # TLS with its own certificate (Tailscale clients will not use a plain-HTTP
 # relay); derp.yaml pins it by hash. derper.json keeps the relay's key.
-systemd-run --quiet --unit=lintel-derper --uid=user /usr/local/bin/lintel-derper -a :3340 -http-port -1 \
+systemd-run --quiet --unit=torii-derper --uid=user /usr/local/bin/torii-derper -a :3340 -http-port -1 \
   -stun-port 3478 -hostname 198.18.0.1 -certmode manual -certdir /home/user/hs/certs -c /home/user/hs/derper.json

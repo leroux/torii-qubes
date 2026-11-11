@@ -1,10 +1,10 @@
-// Command lintel-proxy is the proxy program of a Qubes proxy qube.
+// Command torii-proxy is the proxy program of a Qubes proxy qube.
 //
-//	lintel-proxy run -config FILE|qubesdb:KEY [-install-rules] [-downstream 'vif*']
-//	lintel-proxy connect-service      # body of /etc/qubes-rpc/lintel.Connect
-//	lintel-proxy status-service       # body of /etc/qubes-rpc/lintel.Status (dom0, read-only)
-//	lintel-proxy status|log|explain   # local queries over the admin socket
-//	lintel-proxy rules                # print the nftables rules
+//	torii-proxy run -config FILE|qubesdb:KEY [-install-rules] [-downstream 'vif*']
+//	torii-proxy connect-service      # body of /etc/qubes-rpc/torii.Connect
+//	torii-proxy status-service       # body of /etc/qubes-rpc/torii.Status (dom0, read-only)
+//	torii-proxy status|log|explain   # local queries over the admin socket
+//	torii-proxy rules                # print the nftables rules
 package main
 
 import (
@@ -20,12 +20,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/admin"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/daemon"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/intercept"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/qrexec"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/qubesdb"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/admin"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/daemon"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/intercept"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/qrexec"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/qubesdb"
 )
 
 func main() {
@@ -58,18 +58,18 @@ func main() {
 		usage()
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "lintel-proxy:", err)
+		fmt.Fprintln(os.Stderr, "torii-proxy:", err)
 		os.Exit(1)
 	}
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: lintel-proxy run|connect-service|status-service|status|log|explain|rules [flags]")
+	fmt.Fprintln(os.Stderr, "usage: torii-proxy run|connect-service|status-service|status|log|explain|rules [flags]")
 	os.Exit(2)
 }
 
 // loadConfig reads a file, or the per-qube features dom0 set
-// ("qubesdb:lintel": /vm-config/lintel and its parts, see internal/qubesdb).
+// ("qubesdb:torii": /vm-config/torii and its parts, see internal/qubesdb).
 func loadConfig(src string) (*config.Config, error) {
 	if key, ok := strings.CutPrefix(src, "qubesdb:"); ok {
 		raw, err := qubesdb.Config(qubesdb.Read, key)
@@ -83,7 +83,7 @@ func loadConfig(src string) (*config.Config, error) {
 
 func run(args []string) error {
 	fs := flag.NewFlagSet("run", flag.ExitOnError)
-	src := fs.String("config", "qubesdb:lintel", "config file, or qubesdb:KEY")
+	src := fs.String("config", "qubesdb:torii", "config file, or qubesdb:KEY")
 	install := fs.Bool("install-rules", false, "apply nftables rules and turn forwarding off")
 	down := fs.String("downstream", "vif*", "interface pattern routed workloads arrive on")
 	verbose := fs.Bool("v", false, "log tsnet")
@@ -131,7 +131,7 @@ func run(args []string) error {
 		if err != nil {
 			return err
 		}
-		log.Printf("lintel-proxy %s: %d workloads, config %s", cfg.ProxyQube, len(cfg.Workloads), cfg.Version)
+		log.Printf("torii-proxy %s: %d workloads, config %s", cfg.ProxyQube, len(cfg.Workloads), cfg.Version)
 		next := waitForNewConfig(ctx, *src, cfg.Version, changed)
 		// Identities keep their state on disk, so a restart reconnects
 		// them without new sign-ins; open connections end.

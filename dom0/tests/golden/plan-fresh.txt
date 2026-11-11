@@ -1,25 +1,25 @@
 fedora-44-minimal: download the base template (qvm-template install)
-lintel-fedora-44-minimal: create the proxy template, a clone of fedora-44-minimal
-lintel-fedora-44-minimal: install the proxy package 0.1.0-test
-sys-lintel: create the proxy qube (template lintel-fedora-44-minimal, netvm sys-firewall, provides network)
-sys-lintel: turn Qubes' IPv6 off for it and its clients
-sys-lintel: set netvm = sys-firewall
-sys-lintel: set provides_network = True
-sys-lintel: set autostart = True
-sys-lintel: enable service lintel-proxy
-sys-lintel: set its config 88c8d0955fc8: 3 workloads
-sys-lintel: start it and wait until it runs config 88c8d0955fc8
-50-lintel: write the qrexec policy
-59-lintel-deny: write the shared qrexec denies
-lintel-probe: tag lintel-managed
-lintel-probe: set feature lintel-prior-netvm = none
-lintel-probe: set feature lintel-adopted = 2026-11-10
-lintel-probe2: tag lintel-managed
-lintel-probe2: set feature lintel-prior-netvm = none
-lintel-probe2: set feature lintel-adopted = 2026-11-10
-lintel-probe2: enable service lintel-client
-lintel-probe2: set feature vm-config.lintel-client = {"listen":[{"port":1080,"service":"lintel.Connect+socks",...
-personal: set netvm = sys-lintel (was sys-firewall)
-personal: tag lintel-managed
-personal: set feature lintel-prior-netvm = sys-firewall
-personal: set feature lintel-adopted = 2026-11-10
+torii-fedora-44-minimal: create the proxy template, a clone of fedora-44-minimal
+torii-fedora-44-minimal: install the proxy package 0.1.0-test
+sys-torii: create the proxy qube (template torii-fedora-44-minimal, netvm sys-firewall, provides network)
+sys-torii: turn Qubes' IPv6 off for it and its clients
+sys-torii: set netvm = sys-firewall
+sys-torii: set provides_network = True
+sys-torii: set autostart = True
+sys-torii: enable service torii-proxy
+sys-torii: set its config 97c76f17187a: 3 workloads
+sys-torii: start it and wait until it runs config 97c76f17187a
+50-torii: write the qrexec policy
+59-torii-deny: write the shared qrexec denies
+personal: set netvm = sys-torii (was sys-firewall)
+personal: tag torii-managed
+personal: set feature torii-prior-netvm = sys-firewall
+personal: set feature torii-adopted = 2026-11-10
+torii-probe: tag torii-managed
+torii-probe: set feature torii-prior-netvm = none
+torii-probe: set feature torii-adopted = 2026-11-10
+torii-probe2: tag torii-managed
+torii-probe2: set feature torii-prior-netvm = none
+torii-probe2: set feature torii-adopted = 2026-11-10
+torii-probe2: enable service torii-client
+torii-probe2: set feature vm-config.torii-client = {"listen":[{"port":1080,"service":"torii.Connect+socks","...

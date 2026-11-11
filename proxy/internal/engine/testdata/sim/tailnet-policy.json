@@ -1,9 +1,9 @@
 {
  "tagOwners": {
-  "tag:lintel-peer": [
+  "tag:torii-peer": [
    "autogroup:admin"
   ],
-  "tag:lintel-exit": [
+  "tag:torii-exit": [
    "autogroup:admin"
   ],
   "tag:notes": [
@@ -12,13 +12,13 @@
   "tag:chat": [
    "autogroup:admin"
   ],
-  "tag:m1-lintel-svc": [
+  "tag:m1-torii-svc": [
    "autogroup:admin"
   ],
-  "tag:m1-lintel-job": [
+  "tag:m1-torii-job": [
    "autogroup:admin"
   ],
-  "tag:m1-lintel-routed": [
+  "tag:m1-torii-routed": [
    "autogroup:admin"
   ],
   "tag:m1": [
@@ -28,10 +28,10 @@
  "grants": [
   {
    "src": [
-    "tag:lintel-peer"
+    "tag:torii-peer"
    ],
    "dst": [
-    "tag:m1-lintel-svc"
+    "tag:m1-torii-svc"
    ],
    "ip": [
     "tcp:80"
@@ -39,10 +39,10 @@
   },
   {
    "src": [
-    "tag:lintel-peer"
+    "tag:torii-peer"
    ],
    "dst": [
-    "tag:m1-lintel-routed"
+    "tag:m1-torii-routed"
    ],
    "ip": [
     "tcp:8000"
@@ -50,11 +50,11 @@
   },
   {
    "src": [
-    "tag:m1-lintel-job",
-    "tag:m1-lintel-routed"
+    "tag:m1-torii-job",
+    "tag:m1-torii-routed"
    ],
    "dst": [
-    "tag:lintel-peer"
+    "tag:torii-peer"
    ],
    "ip": [
     "tcp:7000",
@@ -63,8 +63,8 @@
   },
   {
    "src": [
-    "tag:m1-lintel-job",
-    "tag:m1-lintel-routed"
+    "tag:m1-torii-job",
+    "tag:m1-torii-routed"
    ],
    "dst": [
     "autogroup:internet"
@@ -76,7 +76,7 @@
   {
    "src": [
     "autogroup:member",
-    "tag:lintel-peer"
+    "tag:torii-peer"
    ],
    "dst": [
     "tag:notes"
@@ -89,7 +89,7 @@
   {
    "src": [
     "autogroup:member",
-    "tag:lintel-peer"
+    "tag:torii-peer"
    ],
    "dst": [
     "tag:chat"
@@ -100,7 +100,7 @@
   },
   {
    "src": [
-    "tag:m1-lintel-job"
+    "tag:m1-torii-job"
    ],
    "dst": [
     "tag:notes"
@@ -112,7 +112,7 @@
   },
   {
    "src": [
-    "tag:m1-lintel-job"
+    "tag:m1-torii-job"
    ],
    "dst": [
     "tag:chat"

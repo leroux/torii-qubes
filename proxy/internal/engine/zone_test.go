@@ -7,8 +7,8 @@ import (
 
 	"golang.org/x/net/dns/dnsmessage"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/policy"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
 )
 
 // A public name that resolves to the LAN is not dialled there: job's

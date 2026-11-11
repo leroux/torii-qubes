@@ -1,5 +1,5 @@
 // Package qubesdb reads the proxy's config from the per-qube features dom0
-// sets (vm-config.lintel*), as QubesDB shows them inside the qube under
+// sets (vm-config.torii*), as QubesDB shows them inside the qube under
 // /vm-config/, and watches them for changes.
 //
 // QubesDB refuses values of 3072 bytes or more, so dom0 stores the config

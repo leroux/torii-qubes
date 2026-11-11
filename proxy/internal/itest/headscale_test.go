@@ -26,10 +26,10 @@ import (
 	"tailscale.com/tstest/integration"
 	"tailscale.com/types/logger"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/engine"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/tailnet"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/engine"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/tailnet"
 )
 
 // The grants under test, as a small team would write them.

@@ -1,16 +1,16 @@
-# lintel: build the binaries, the packages, and run the tests.
+# torii: build the binaries, the packages, and run the tests.
 #
 #   make            the three packages in build/ (needs go >= 1.21; it fetches
 #                   the toolchain in proxy/go.mod and nfpm pinned in tools/go.mod)
 #   make test       unit tests, Go and Python
 #   make test-all   every level that can run here (see proxy/README.md)
 #
-# Install: copy build/lintel-dom0-*.noarch.rpm to dom0 and
-#   sudo dnf install ./lintel-dom0-*.noarch.rpm      (see README.md)
+# Install: copy build/torii-dom0-*.noarch.rpm to dom0 and
+#   sudo dnf install ./torii-dom0-*.noarch.rpm      (see README.md)
 
 VERSION ?= $(shell cat VERSION).$(shell git rev-list --count HEAD 2>/dev/null || echo 0)
 NFPM    ?= $(CURDIR)/build/nfpm
-export LINTEL_VERSION := $(VERSION)
+export TORII_VERSION := $(VERSION)
 GOFLAGS := -trimpath -ldflags=-s
 
 .PHONY: all binaries packages test test-go test-py test-all clean
@@ -19,8 +19,8 @@ all: packages
 
 binaries:
 	mkdir -p build
-	cd proxy && CGO_ENABLED=0 go build $(GOFLAGS) -o ../build/lintel-proxy ./cmd/lintel-proxy
-	cd proxy && CGO_ENABLED=0 go build $(GOFLAGS) -o ../build/lintel-client ./cmd/lintel-client
+	cd proxy && CGO_ENABLED=0 go build $(GOFLAGS) -o ../build/torii-proxy ./cmd/torii-proxy
+	cd proxy && CGO_ENABLED=0 go build $(GOFLAGS) -o ../build/torii-client ./cmd/torii-client
 
 # nfpm at the version in tools/go.mod. Override with NFPM=/path/to/nfpm.
 build/nfpm: tools/go.mod tools/go.sum
@@ -29,16 +29,16 @@ build/nfpm: tools/go.mod tools/go.sum
 
 packages: binaries $(if $(filter $(CURDIR)/build/nfpm,$(NFPM)),build/nfpm)
 	rm -rf build/bundle build/python build/*.rpm && mkdir -p build/bundle build/python
-	cd packaging/proxy  && $(NFPM) pkg -p deb -t ../../build/bundle/lintel-proxy.deb
-	cd packaging/proxy  && $(NFPM) pkg -p rpm -t ../../build/bundle/lintel-proxy.rpm
-	cd packaging/client && $(NFPM) pkg -p deb -t ../../build/bundle/lintel-client.deb
-	cd packaging/client && $(NFPM) pkg -p rpm -t ../../build/bundle/lintel-client.rpm
+	cd packaging/proxy  && $(NFPM) pkg -p deb -t ../../build/bundle/torii-proxy.deb
+	cd packaging/proxy  && $(NFPM) pkg -p rpm -t ../../build/bundle/torii-proxy.rpm
+	cd packaging/client && $(NFPM) pkg -p deb -t ../../build/bundle/torii-client.deb
+	cd packaging/client && $(NFPM) pkg -p rpm -t ../../build/bundle/torii-client.rpm
 	# The bundle's version carries a hash of the template packages, so a
 	# rebuilt package is installed by the next apply even when the version
 	# number did not change (an uncommitted build).
-	echo "$(VERSION)+$$(cat build/bundle/lintel-proxy.deb build/bundle/lintel-proxy.rpm | sha256sum | cut -c1-12)" > build/bundle/VERSION
-	cp -r dom0/lintel build/python/ && find build/python -name __pycache__ -prune -exec rm -rf {} +
-	sed -i 's/^__version__ = .*/__version__ = "$(VERSION)"/' build/python/lintel/__init__.py
+	echo "$(VERSION)+$$(cat build/bundle/torii-proxy.deb build/bundle/torii-proxy.rpm | sha256sum | cut -c1-12)" > build/bundle/VERSION
+	cp -r dom0/torii build/python/ && find build/python -name __pycache__ -prune -exec rm -rf {} +
+	sed -i 's/^__version__ = .*/__version__ = "$(VERSION)"/' build/python/torii/__init__.py
 	cd packaging/dom0   && $(NFPM) pkg -p rpm -t ../../build/
 	@ls -1 build/*.rpm build/bundle/
 
@@ -48,7 +48,7 @@ test-go:
 	cd proxy && go vet ./... && go test -short ./...
 
 test-py:
-	cd dom0 && python3 -m unittest tests.test_lintel
+	cd dom0 && python3 -m unittest tests.test_torii
 
 test-all: test-py
 	cd proxy && $(MAKE) test-all

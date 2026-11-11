@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/policy"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
 )
 
 // job3's tailnet_allow names store: store by any of its names or addresses,

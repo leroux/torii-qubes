@@ -1,4 +1,4 @@
-# Headscale for lintel testing, in lintel-headscale. Devices behind this
+# Headscale for torii testing, in torii-headscale. Devices behind this
 # qube (its clients) reach it at 198.18.0.1.
 server_url: http://198.18.0.1:8080
 listen_addr: 198.18.0.1:8080
@@ -27,7 +27,7 @@ policy:
   path: /home/user/hs/policy.hujson
 dns:
   magic_dns: true
-  base_domain: hs.lintel.test
+  base_domain: hs.torii.test
   override_local_dns: false
   nameservers:
     global: []

@@ -1,0 +1,16 @@
+[Unit]
+Description=torii client (loopback ports into this qube's proxy qube over qrexec)
+# Enabled per qube by dom0: qvm-service <qube> torii-client on
+ConditionPathExists=/run/qubes-service/torii-client
+After=qubes-db.service qubes-qrexec-agent.service
+Wants=qubes-db.service
+
+[Service]
+User=user
+ExecStart=/usr/lib/torii/torii-client
+# It exits when its config changes and starts again on the new one.
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

@@ -4,9 +4,9 @@
 
 - **Per-qube firewalling, Little Snitch-style.** An `ask` verdict
   (`outbound.internet: ask`): the engine holds a TCP connection while dom0,
-  or a GUI qube, asks through a `lintel.Ask` qrexec call (never a prompt in
+  or a GUI qube, asks through a `torii.Ask` qrexec call (never a prompt in
   the proxy qube); UDP and QUIC decided when the name is resolved. "Always"
-  answers become learned rules in the proxy, which `lintel rules` offers to
+  answers become learned rules in the proxy, which `torii rules` offers to
   write into the file. Rules attach to the qube (or a proxy's `unlisted:`),
   never to an identity or an egress.
 - **Shared tailnet identities**, explicit (`identities:`) and for listed
@@ -21,13 +21,13 @@
   transparent: programs must use the proxy or a forward. The proxy program
   already supports it (a qrexec workload whose qube has a network card);
   the machine file has no way to say it. Until then, the transparent way is
-  a proxy in front of that netvm: `proxies: [{name: sys-lintel-vpn, netvm: sys-vpn}]`
-  and `network: proxy` with `proxy: sys-lintel-vpn`.
+  a proxy in front of that netvm: `proxies: [{name: sys-torii-vpn, netvm: sys-vpn}]`
+  and `network: proxy` with `proxy: sys-torii-vpn`.
 - **Services as real Tailscale Services** (`svc:chat`): today each service
   is its own tsnet device; the file would not change.
-- `lintel check` lists tailnet devices left behind by qubes and services that
+- `torii check` lists tailnet devices left behind by qubes and services that
   left the file.
-- `lintel sign-in-key` restarts only the identity it concerns, not the whole
+- `torii sign-in-key` restarts only the identity it concerns, not the whole
   proxy.
 - Measurements: memory per identity (throughput and load are in `docs/performance.md`).
 - A GUI: a read-only Connectivity window and a tray widget first.
@@ -35,7 +35,7 @@
 ## Not yet tried on a real machine
 
 - Egresses on a real tailnet: TSMP ping health, failover and failback with
-  real exit nodes, an unlisted disposable through `sys-lintel-dvm` (the
+  real exit nodes, an unlisted disposable through `sys-torii-dvm` (the
   in-process tailnet test, `internal/itest`, skips on a Qubes qube).
 - `identity: login`, dedicated proxies (`proxies:`, `proxy: <name>`),
   `network: default` and `network: <netvm>`, `local-inbound`, adoption

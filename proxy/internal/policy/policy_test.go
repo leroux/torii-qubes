@@ -4,13 +4,13 @@ import (
 	"net/netip"
 	"testing"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/config"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
 )
 
 func testConfig(t *testing.T) *config.Config {
 	t.Helper()
 	c, err := config.Parse([]byte(`{
-	  "proxy_qube": "sys-lintel", "state_dir": "/s",
+	  "proxy_qube": "sys-torii", "state_dir": "/s",
 	  "workloads": {
 	    "airgap":  {"link": "qrexec", "identity": {"tags": ["tag:server"]}, "inbound": [{"port": 443}, {"port": 8443, "target": 443}]},
 	    "job":     {"link": "qrexec", "identity": {"tags": ["tag:job"]}, "tailnet_outbound": true, "socks": true,
@@ -20,7 +20,7 @@ func testConfig(t *testing.T) *config.Config {
 	    "web":     {"link": "routed", "address": "10.137.0.21", "internet": "full"},
 	    "work":    {"link": "routed", "address": "10.137.0.22", "identity": {"login": true}, "tailnet_outbound": true, "internet": "full", "egress": "vpn"},
 	    "shop":    {"link": "routed", "address": "10.137.0.23", "internet": "full", "egress": "vpn"},
-	    "sys-lintel": {"link": "none", "internet": "full", "socks": true}
+	    "sys-torii": {"link": "none", "internet": "full", "socks": true}
 	  },
 	  "egresses": {"vpn": {"hostname": "m1-egress-vpn", "tags": ["tag:m1-egress"], "exits": ["exit-1", "exit-2"]}},
 	  "unlisted": {"internet": "allowlist", "internet_allow": ["example.com"], "egress": "vpn"}}`))
@@ -60,8 +60,8 @@ func TestDecideOutbound(t *testing.T) {
 		{"loopback forbidden", Outbound{Workload: "web", Entry: EntryIntercept, Addr: ip("127.0.0.1"), Port: 22}, Refuse, ReasonForbiddenAddress, ""},
 		{"qubes dns forbidden as tcp dest", Outbound{Workload: "web", Entry: EntryIntercept, Addr: ip("10.139.1.1"), Port: 53}, Refuse, ReasonForbiddenAddress, ""},
 		{"exit node path", Outbound{Workload: "work", Entry: EntryIntercept, Addr: ip("93.184.216.34"), Port: 443}, Allow, ReasonInternetFull, PathExit},
-		{"the proxy qube's own socks", Outbound{Workload: "sys-lintel", Entry: EntrySOCKS, Host: "example.com"}, Allow, ReasonInternetFull, PathInternet},
-		{"the proxy qube is never intercepted", Outbound{Workload: "sys-lintel", Entry: EntryIntercept, Addr: ip("1.1.1.1")}, Refuse, ReasonWrongEntry, ""},
+		{"the proxy qube's own socks", Outbound{Workload: "sys-torii", Entry: EntrySOCKS, Host: "example.com"}, Allow, ReasonInternetFull, PathInternet},
+		{"the proxy qube is never intercepted", Outbound{Workload: "sys-torii", Entry: EntryIntercept, Addr: ip("1.1.1.1")}, Refuse, ReasonWrongEntry, ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -1,8 +1,8 @@
 {
   "version": "example-1",
-  "proxy_qube": "sys-lintel",
-  "state_dir": "/rw/lintel/state",
-  "log_dir": "/rw/lintel/log",
+  "proxy_qube": "sys-torii",
+  "state_dir": "/rw/torii/state",
+  "log_dir": "/rw/torii/log",
   "workloads": {
     "infra": {
       "link": "qrexec",

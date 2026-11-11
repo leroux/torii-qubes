@@ -37,9 +37,9 @@ import (
 //     intercept port is accepted too, not dropped: the engine refuses
 //     it as the proxy qube's own address, and logs it.
 func Rules(downstream string, tcpPort, dnsPort, udpPort uint16) string {
-	return fmt.Sprintf(`table inet lintel
-delete table inet lintel
-table inet lintel {
+	return fmt.Sprintf(`table inet torii
+delete table inet torii
+table inet torii {
 	chain prerouting {
 		type nat hook prerouting priority dstnat - 10; policy accept;
 		iifname %[1]q udp dport 53 redirect to :%[3]d
@@ -331,7 +331,7 @@ func (r *reply) Close() error        { return r.c.Close() }
 const ip6tSOOriginalDst = 80
 
 // QubesComment marks the rules this program adds to Qubes' own tables.
-const QubesComment = "lintel"
+const QubesComment = "torii"
 
 // QubesInputRules are the accepts a Qubes netvm needs: its own input chain
 // (table ip qubes, chain input) rejects whatever arrives from downstream

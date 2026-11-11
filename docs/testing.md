@@ -1,4 +1,4 @@
-# How lintel is tested
+# How torii is tested
 
 `make test` runs everything below except the root-only and Headscale levels,
 in seconds, with no Qubes machine and no tailnet account.

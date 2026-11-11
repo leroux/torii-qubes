@@ -1,7 +1,7 @@
 {
  "egresses": {
   "vpn": {
-   "auth_key_file": "/rw/lintel/keys/egress-vpn",
+   "auth_key_file": "/rw/torii/keys/egress-vpn",
    "exits": [
     "exit1",
     "exit2"
@@ -14,17 +14,28 @@
    ]
   }
  },
- "log_dir": "/rw/lintel/log",
- "proxy_qube": "sys-lintel",
- "state_dir": "/rw/lintel/state",
+ "log_dir": "/rw/torii/log",
+ "proxy_qube": "sys-torii",
+ "state_dir": "/rw/torii/state",
  "version": "v1",
  "workloads": {
-  "lintel-probe": {
+  "personal": {
+   "address": "10.137.0.15",
+   "egress": "vpn",
    "identity": {
-    "auth_key_file": "/rw/lintel/keys/lintel-probe",
-    "hostname": "m1-lintel-probe",
+    "auth_key_file": "/rw/torii/keys/personal",
+    "hostname": "m1-personal",
+    "login": true
+   },
+   "internet": "full",
+   "link": "routed"
+  },
+  "torii-probe": {
+   "identity": {
+    "auth_key_file": "/rw/torii/keys/torii-probe",
+    "hostname": "m1-torii-probe",
     "tags": [
-     "tag:m1-lintel-test",
+     "tag:m1-torii-test",
      "tag:m1"
     ]
    },
@@ -39,7 +50,7 @@
    ],
    "link": "qrexec"
   },
-  "lintel-probe2": {
+  "torii-probe2": {
    "forwards": [
     {
      "name": "db",
@@ -48,10 +59,10 @@
    ],
    "http": true,
    "identity": {
-    "auth_key_file": "/rw/lintel/keys/lintel-probe2",
-    "hostname": "m1-lintel-probe2",
+    "auth_key_file": "/rw/torii/keys/torii-probe2",
+    "hostname": "m1-torii-probe2",
     "tags": [
-     "tag:m1-lintel-job",
+     "tag:m1-torii-job",
      "tag:m1"
     ]
    },
@@ -73,17 +84,6 @@
    "link": "qrexec",
    "socks": true,
    "tailnet_outbound": true
-  },
-  "personal": {
-   "address": "10.137.0.15",
-   "egress": "vpn",
-   "identity": {
-    "auth_key_file": "/rw/lintel/keys/personal",
-    "hostname": "m1-personal",
-    "login": true
-   },
-   "internet": "full",
-   "link": "routed"
   }
  }
 }

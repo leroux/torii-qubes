@@ -15,10 +15,10 @@ import (
 	"golang.org/x/net/dns/dnsmessage"
 	"golang.org/x/net/proxy"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/policy"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/tailnet"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/tailnet"
 )
 
 // udpEcho is a loopback UDP server answering "<tag>:<payload>".
@@ -241,9 +241,9 @@ func TestUDPExitNodeFailsClosed(t *testing.T) {
 }
 
 func TestProxyQubeOwnOutbound(t *testing.T) {
-	cfg, err := config.Parse([]byte(`{"proxy_qube":"sys-lintel","state_dir":"/s","listen":{"local_socks":"127.0.0.1:0"},
+	cfg, err := config.Parse([]byte(`{"proxy_qube":"sys-torii","state_dir":"/s","listen":{"local_socks":"127.0.0.1:0"},
 	  "workloads":{
-	    "sys-lintel": {"link":"none","identity":{"tags":["tag:proxy"]},"tailnet_outbound":true,"socks":true,
+	    "sys-torii": {"link":"none","identity":{"tags":["tag:proxy"]},"tailnet_outbound":true,"socks":true,
 	                "internet":"allowlist","internet_allow":["pypi.org"],
 	                "forwards":[{"name":"db","to":"store:8000","listen":` + fmt.Sprint(freePort(t)) + `}]},
 	    "job": {"link":"qrexec","socks":true,"internet":"full"},
@@ -255,7 +255,7 @@ func TestProxyQubeOwnOutbound(t *testing.T) {
 	inet := newFakeInternet(t)
 	inet.name("pypi.org", "151.101.0.223")
 	inet.serve(t, "151.101.0.223:443", "pypi")
-	eng := New(Deps{Config: cfg, Identities: map[string]tailnet.Identity{"sys-lintel": fn.Node("sys-lintel")},
+	eng := New(Deps{Config: cfg, Identities: map[string]tailnet.Identity{"sys-torii": fn.Node("sys-torii")},
 		Internet: inet, Resolver: inet, Log: &events.Log{}, SNIWait: 100 * time.Millisecond})
 	if err := eng.Start(context.Background()); err != nil {
 		t.Fatal(err)
@@ -287,7 +287,7 @@ func TestProxyQubeOwnOutbound(t *testing.T) {
 	}
 
 	// qrexec calls come only from qrexec workloads, whatever dom0 names.
-	for _, caller := range []string{"sys-lintel", "web", "nobody"} {
+	for _, caller := range []string{"sys-torii", "web", "nobody"} {
 		a, b := net.Pipe()
 		go eng.HandleQrexec(context.Background(), caller, "socks", b)
 		a.SetReadDeadline(time.Now().Add(2 * time.Second))

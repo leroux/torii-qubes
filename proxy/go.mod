@@ -1,4 +1,4 @@
-module github.com/Gaia-PBC/lintel-qubes/proxy
+module github.com/Gaia-PBC/torii-qubes/proxy
 
 go 1.27.3
 

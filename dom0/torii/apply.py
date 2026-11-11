@@ -127,7 +127,7 @@ class Applier:
         if dist not in DEPS:
             dist = "fedora" if "fedora" in dist else "debian"
         ext = "deb" if dist == "debian" else "rpm"
-        pkg = os.path.join(self.bundle_dir, f"lintel-proxy.{ext}")
+        pkg = os.path.join(self.bundle_dir, f"torii-proxy.{ext}")
         with open(pkg, "rb") as f:
             data = f.read()
         was_running = vm.is_running()
@@ -135,14 +135,14 @@ class Applier:
             vm.start()
         try:
             self._root(vm, DEPS[dist], s, "installing the proxy's dependencies")
-            dest = f"/tmp/lintel-proxy.{ext}"
+            dest = f"/tmp/torii-proxy.{ext}"
             self._root(vm, f"cat > {dest}", s, "copying the package in", input=data)
             self._root(vm, INSTALL[dist].format(f=dest), s, "installing the package")
-            self._root(vm, "systemctl enable lintel-guard.service lintel-proxy.service", s, "enabling the services")
+            self._root(vm, "systemctl enable torii-guard.service torii-proxy.service", s, "enabling the services")
         finally:
             vm.shutdown()
             _wait(lambda: vm.is_halted(), 120, s, "the template did not shut down")
-        vm.features["lintel-version"] = s.data["version"]
+        vm.features["torii-version"] = s.data["version"]
 
     def _root(self, vm, cmd: str, s: Step, what: str, input: bytes | None = None) -> str:
         """Run cmd as root in vm. With input, cmd is exec'd and reads it:

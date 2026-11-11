@@ -160,13 +160,13 @@ type Workload struct {
 	Egress string `json:"egress,omitempty"`
 
 	// Forwards are fixed outbound destinations: for qrexec workloads,
-	// called as lintel.Connect+f.<name>; for the proxy qube itself
+	// called as torii.Connect+f.<name>; for the proxy qube itself
 	// (link: none), a loopback port each.
 	Forwards []Forward `json:"forwards,omitempty"`
-	// SOCKS lets a qrexec workload call lintel.Connect+socks, or the
+	// SOCKS lets a qrexec workload call torii.Connect+socks, or the
 	// proxy qube's own programs use Listen.LocalSOCKS.
 	SOCKS bool `json:"socks,omitempty"`
-	// HTTP lets a qrexec workload call lintel.Connect+http: an HTTP proxy
+	// HTTP lets a qrexec workload call torii.Connect+http: an HTTP proxy
 	// (CONNECT, and absolute-form requests for plain http://).
 	HTTP bool `json:"http,omitempty"`
 }
@@ -216,8 +216,8 @@ const (
 	DefaultDNS        = "0.0.0.0:15053"
 	DefaultUDP        = "0.0.0.0:15002"
 	DefaultLocalSOCKS = "127.0.0.1:1080"
-	DefaultConnect    = "/run/lintel/connect.sock"
-	DefaultAdmin      = "/run/lintel/admin.sock"
+	DefaultConnect    = "/run/torii/connect.sock"
+	DefaultAdmin      = "/run/torii/admin.sock"
 	DefaultExitDNS    = "1.1.1.1:53"
 )
 

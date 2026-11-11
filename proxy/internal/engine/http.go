@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/policy"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
 )
 
-// handleHTTP serves lintel.Connect+http: an HTTP proxy, what most tools
+// handleHTTP serves torii.Connect+http: an HTTP proxy, what most tools
 // use through HTTPS_PROXY and HTTP_PROXY.
 //
 // CONNECT host:port is decided like a SOCKS request by name, then carried
@@ -58,7 +58,7 @@ func (e *Engine) httpConnect(ctx context.Context, workload string, c net.Conn, b
 		if d.Verdict == policy.Allow {
 			httpError(c, http.StatusBadGateway, "unreachable")
 		} else {
-			httpError(c, http.StatusForbidden, "refused by lintel: "+string(d.Reason))
+			httpError(c, http.StatusForbidden, "refused by torii: "+string(d.Reason))
 		}
 		return
 	}
@@ -99,7 +99,7 @@ func (e *Engine) httpForward(ctx context.Context, workload string, c net.Conn, b
 		if d.Verdict == policy.Allow {
 			httpError(c, http.StatusBadGateway, "unreachable")
 		} else {
-			httpError(c, http.StatusForbidden, "refused by lintel: "+string(d.Reason))
+			httpError(c, http.StatusForbidden, "refused by torii: "+string(d.Reason))
 		}
 		return
 	}

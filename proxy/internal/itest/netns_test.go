@@ -7,7 +7,7 @@ package itest
 // inside the proxy process (WireGuard is covered by the other tests).
 //
 // Needs root, ip and nft. The test binary re-executes itself in each
-// namespace in a helper role chosen by LINTEL_HELPER.
+// namespace in a helper role chosen by TORII_HELPER.
 
 import (
 	"bufio"
@@ -28,17 +28,17 @@ import (
 
 	"golang.org/x/net/dns/dnsmessage"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/admin"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/daemon"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/engine"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/policy"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/tailnet"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/admin"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/daemon"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/engine"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/tailnet"
 )
 
 func TestMain(m *testing.M) {
-	switch os.Getenv("LINTEL_HELPER") {
+	switch os.Getenv("TORII_HELPER") {
 	case "":
 		os.Exit(m.Run())
 	case "server":
@@ -276,7 +276,7 @@ func (e *nsEnv) in(ns string, args ...string) {
 func (e *nsEnv) start(ns, role string, env ...string) string {
 	e.t.Helper()
 	cmd := exec.Command("ip", "netns", "exec", e.ns(ns), e.self)
-	cmd.Env = append(os.Environ(), append([]string{"LINTEL_HELPER=" + role}, env...)...)
+	cmd.Env = append(os.Environ(), append([]string{"TORII_HELPER=" + role}, env...)...)
 	out, _ := cmd.StdoutPipe()
 	cmd.Stderr = os.Stderr
 	if err := cmd.Start(); err != nil {
@@ -294,7 +294,7 @@ func (e *nsEnv) start(ns, role string, env ...string) string {
 func (e *nsEnv) client(ns string, env ...string) string {
 	e.t.Helper()
 	cmd := exec.Command("ip", "netns", "exec", e.ns(ns), e.self)
-	cmd.Env = append(os.Environ(), append([]string{"LINTEL_HELPER=client"}, env...)...)
+	cmd.Env = append(os.Environ(), append([]string{"TORII_HELPER=client"}, env...)...)
 	out, _ := cmd.CombinedOutput()
 	return strings.TrimSpace(string(out))
 }
@@ -368,7 +368,7 @@ func TestNetnsFakeQubes(t *testing.T) {
 	cfgPath := filepath.Join(e.dir, "config.json")
 	adminSock := filepath.Join(e.dir, "admin.sock")
 	cfg := map[string]any{
-		"version": "netns", "proxy_qube": "sys-lintel", "state_dir": e.dir,
+		"version": "netns", "proxy_qube": "sys-torii", "state_dir": e.dir,
 		"listen": map[string]string{"admin": adminSock, "connect": filepath.Join(e.dir, "connect.sock")},
 		"workloads": map[string]any{
 			"browser": map[string]any{"link": "routed", "address": "10.137.1.20", "identity": map[string]any{"tags": []string{"tag:browser"}},

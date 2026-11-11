@@ -2,26 +2,26 @@
 # path, run through the real proxy engine with a fake tailnet, internet, LAN
 # and qubes. Grants: tailnet-policy.json next to this file.
 machine: m1
-proxy: sys-lintel
+proxy: sys-torii
 egress:
-  peer: { exits: [lintel-peer] }
+  peer: { exits: [torii-peer] }
 defaults:
   network: none
 qubes:
-  lintel-svc:              # no network card, a service: 80 -> its 8080 (granted), 81 (declared, not granted)
-    tailnet: { identity: tagged, tags: [lintel-svc], inbound: [{port: 80, target: 8080}, 81] }
-  lintel-job:              # no network card, a job: listed internet names, only notes on the tailnet, a forward
+  torii-svc:              # no network card, a service: 80 -> its 8080 (granted), 81 (declared, not granted)
+    tailnet: { identity: tagged, tags: [torii-svc], inbound: [{port: 80, target: 8080}, 81] }
+  torii-job:              # no network card, a job: listed internet names, only notes on the tailnet, a forward
     outbound: { internet: [example.com, pypi.org], tailnet: [notes] }
-    tailnet: { identity: tagged, tags: [lintel-job] }
-    forwards: { peer: { to: "lintel-peer:7000", port: 7000 } }
-  lintel-job2:             # no network card, all of the internet
+    tailnet: { identity: tagged, tags: [torii-job] }
+    forwards: { peer: { to: "torii-peer:7000", port: 7000 } }
+  torii-job2:             # no network card, all of the internet
     outbound: { internet: all }
-  lintel-routed:           # routed: one name, the tailnet, internet through egress peer, 8000 in
+  torii-routed:           # routed: one name, the tailnet, internet through egress peer, 8000 in
     network: proxy
     egress: peer
     outbound: { internet: [example.com], tailnet: yes }
-    tailnet: { identity: tagged, tags: [lintel-routed], inbound: [8000] }
-  lintel-routed2:          # routed: one name and one LAN host, no identity
+    tailnet: { identity: tagged, tags: [torii-routed], inbound: [8000] }
+  torii-routed2:          # routed: one name and one LAN host, no identity
     network: proxy
     outbound: { internet: [example.com], lan: [192.168.1.254:80] }
   infra:             # no network card; hosts the services

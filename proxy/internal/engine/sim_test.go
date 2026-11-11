@@ -37,19 +37,19 @@ import (
 	"golang.org/x/net/dns/dnsmessage"
 	"golang.org/x/net/proxy"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/policy"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/tailnet"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/tailnet"
 )
 
 const (
-	simPeer    = "lintel-peer"
+	simPeer    = "torii-peer"
 	simProxyIP = "10.137.0.30"
 	simSuffix  = "fake.ts.net"
 )
 
-var simPeerTags = []string{"tag:lintel-peer", "tag:lintel-exit"}
+var simPeerTags = []string{"tag:torii-peer", "tag:torii-exit"}
 
 type simPolicy struct {
 	Grants []struct {
@@ -93,7 +93,7 @@ func simConfig(t *testing.T) *config.Config {
 	}
 	script := `import json, sys
 sys.path.insert(0, "../../../dom0")
-from lintel import machine, derive
+from torii import machine, derive
 m = machine.load("testdata/sim/machine.yaml")
 addrs, n = {}, 20
 for name, q in sorted(m.qubes.items()):

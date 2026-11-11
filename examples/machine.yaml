@@ -1,20 +1,20 @@
-# lintel machine file: one per machine, in dom0 at ~/lintel.yaml.
-# `lintel plan` shows every change, `lintel apply` makes them,
-# `lintel show` reads back what each qube can reach, `lintel check` reports drift.
+# torii machine file: one per machine, in dom0 at ~/torii.yaml.
+# `torii plan` shows every change, `torii apply` makes them,
+# `torii show` reads back what each qube can reach, `torii check` reports drift.
 
 machine: m1               # this machine's name: prefixes its tags (server -> tag:m1-server)
                           # and its qubes' device names (job-1 -> m1-job-1); every tagged
                           # device also carries tag:m1
-# lintel only changes the qubes listed under qubes:. The first apply that lists one
-# records its netvm (feature lintel-prior-netvm); a qube leaving the file gets no netvm.
+# torii only changes the qubes listed under qubes:. The first apply that lists one
+# records its netvm (feature torii-prior-netvm); a qube leaving the file gets no netvm.
 
-proxy: sys-lintel          # the proxy qube the tool creates: tailnet identities and outbound relay
-# proxy: { name: sys-lintel, netvm: sys-firewall, label: orange,
+proxy: sys-torii          # the proxy qube the tool creates: tailnet identities and outbound relay
+# proxy: { name: sys-torii, netvm: sys-firewall, label: orange,
 #          unlisted: refuse }  # qubes attached to it but not listed below: refuse (default),
 #                              # or e.g. { internet: all, egress: vpn }
 # proxies:                # dedicated proxies, chosen per qube with `proxy: <name>`
-#   - { name: sys-lintel-admin }
-# template: lintel-fedora-44-minimal  # the tool's own template (lintel-<base>), cloned from:
+#   - { name: sys-torii-admin }
+# template: torii-fedora-44-minimal  # the tool's own template (torii-<base>), cloned from:
 # base-template: fedora-44-minimal
 
 # Ways out through tailnet exit nodes. A qube with `egress: vpn` sends its internet and
@@ -29,7 +29,7 @@ egress:
 
 tailnet:
   # control-url: https://headscale.example.org   # empty: Tailscale
-  tag-owners: [autogroup:admin]                  # for `lintel grants`
+  tag-owners: [autogroup:admin]                  # for `torii grants`
 
 defaults:                 # for every qube in the file unless it says otherwise
   network: none           # required, here or per qube. none: no network card, qrexec only

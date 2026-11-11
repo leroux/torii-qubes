@@ -1,6 +1,6 @@
 # Design
 
-Why lintel is built the way it is. For using it, start with the
+Why torii is built the way it is. For using it, start with the
 [README](../README.md).
 
 ## The problem
@@ -69,7 +69,7 @@ on the tailnet a qube may go. A port must be allowed by both.
 
 ### One shared proxy qube, with one identity per workload
 
-A proxy qube, `sys-lintel` by default, holds the identities of every workload
+A proxy qube, `sys-torii` by default, holds the identities of every workload
 on the machine and carries their traffic. This is the shape of Istio's
 ambient mode: one connection-level proxy per node holding that node's
 workload identities. Workloads that need stronger separation get a dedicated
@@ -99,7 +99,7 @@ qube of their own. Leave that qube out of the file, or give it
 
 Every qrexec call goes the same way as the connection it carries. For
 inbound, the proxy qube calls `qubes.ConnectTCP` into the workload, on listed
-ports only. For outbound, the workload calls `lintel.Connect` in the proxy
+ports only. For outbound, the workload calls `torii.Connect` in the proxy
 qube. dom0's policy allows each call by name and port, and names the caller,
 so the proxy knows which workload is asking.
 
@@ -142,7 +142,7 @@ egress's, chosen per connection by the zone of the address dialled.
 
 An egress identity is internet-only, held on both sides: the proxy never
 sends tailnet destinations through it (they are a zone of their own,
-dialled only on the workload's identity), and `lintel grants` proposes only
+dialled only on the workload's identity), and `torii grants` proposes only
 `autogroup:internet` for its tag. Sharing a *path* is harmless, since everyone
 behind one exit node shares its address anyway. Sharing tailnet
 *authorisation* is how compartments merge, so egresses don't do it.
@@ -185,19 +185,19 @@ way is a proxy of their own, so the main proxy can stay `refuse`.
 
 ### Configuration in features, status over one read-only service
 
-dom0 writes each proxy qube's config as Qubes features (`vm-config.lintel*`),
+dom0 writes each proxy qube's config as Qubes features (`vm-config.torii*`),
 which the qube can read through QubesDB but not change. QubesDB caps a value
 under 3 KB, so the JSON is compressed and split, with a hash to detect
 partial writes. A half-written or invalid config never replaces the running
 one. Status and the decision log come back to dom0 through one qrexec
-service, `lintel.Status`.
+service, `torii.Status`.
 
 ### Packages travel inside the dom0 RPM
 
 The dom0 package carries the proxy and client packages as `.deb` and
 `.rpm`. On first run the tool clones a minimal template into its own, copies
 the package in and installs it, so no template needs a repository for
-lintel. Each identity's Tailscale state lives in the proxy qube's private
+torii. Each identity's Tailscale state lives in the proxy qube's private
 volume. A rebuilt machine gets new identities and new sign-ins rather than
 restored keys.
 
@@ -217,7 +217,7 @@ golden-tested without a Qubes machine ([`testing.md`](testing.md)).
   calls at all.
 - **The proxy qube** holds every identity on it and sees the traffic it
   relays, as any netvm does, so treat it like one. From there it can call
-  into workloads only on their declared inbound ports. lintel's policy
+  into workloads only on their declared inbound ports. torii's policy
   gives it no calls into dom0: dom0 reads its status, and hands it its config
   as features. Put sensitive workloads on a dedicated proxy to keep them
   apart.
@@ -231,5 +231,5 @@ golden-tested without a Qubes machine ([`testing.md`](testing.md)).
 | [Tailscale Kubernetes operator](https://tailscale.com/kb/1236/kubernetes-operator) | The closest model: declarations become tailnet ingress and egress proxies, shared or dedicated. Qubes is the cluster and dom0 the control plane |
 | [TSDProxy](https://almeidapaulopt.github.io/tsdproxy/docs/v3/concepts/) | Docker labels become `tsnet` nodes, one per container or shared |
 | [Tailscale Services](https://tailscale.com/docs/features/tailscale-services) | Named inbound endpoints without a device each; a likely later backend for `services:` |
-| Istio ambient mode | One connection-level proxy per node holding its workloads' identities, as `sys-lintel` does for one machine |
+| Istio ambient mode | One connection-level proxy per node holding its workloads' identities, as `sys-torii` does for one machine |
 | `qubes.ConnectTCP`, `qubes.UpdatesProxy` | Qubes' own precedents for reaching across qubes over qrexec, and for a proxy that offline qubes call |

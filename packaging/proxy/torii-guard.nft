@@ -1,5 +1,5 @@
 #!/usr/sbin/nft -f
-# lintel guard: loaded at boot before Qubes' network setup, and never
+# torii guard: loaded at boot before Qubes' network setup, and never
 # changed or removed by the proxy program. Whatever else happens (Qubes
 # turns ip_forward on, the program is stopped, crashes or reloads), this
 # qube forwards nothing: everything a workload may reach, the program
@@ -9,10 +9,10 @@
 # The counters are the evidence, kept by the kernel for every packet from
 # boot on: `attempts` counts what workloads sent, `forward` what was
 # refused forwarding, and `tripwire` any forwarded packet about to leave,
-# which must stay 0 (each one is also logged as "lintel-guard-tripwire").
-table inet lintel-guard
-delete table inet lintel-guard
-table inet lintel-guard {
+# which must stay 0 (each one is also logged as "torii-guard-tripwire").
+table inet torii-guard
+delete table inet torii-guard
+table inet torii-guard {
 	counter attempts {}
 	counter forward_dropped {}
 	counter tripwire {}
@@ -39,7 +39,7 @@ table inet lintel-guard {
 		type filter hook postrouting priority -400; policy accept;
 		ip6 saddr { ::, fe80::/10 } accept
 		ip6 daddr { ff00::/8, fe80::/10 } accept
-		meta iif != 0 counter name tripwire log prefix "lintel-guard-tripwire " drop
+		meta iif != 0 counter name tripwire log prefix "torii-guard-tripwire " drop
 	}
 	# This qube never opens connections to other qubes' Qubes addresses.
 	# Replies to its own clients leave through vif* and are not affected.

@@ -1,12 +1,12 @@
-# lintel
+# torii
 
-> **Experimental.** lintel is under active development. The machine file,
+> **Experimental.** torii is under active development. The machine file,
 > the commands and the names it creates on your machine may change between
 > versions without a migration path. It changes dom0 policy and your qubes'
 > networking, so try it on a machine you can afford to rebuild, not one you
 > depend on.
 >
-> lintel is an independent project. It is not part of, or endorsed by, the
+> torii is an independent project. It is not part of, or endorsed by, the
 > Qubes OS Project.
 
 Give each qube in Qubes OS its own Tailscale identity and its own rules for
@@ -14,7 +14,7 @@ what it can reach and what can reach it. That includes qubes with no network
 card at all.
 
 You describe every qube's connectivity in one YAML file in dom0.
-`lintel apply` makes the machine match it, and `lintel show` reads back from
+`torii apply` makes the machine match it, and `torii show` reads back from
 the live system what each qube can really reach.
 
 ```yaml
@@ -49,7 +49,7 @@ Doing it by hand means netvms, qrexec policy, services and state inside
 templates, and the tailnet policy, all kept in step. Afterwards nothing tells
 you what a qube can actually reach.
 
-With lintel:
+With torii:
 
 - **Every qube gets its own identity.** Each qube that needs one is its own
   tailnet device with its own tags, so tailnet grants apply per qube.
@@ -62,9 +62,9 @@ With lintel:
   up and the TLS server name it sends. Or send a qube's internet through
   exit nodes, tried in order, without giving it an identity of its own. If
   none is up, connections fail rather than going direct.
-- **You can see the result.** `lintel show` reads netvms, every policy file,
-  the proxy's config and each identity's state. `lintel check` reports where
-  they differ from the file. `lintel log` shows why each connection was
+- **You can see the result.** `torii show` reads netvms, every policy file,
+  the proxy's config and each identity's state. `torii check` reports where
+  they differ from the file. `torii log` shows why each connection was
   allowed or refused.
 - **No credentials in dom0.** A new identity joins through a sign-in link
   that the tag's owner approves. Auth keys are optional, and are stored only
@@ -76,8 +76,8 @@ With lintel:
         tailnet (Tailscale or Headscale)
                     │  one identity per qube
           ┌─────────┴─────────┐
- dom0     │  sys-lintel        │── sys-firewall ── internet
- lintel ──►│  lintel-proxy      │
+ dom0     │  sys-torii        │── sys-firewall ── internet
+ torii ──►│  torii-proxy      │
           └───┬───────────┬───┘
        qrexec │           │ netvm
         ┌─────┴────┐ ┌────┴─────┐
@@ -86,18 +86,18 @@ With lintel:
         └──────────┘ └──────────┘
 ```
 
-- **`lintel`** is a small Python tool in dom0. It reads the file, plans the
+- **`torii`** is a small Python tool in dom0. It reads the file, plans the
   changes and makes them through the Qubes Admin API: netvms, one qrexec
   policy file, features, and the proxy qube and its template. It never
   handles network traffic.
-- **`sys-lintel`** is a proxy qube running `lintel-proxy`, a Go program built
+- **`sys-torii`** is a proxy qube running `torii-proxy`, a Go program built
   on Tailscale's [`tsnet`](https://tailscale.com/kb/1244/tsnet). It holds one
   tailnet identity per qube. Kernel forwarding is off, so nothing passes
   unless the program relays it. It decides every connection against the file
   and logs it.
-- **`lintel-client`** runs in offline qubes that reach out. It offers an HTTP
+- **`torii-client`** runs in offline qubes that reach out. It offers an HTTP
   proxy, SOCKS and fixed forwards on loopback. Each connection becomes a
-  `lintel.Connect` qrexec call to the proxy qube.
+  `torii.Connect` qrexec call to the proxy qube.
 
 [`docs/design.md`](docs/design.md) explains why it is built this way.
 
@@ -107,7 +107,7 @@ With lintel:
 |---|---|---|
 | An **offline service** reachable from the tailnet | `tailnet: {identity: tagged, inbound: [443]}` | The qube keeps no netvm. Its identity listens on 443, and each connection is a `qubes.ConnectTCP` call into the qube, allowed by dom0 on that port only. |
 | An **offline job** that fetches packages and uses the tailnet | `outbound: {internet: [pypi.org], tailnet: yes}` | Inside the qube, `HTTPS_PROXY` and SOCKS are on loopback. The proxy allows only the names on the list, and tailnet destinations the grants allow. |
-| A **networked qube** behind the proxy | `network: proxy` | Its netvm becomes `sys-lintel`. All its traffic and DNS are intercepted and decided per destination, and tailnet traffic goes out on its own identity. |
+| A **networked qube** behind the proxy | `network: proxy` | Its netvm becomes `sys-torii`. All its traffic and DNS are intercepted and decided per destination, and tailnet traffic goes out on its own identity. |
 | Internet **through exit nodes** | `egress: vpn`, with `egress: {vpn: {exits: [a, b]}}` | Its internet and DNS go through the first healthy exit node, failing over in order and back after a hold-down. With none healthy, connections are refused, never sent direct. The egress has one internet-only identity, so the qube needs none. |
 | **Qubes attached by hand** | `proxy: {unlisted: refuse}` (default) or `{internet: all, egress: vpn}` | A qube attached to a proxy but not in the file gets nothing, or the internet through an egress. Disposables are such qubes: their disposable template's proxy decides. |
 | **Named services** | `services: {chat: {qube, tags, ports}}` | Each service is its own tailnet device. With `tls: yes` it serves HTTPS with a Tailscale certificate. |
@@ -123,18 +123,18 @@ the same steps with the output to expect at each one.
 everything:
 
 ```sh
-git clone https://github.com/Gaia-PBC/lintel-qubes.git && cd lintel-qubes
-make          # build/lintel-dom0-<version>.noarch.rpm
+git clone https://github.com/Gaia-PBC/torii-qubes.git && cd torii-qubes
+make          # build/torii-dom0-<version>.noarch.rpm
 ```
 
 **2. Install** it in dom0:
 
 ```sh
-qvm-run --pass-io dev 'cat ~/lintel-qubes/build/lintel-dom0-*.noarch.rpm' > /tmp/lintel.rpm
-sudo dnf install /tmp/lintel.rpm
+qvm-run --pass-io dev 'cat ~/torii-qubes/build/torii-dom0-*.noarch.rpm' > /tmp/torii.rpm
+sudo dnf install /tmp/torii.rpm
 ```
 
-**3. Write `~/lintel.yaml`** in dom0. Start from the example above or from
+**3. Write `~/torii.yaml`** in dom0. Start from the example above or from
 [`examples/machine.yaml`](examples/machine.yaml). The qubes must already
 exist. The tool changes only their network settings, and never creates or
 deletes your qubes.
@@ -145,21 +145,21 @@ deletes your qubes.
 **5. Plan and apply:**
 
 ```sh
-lintel plan     # every change, in order
-lintel apply    # the first run downloads a template and creates sys-lintel
+torii plan     # every change, in order
+torii apply    # the first run downloads a template and creates sys-torii
 ```
 
-**6. Sign identities in.** `lintel show` prints a sign-in link for each new
+**6. Sign identities in.** `torii show` prints a sign-in link for each new
 identity. Open it as an owner of the identity's tags and approve it.
 
-**7. Grant access.** `lintel grants` prints proposed grants. Narrow them,
+**7. Grant access.** `torii grants` prints proposed grants. Narrow them,
 then paste them into the tailnet policy. A port the file offers but no grant
 allows is never reached.
 
-**8. Check:** `lintel show`, `lintel check`, `lintel log QUBE`.
+**8. Check:** `torii show`, `torii check`, `torii log QUBE`.
 
 Offline qubes that reach out also need the client package in their template
-(`lintel install-client <template>`); `plan` tells you which templates lack it.
+(`torii install-client <template>`); `plan` tells you which templates lack it.
 
 ## Documentation
 

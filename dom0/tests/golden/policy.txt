@@ -1,23 +1,23 @@
-# Written by lintel apply from the machine file. Do not edit: the next
+# Written by torii apply from the machine file. Do not edit: the next
 # apply replaces it. Hand-written policy belongs in other files.
 
 # Inbound: the proxy qube calls into the workload, on listed ports only.
-qubes.ConnectTCP  +443  sys-lintel  lintel-probe  allow
-qubes.ConnectTCP  +8080  sys-lintel  lintel-probe  allow
-qubes.ConnectTCP  +8080  sys-lintel  lintel-probe2  allow
+qubes.ConnectTCP  +443  sys-torii  torii-probe  allow
+qubes.ConnectTCP  +8080  sys-torii  torii-probe  allow
+qubes.ConnectTCP  +8080  sys-torii  torii-probe2  allow
 
 # Outbound: workloads that declare outbound access call their proxy qube.
-lintel.Connect  +socks  lintel-probe2  @default  allow target=sys-lintel
-lintel.Connect  +socks  lintel-probe2  sys-lintel  allow
-lintel.Connect  +http  lintel-probe2  @default  allow target=sys-lintel
-lintel.Connect  +http  lintel-probe2  sys-lintel  allow
-lintel.Connect  +f.db  lintel-probe2  @default  allow target=sys-lintel
-lintel.Connect  +f.db  lintel-probe2  sys-lintel  allow
+torii.Connect  +socks  torii-probe2  @default  allow target=sys-torii
+torii.Connect  +socks  torii-probe2  sys-torii  allow
+torii.Connect  +http  torii-probe2  @default  allow target=sys-torii
+torii.Connect  +http  torii-probe2  sys-torii  allow
+torii.Connect  +f.db  torii-probe2  @default  allow target=sys-torii
+torii.Connect  +f.db  torii-probe2  sys-torii  allow
 
 # local-inbound: qubes on this machine, by port.
-qubes.ConnectTCP  +22  lintel-probe2  personal  allow
+qubes.ConnectTCP  +22  torii-probe2  personal  allow
 
 # dom0 and the named admin qubes read status and the decision log.
-lintel.Status  *  dom0  sys-lintel  allow user=root
+torii.Status  *  dom0  sys-torii  allow user=root
 
-# Everything else is denied by 59-lintel-deny.policy, after every mesh's file.
+# Everything else is denied by 59-torii-deny.policy, after every mesh's file.

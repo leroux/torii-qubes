@@ -1,6 +1,6 @@
 // Package admin is the program's local, read-only API on a unix socket:
 // status, explain and the decision log. dom0 reaches it through the
-// lintel.Status qrexec service; tests and check call it directly.
+// torii.Status qrexec service; tests and check call it directly.
 package admin
 
 import (
@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/engine"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/events"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/engine"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
 )
 
 // Handler serves the API for e.
@@ -65,7 +65,7 @@ func (c Client) http() *http.Client {
 // Get fetches path with query and decodes into out (or copies raw to out
 // when it is an io.Writer).
 func (c Client) Get(ctx context.Context, path string, q url.Values, out any) error {
-	req, _ := http.NewRequestWithContext(ctx, "GET", "http://lintel"+path+"?"+q.Encode(), nil)
+	req, _ := http.NewRequestWithContext(ctx, "GET", "http://torii"+path+"?"+q.Encode(), nil)
 	resp, err := c.http().Do(req)
 	if err != nil {
 		return err

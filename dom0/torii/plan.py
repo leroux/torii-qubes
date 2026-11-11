@@ -35,7 +35,7 @@ def _effective_netvm(snap: Snapshot, netvm: str | None) -> str | None:
 
 
 def _known_netvm(snap: Snapshot, info) -> bool:
-    """A netvm lintel may move a qube away from without being told: none,
+    """A netvm torii may move a qube away from without being told: none,
     Qubes' default, or one of the tool's own proxies."""
     n = info.netvm
     if n == "" or info.netvm_default or (snap.default_netvm and n == snap.default_netvm):
@@ -124,7 +124,7 @@ def make(m: Machine, snap: Snapshot, bundle_version: str) -> list[Step]:
         if MT not in info.tags and not wq.adopt_force:
             target = _effective_netvm(snap, derive.qube_state(m, wq).netvm)
             if target is not None and target != info.netvm and not _known_netvm(snap, info):
-                errors.append(f"{name}: its netvm is {info.netvm}, which lintel doesn't know; adopting it "
+                errors.append(f"{name}: its netvm is {info.netvm}, which torii doesn't know; adopting it "
                               f"would move it to {target or '(none)'}. If you mean that, add `adopt: force`")
         if wq.network_card and not info.address:
             errors.append(f"{name}: routed {info.klass}s are not supported (their address changes per start)")
@@ -158,7 +158,7 @@ def make(m: Machine, snap: Snapshot, bundle_version: str) -> list[Step]:
                           {"source": m.base_template}))
     elif active and derive.OWNED_TAG not in q[tpl].tags:
         raise PlanError(f"template {tpl} exists and is not the tool's; name another in `template:`")
-    have_v = q[tpl].features.get("lintel-version") if tpl in q else None
+    have_v = q[tpl].features.get("torii-version") if tpl in q else None
     if active and have_v != bundle_version:
         steps.append(Step("template-package", tpl,
                           f"install the proxy package {bundle_version}" + (f" (has {have_v})" if have_v else ""),
@@ -270,7 +270,7 @@ def make(m: Machine, snap: Snapshot, bundle_version: str) -> list[Step]:
         steps += _features_steps(name, info.features, st.features, "feature")
 
     # 5. Qubes the tool manages that left the file: no netvm, failing
-    # closed. The netvm it had before lintel is named, never restored: it
+    # closed. The netvm it had before torii is named, never restored: it
     # may send direct what the file had since sent through the proxy.
     gone = sorted(n for n, i in q.items() if MT in i.tags and n not in m.qubes)
     for name in gone:
@@ -283,7 +283,7 @@ def make(m: Machine, snap: Snapshot, bundle_version: str) -> list[Step]:
             text = f"set netvm = (none) (was {info.netvm}"
             if prior and prior not in ("none", info.netvm):
                 restore = "--default" if prior == derive.DEFAULT_NETVM else prior
-                text += f"; before lintel: {prior}, `qvm-prefs {name} netvm {restore}` to restore"
+                text += f"; before torii: {prior}, `qvm-prefs {name} netvm {restore}` to restore"
             steps.append(Step("pref", name, text + ")", {"key": "netvm", "value": st.netvm}))
         steps += _service_steps(name, info.features, st.services)
         steps += _features_steps(name, info.features, st.features, "feature")
@@ -333,6 +333,6 @@ def notes(m: Machine, snap: Snapshot) -> list[str]:
         if wq.egress != "direct" and wq.lan != "none":
             out.append(f"{name}: its LAN access goes direct through {wq.proxy}'s netvm, never through egress {wq.egress}")
     for tpl, users in sorted(need.items()):
-        out.append(f"{', '.join(users)} need{'s' if len(users) == 1 else ''} the lintel client in {tpl}; "
-                   f"install it with `lintel install-client {tpl}`, then restart them")
+        out.append(f"{', '.join(users)} need{'s' if len(users) == 1 else ''} the torii client in {tpl}; "
+                   f"install it with `torii install-client {tpl}`, then restart them")
     return out

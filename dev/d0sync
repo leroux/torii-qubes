@@ -1,8 +1,8 @@
 #!/bin/sh
-# Copy this checkout's dom0/ (and build/bundle/, if built) to ~/lintel-dev in
+# Copy this checkout's dom0/ (and build/bundle/, if built) to ~/torii-dev in
 # dom0, so the working tree's dom0 tool can run there without an RPM:
 #
-#   dev/d0sync && d0 'cd ~/lintel-dev/dom0 && LINTEL_BUNDLE=~/lintel-dev/build/bundle python3 -m lintel plan -f ~/lintel.yaml'
+#   dev/d0sync && d0 'cd ~/torii-dev/dom0 && TORII_BUNDLE=~/torii-dev/build/bundle python3 -m torii plan -f ~/torii.yaml'
 #
 # dom0 pulls the files: it runs tar in this qube over qvm-run. Nothing from
 # this qube is executed in dom0 except the files you then run yourself.
@@ -11,6 +11,6 @@ repo=$(cd "$(dirname "$0")/.." && pwd)
 self=$(qubesdb-read /name)
 parts=dom0
 [ -d "$repo/build/bundle" ] && parts="$parts build/bundle"
-printf '%s\n' "rm -rf ~/lintel-dev && mkdir -p ~/lintel-dev && \
-qvm-run --pass-io $self 'tar -C $repo -c --exclude=__pycache__ $parts' </dev/null | tar -C ~/lintel-dev -x && \
-echo synced $parts to dom0:~/lintel-dev" | "$repo/contrib/dom0-dev-access/d0"
+printf '%s\n' "rm -rf ~/torii-dev && mkdir -p ~/torii-dev && \
+qvm-run --pass-io $self 'tar -C $repo -c --exclude=__pycache__ $parts' </dev/null | tar -C ~/torii-dev -x && \
+echo synced $parts to dom0:~/torii-dev" | "$repo/contrib/dom0-dev-access/d0"

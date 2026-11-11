@@ -1,16 +1,16 @@
 [Unit]
-Description=lintel guard: this proxy qube forwards nothing, from boot on
+Description=torii guard: this proxy qube forwards nothing, from boot on
 # Before Qubes turns forwarding on and before any network comes up; loaded
 # in every qube of the proxy template, whatever its services.
 DefaultDependencies=no
 After=local-fs.target
-Before=network-pre.target qubes-network.service qubes-network-uplink.service lintel-proxy.service
+Before=network-pre.target qubes-network.service qubes-network-uplink.service torii-proxy.service
 Wants=network-pre.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/sbin/nft -f /usr/lib/lintel/lintel-guard.nft
+ExecStart=/usr/sbin/nft -f /usr/lib/torii/torii-guard.nft
 
 [Install]
 WantedBy=sysinit.target

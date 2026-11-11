@@ -16,14 +16,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/dnsx"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/egress"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/policy"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/sni"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/socks5"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/tailnet"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/dnsx"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/egress"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/sni"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/socks5"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/tailnet"
 )
 
 // Dialer opens TCP connections; *net.Dialer is one.
@@ -509,7 +509,7 @@ func (e *Engine) dialWorkload(ctx context.Context, workload string, port uint16)
 
 // ---- outbound, qrexec workloads ----
 
-// HandleQrexec serves one lintel.Connect call: caller is the calling qube
+// HandleQrexec serves one torii.Connect call: caller is the calling qube
 // as dom0 named it, arg the service argument ("socks" or "f.<name>").
 func (e *Engine) HandleQrexec(ctx context.Context, caller, arg string, c net.Conn) {
 	defer c.Close()

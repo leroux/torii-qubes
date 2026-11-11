@@ -34,16 +34,16 @@ func TestMain(m *testing.M) {
 }
 
 func TestHeader(t *testing.T) {
-	h, err := ReadHeader(bufio.NewReader(strings.NewReader("lintel.Connect+socks job-1\x00rest")))
+	h, err := ReadHeader(bufio.NewReader(strings.NewReader("torii.Connect+socks job-1\x00rest")))
 	if err != nil || h.Arg != "socks" || h.Caller != "job-1" {
 		t.Fatalf("%+v %v", h, err)
 	}
 	for _, bad := range []string{
-		"lintel.Connect+socks job-1",       // no terminator
+		"torii.Connect+socks job-1",       // no terminator
 		"qubes.ConnectTCP+22 job-1\x00",   // other service
-		"lintel.Connect+socks $(evil)\x00", // bad caller
-		"lintel.Connect+a/b job-1\x00",     // bad arg
-		"lintel.Connect+socks\x00",         // no caller
+		"torii.Connect+socks $(evil)\x00", // bad caller
+		"torii.Connect+a/b job-1\x00",     // bad arg
+		"torii.Connect+socks\x00",         // no caller
 	} {
 		if _, err := ReadHeader(bufio.NewReader(strings.NewReader(bad))); err == nil {
 			t.Errorf("accepted %q", bad)

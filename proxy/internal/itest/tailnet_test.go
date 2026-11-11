@@ -27,11 +27,11 @@ import (
 	"tailscale.com/tstest/integration/testcontrol"
 	"tailscale.com/types/logger"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/engine"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/policy"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/tailnet"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/engine"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/tailnet"
 )
 
 func startControl(t *testing.T, requireAuth bool) (string, *testcontrol.Server) {
@@ -186,7 +186,7 @@ func TestRealTailnet(t *testing.T) {
 	})
 
 	cfg := &config.Config{
-		Version: "it", ProxyQube: "sys-lintel", StateDir: t.TempDir(),
+		Version: "it", ProxyQube: "sys-torii", StateDir: t.TempDir(),
 		Workloads: map[string]*config.Workload{
 			"infra": {Link: config.LinkQrexec, Identity: &config.Identity{Tags: []string{"tag:server"}},
 				Inbound: []config.Inbound{{Port: 443}}},
@@ -454,7 +454,7 @@ func waitFor(t *testing.T, d time.Duration, f func() bool) {
 }
 
 func debugLogf(t *testing.T) logger.Logf {
-	if os.Getenv("LINTEL_DEBUG") == "" {
+	if os.Getenv("TORII_DEBUG") == "" {
 		return logger.Discard
 	}
 	return func(f string, a ...any) { t.Logf("exit: "+f, a...) }

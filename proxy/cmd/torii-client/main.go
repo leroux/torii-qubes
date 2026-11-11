@@ -1,17 +1,17 @@
-// Command lintel-client runs in a workload without a network card. It
+// Command torii-client runs in a workload without a network card. It
 // listens on loopback ports and turns each connection into one qrexec
 // call, so programs in the workload reach the outside through its proxy
 // qube, as dom0 allows:
 //
-//	127.0.0.1:1080 -> lintel.Connect+socks      (SOCKS5)
-//	127.0.0.1:3128 -> lintel.Connect+http       (HTTPS_PROXY / HTTP_PROXY)
-//	127.0.0.1:5432 -> lintel.Connect+f.db       (a fixed forward)
+//	127.0.0.1:1080 -> torii.Connect+socks      (SOCKS5)
+//	127.0.0.1:3128 -> torii.Connect+http       (HTTPS_PROXY / HTTP_PROXY)
+//	127.0.0.1:5432 -> torii.Connect+f.db       (a fixed forward)
 //	127.0.0.1:22   -> qubes.ConnectTCP+22 to another qube (local-inbound)
 //
-// Which ports, from the per-qube feature vm-config.lintel-client that the
+// Which ports, from the per-qube feature vm-config.torii-client that the
 // dom0 tool sets (JSON: {"listen": [{"port", "service", "target"}]}). It
 // exits when that feature changes; systemd starts it again. Enabled per
-// qube by dom0 with the qvm-service lintel-client.
+// qube by dom0 with the qvm-service torii-client.
 package main
 
 import (
@@ -27,7 +27,7 @@ import (
 	"regexp"
 	"syscall"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/qubesdb"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/qubesdb"
 )
 
 type listen struct {
@@ -41,7 +41,7 @@ type clientConfig struct {
 }
 
 var (
-	serviceRe = regexp.MustCompile(`^(lintel\.Connect\+(socks|http|f\.[A-Za-z0-9_-]{1,40})|qubes\.ConnectTCP\+[0-9]{1,5})$`)
+	serviceRe = regexp.MustCompile(`^(torii\.Connect\+(socks|http|f\.[A-Za-z0-9_-]{1,40})|qubes\.ConnectTCP\+[0-9]{1,5})$`)
 	targetRe  = regexp.MustCompile(`^(@default|[A-Za-z][A-Za-z0-9_.-]{0,30})$`)
 )
 
@@ -64,7 +64,7 @@ func parse(b []byte) (*clientConfig, error) {
 }
 
 func main() {
-	src := flag.String("config", "qubesdb:/vm-config/lintel-client", "config: a file, or qubesdb:PATH")
+	src := flag.String("config", "qubesdb:/vm-config/torii-client", "config: a file, or qubesdb:PATH")
 	addr := flag.String("addr", "127.0.0.1", "address to listen on")
 	qrexec := flag.String("qrexec-client-vm", "qrexec-client-vm", "qrexec client (tests)")
 	flag.Parse()
@@ -77,18 +77,18 @@ func main() {
 		raw, err = os.ReadFile(*src)
 	}
 	if err != nil {
-		log.Fatalf("lintel-client: %v", err)
+		log.Fatalf("torii-client: %v", err)
 	}
 	cfg, err := parse(raw)
 	if err != nil {
-		log.Fatalf("lintel-client: config: %v", err)
+		log.Fatalf("torii-client: config: %v", err)
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	for _, l := range cfg.Listen {
 		ln, err := net.Listen("tcp", net.JoinHostPort(*addr, fmt.Sprint(l.Port)))
 		if err != nil {
-			log.Fatalf("lintel-client: %v", err)
+			log.Fatalf("torii-client: %v", err)
 		}
 		log.Printf("127.0.0.1:%d -> %s %s", l.Port, l.Target, l.Service)
 		go serve(ctx, ln, l, *qrexec)

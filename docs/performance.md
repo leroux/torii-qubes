@@ -98,7 +98,7 @@ with the same tools:
 
 | Limit | Default | Set to | Why |
 |---|---|---|---|
-| Connection tracking in the proxy qube (`nf_conntrack_max`) | 3,072 (sized from the memory the qube boots with) | 65,536, by `lintel-proxy.service` | Each routed connection holds an entry for two minutes after it closes: the default allowed about 25 new connections a second, and live it filled and dropped packets. 65,536 is what Linux gives a desktop with a few GB and OpenWrt a larger router; about 540 a second sustained, about 20 MB if full |
+| Connection tracking in the proxy qube (`nf_conntrack_max`) | 3,072 (sized from the memory the qube boots with) | 65,536, by `torii-proxy.service` | Each routed connection holds an entry for two minutes after it closes: the default allowed about 25 new connections a second, and live it filled and dropped packets. 65,536 is what Linux gives a desktop with a few GB and OpenWrt a larger router; about 540 a second sustained, about 20 MB if full |
 | Open files of the proxy program | 1,024 soft | 524,288 | Go raises the soft limit to the hard one at start; nothing to do |
 
 Not changed: the client qubes' own connection tracking (3,072 too, Qubes'

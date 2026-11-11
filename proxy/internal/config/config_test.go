@@ -7,8 +7,8 @@ import (
 
 const example = `{
   "version": "v1",
-  "proxy_qube": "sys-lintel",
-  "state_dir": "/rw/lintel",
+  "proxy_qube": "sys-torii",
+  "state_dir": "/rw/torii",
   "workloads": {
     "infra": {"link": "qrexec", "identity": {"tags": ["tag:server"]}, "inbound": [{"port": 443}]},
     "job-1": {"link": "qrexec", "identity": {"tags": ["tag:job"]}, "inbound": [{"port": 8080, "target": 80}],
@@ -102,7 +102,7 @@ func TestProxyQubeItself(t *testing.T) {
 }
 
 const egressConfig = `{
-  "proxy_qube": "sys-lintel", "state_dir": "/s",
+  "proxy_qube": "sys-torii", "state_dir": "/s",
   "egresses": {"vpn": {"hostname": "m1-egress-vpn", "tags": ["tag:m1-egress"], "exits": ["exit-1", "exit-2"]}},
   "unlisted": {"internet": "full", "egress": "vpn"},
   "workloads": {

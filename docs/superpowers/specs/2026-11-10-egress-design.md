@@ -53,19 +53,19 @@ Three separate things, each answering one question:
 | **Egress** | Which way does its internet go? | top-level `egress:`, chosen by the qube's `egress:` |
 | **Policy** | What may it reach? | `outbound:` (later: `rules:`, `ask`) |
 
-- **`sys-lintel`** is the one proxy qube. It holds every identity and every
+- **`sys-torii`** is the one proxy qube. It holds every identity and every
   egress used by the qubes on it. **Extra proxies** (`proxies:`) exist for
   two reasons only: *isolation* (a workload's keys and traffic in a qube of
   their own), and *grouping qubes that can't be listed* (disposables, whose
   policy has to come from their proxy's `unlisted:`). Never to pick an
   egress.
-- **The netvm answers "is this qube inside lintel?"**; **the file answers
+- **The netvm answers "is this qube inside torii?"**; **the file answers
   "what does it do?"**.
 - **An egress is a reusable definition.** Each proxy that carries it gets its
   own instance: one tailnet device, so WireGuard keys never leave the qube
-  that uses them. Normally that's one instance, in `sys-lintel`.
+  that uses them. Normally that's one instance, in `sys-torii`.
 - **An egress identity is internet-only.** It never carries tailnet
-  destinations, and `lintel grants` proposes only `autogroup:internet` for it.
+  destinations, and `torii grants` proposes only `autogroup:internet` for it.
 
 ## The machine file
 
@@ -80,11 +80,11 @@ egress:
     # probe: host:port                       # optional; default none
 
 proxy:
-  name: sys-lintel
+  name: sys-torii
   # unlisted: refuse                         # default
 
 proxies:
-  sys-lintel-dvm:                            # groups disposables, which can't be listed
+  sys-torii-dvm:                            # groups disposables, which can't be listed
     unlisted: {egress: vpn, internet: all}
 
 defaults:
@@ -101,9 +101,9 @@ qubes:
     tailnet: {identity: tagged, tags: [job]}
   wiki:                          # offline service on the tailnet
     tailnet: {identity: tagged, inbound: [443]}
-  browser-dvm:                   # disposable template: its disposables use sys-lintel-dvm
+  browser-dvm:                   # disposable template: its disposables use sys-torii-dvm
     network: proxy
-    proxy: sys-lintel-dvm
+    proxy: sys-torii-dvm
     disposables: yes
     egress: vpn
     outbound: {internet: all}
@@ -136,7 +136,7 @@ Existing keys (`name`, `netvm`, `label`) plus:
 | `egress` | `direct` \| an egress name | Which way its internet goes. Needs `outbound.internet` other than `none`. |
 | `tailnet.identity` | `none` \| `tagged` \| `login` | `proxy` and `proxy:<name>` are removed. |
 | `disposables` | `yes` | Required to list a disposable template; acknowledges that every disposable made from it changes. |
-| `adopt` | `force` | Required to adopt a qube whose netvm lintel doesn't recognise (see Adoption). |
+| `adopt` | `force` | Required to adopt a qube whose netvm torii doesn't recognise (see Adoption). |
 
 ### How a connection is decided
 
@@ -174,7 +174,7 @@ Removed keys, each with an error naming the replacement:
 
 | Old | Write instead |
 |---|---|
-| `manage:` | nothing: lintel only changes qubes listed in `qubes:` |
+| `manage:` | nothing: torii only changes qubes listed in `qubes:` |
 | `outbound.via: <exit node>` | `egress: {name: {exits: [<exit node>]}}` and `egress: name` |
 | `network: proxy:X`, `tailnet.identity: proxy:X` | `proxy: X` (and `network: proxy`, `identity: tagged`) |
 | `tailnet.identity: proxy` | `tailnet.identity: tagged` |
@@ -254,7 +254,7 @@ to the internet without an exit node, and the engine refuses by health.
   a listed qube, a service, or a non-`refuse` `unlisted:`. A file with only
   `machine:` gives an empty plan.
 - **The main proxy is never removed automatically**, even when unused. It
-  holds identity keys. `plan` notes `sys-lintel: unused`. Removing an entry
+  holds identity keys. `plan` notes `sys-torii: unused`. Removing an entry
   from `proxies:` still removes that proxy, and `plan` still refuses while
   qubes are attached to it.
 
@@ -262,31 +262,31 @@ to the internet without an exit node, and the engine refuses by health.
 
 The first `apply` that lists a qube *adopts* it:
 
-- It writes dom0 features `lintel-prior-netvm` (the netvm, `none` or
-  `<default>`) and `lintel-adopted` (the date). They are **written once,
+- It writes dom0 features `torii-prior-netvm` (the netvm, `none` or
+  `<default>`) and `torii-adopted` (the date). They are **written once,
   never overwritten and never applied**. `show` displays them.
 - It **refuses** unless the entry says so:
   - `adopt: force` when the netvm would change away from one that is
-    neither none, nor Qubes' default netvm, nor a lintel proxy (for example
+    neither none, nor Qubes' default netvm, nor a torii proxy (for example
     `sys-whonix`, a VPN qube, a hand-made Tailscale qube). An entry that
     writes that netvm explicitly (`network: sys-whonix`) doesn't change it
     and isn't refused.
   - `disposables: yes` for a disposable template (`template_for_dispvms`).
 
 ```
-anon-whonix: its netvm is sys-whonix, which lintel doesn't know; adopting it
-             would move it to sys-lintel. If you mean that, add `adopt: force`.
+anon-whonix: its netvm is sys-whonix, which torii doesn't know; adopting it
+             would move it to sys-torii. If you mean that, add `adopt: force`.
 ```
 
 ### Leaving the file
 
-The qube's netvm becomes **none**. Its client service and lintel's features
-are removed, and so is the tag. The prior-netvm features stay. lintel never
+The qube's netvm becomes **none**. Its client service and torii's features
+are removed, and so is the tag. The prior-netvm features stay. torii never
 restores the earlier netvm, which might send traffic direct that you had
 since forced through an exit node.
 
 ```
-browser: set netvm = (none)  (was sys-lintel; before lintel: sys-firewall,
+browser: set netvm = (none)  (was sys-torii; before torii: sys-firewall,
          `qvm-prefs browser netvm sys-firewall` to restore)
 ```
 
@@ -294,7 +294,7 @@ browser: set netvm = (none)  (was sys-lintel; before lintel: sys-firewall,
 
 - An egress instance is created in a proxy when the first qube, or that
   proxy's `unlisted:`, uses it there. It signs in like any identity: a link,
-  or `lintel sign-in-key`.
+  or `torii sign-in-key`.
 - Until it's signed in, `plan` notes that the qubes using it will have their
   internet refused.
 - The proxy config gains `egresses` (`hostname`, `tags`, `exits`,
@@ -307,13 +307,13 @@ browser: set netvm = (none)  (was sys-lintel; before lintel: sys-firewall,
   disposables get a new address on every start, so they can't be listed. The
   proxy sees them as unlisted sources.
 - **The one documented way:** a disposable template, listed with
-  `disposables: yes` and `proxy: sys-lintel-dvm`, where `sys-lintel-dvm`'s
-  `unlisted:` gives disposables their policy. The main `sys-lintel` stays
+  `disposables: yes` and `proxy: sys-torii-dvm`, where `sys-torii-dvm`'s
+  `unlisted:` gives disposables their policy. The main `sys-torii` stays
   `refuse`, so a qube attached there by mistake still gets nothing.
 - Qubes that should open disposables through it need their `default_dispvm`
-  set by hand. lintel never sets it.
+  set by hand. torii never sets it.
 - `check` warns about the escape path: a listed qube with an egress whose
-  `default_dispvm`'s netvm isn't a lintel proxy.
+  `default_dispvm`'s netvm isn't a torii proxy.
 
 ```
 browser uses egress vpn, but its default_dispvm (default-dvm) has netvm
@@ -322,22 +322,22 @@ sys-firewall: disposables opened from browser go out directly.
 
 `docs/setup.md` gets the recipe: create the template (`qvm-create`,
 `qvm-prefs … template_for_dispvms True`), list it, set `default_dispvm`,
-check with `lintel show`.
+check with `torii show`.
 
 ## What is provisioned (the example file)
 
 ```mermaid
 flowchart TB
-    dom0["dom0: lintel<br/>prefs, policy, config<br/>never traffic"]
+    dom0["dom0: torii<br/>prefs, policy, config<br/>never traffic"]
 
-    subgraph SL["sys-lintel (unlisted: refuse)"]
+    subgraph SL["sys-torii (unlisted: refuse)"]
         wikiId(["m1-wiki<br/>tagged"])
         buildId(["m1-build<br/>tagged"])
         vpnA{{"m1-egress-vpn<br/>internet only"}}
     end
 
-    subgraph SD["sys-lintel-dvm (unlisted: vpn, all)"]
-        vpnB{{"m1-egress-vpn-sys-lintel-dvm<br/>internet only"}}
+    subgraph SD["sys-torii-dvm (unlisted: vpn, all)"]
+        vpnB{{"m1-egress-vpn-sys-torii-dvm<br/>internet only"}}
     end
 
     browser["browser<br/>routed, no identity"]
@@ -348,8 +348,8 @@ flowchart TB
 
     browser -- "vif" --> vpnA
     wikiId -- "qubes.ConnectTCP :443" --> wiki
-    build -- "lintel.Connect: pypi.org" --> vpnA
-    build -- "lintel.Connect: tailnet" --> buildId
+    build -- "torii.Connect: pypi.org" --> vpnA
+    build -- "torii.Connect: tailnet" --> buildId
     dvm -- "vif" --> vpnB
     disp -- "vif" --> vpnB
     dvm -. "netvm inherited" .-> disp
@@ -368,17 +368,17 @@ flowchart TB
 ```
 
 `vpn` has two instances here on purpose: disposables are kept apart from
-`sys-lintel` so that its `unlisted:` can stay `refuse`.
+`sys-torii` so that its `unlisted:` can stay `refuse`.
 
 ## Observability
 
 ```
-$ lintel show
+$ torii show
 egress vpn   active exit-ams since 10:02   (exit-nyc: no ping reply ×3 at 10:01)
              exits: exit-nyc ✗  exit-ams ✓  exit-home ✓
-             used by: browser, build; sys-lintel-dvm: browser-dvm, 2 unlisted
+             used by: browser, build; sys-torii-dvm: browser-dvm, 2 unlisted
 
-$ lintel log --egress vpn
+$ torii log --egress vpn
 10:01:47  exit-nyc  unhealthy   ping: 3 missed
 10:01:47  switch    exit-nyc → exit-ams
 10:14:02  exit-nyc  healthy     (failback in 2m)
@@ -439,7 +439,7 @@ still hold with unlisted sources; failover on a real tailnet.
   the identity/egress/policy split, the failover design, and why egress
   identities are internet-only.
 - `docs/setup.md`: the gradual adoption steps; the disposable recipe; the
-  recipe of making `sys-lintel` Qubes' global default netvm (offline by
+  recipe of making `sys-torii` Qubes' global default netvm (offline by
   default with `unlisted: refuse`, or exit-only with an egress default).
 - `docs/tailscale.md`: the egress tag and its grant.
 - `TODO.md`: a Little Snitch-style firewall (below); shared identities;
@@ -455,7 +455,7 @@ Not in this spec; recorded so this design doesn't block it.
   TCP connection, with a timeout, while it asks. UDP and QUIC are decided
   when the name is resolved.
 - The prompt is shown by dom0 or a GUI qube, through a qrexec call from the
-  proxy (`lintel.Ask`), never in the proxy qube. dom0 names the qube.
+  proxy (`torii.Ask`), never in the proxy qube. dom0 names the qube.
 - "Allow always" answers become learned rules kept in the proxy.
-  `lintel rules` in dom0 lists them and offers to write them into the file,
+  `torii rules` in dom0 lists them and offers to write them into the file,
   which stays the source of truth.

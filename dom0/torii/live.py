@@ -1,7 +1,7 @@
 """A snapshot of the live system: the settings the tool reads and owns.
 
 The snapshot is plain data (JSON-able), so plans are golden-tested from
-recorded snapshots, and ``lintel snapshot`` records one from a machine.
+recorded snapshots, and ``torii snapshot`` records one from a machine.
 """
 
 from __future__ import annotations
@@ -45,7 +45,7 @@ class QubeInfo:
 class Snapshot:
     qubes: dict[str, QubeInfo]
     policy: str | None  # the tool's policy file, None if absent
-    other_policy: dict[str, str]  # hand-written files that mention lintel services; read only
+    other_policy: dict[str, str]  # hand-written files that mention torii services; read only
     default_netvm: str = ""  # Qubes' global default netvm
 
     def to_json(self) -> str:
@@ -122,7 +122,7 @@ def take(app, policy_client, interesting: set[str], policy_name: str = derive.PO
             if f == policy_name:
                 continue
             text, _ = policy_client.policy_get(f)
-            if "lintel." in text or "qubes.ConnectTCP" in text:
+            if "torii." in text or "qubes.ConnectTCP" in text:
                 other[f] = text
     dn = _prop(app, "default_netvm")
     return Snapshot(qubes=qubes, policy=policy, other_policy=other, default_netvm=str(dn) if dn else "")

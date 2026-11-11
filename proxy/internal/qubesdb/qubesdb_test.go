@@ -14,7 +14,7 @@ func TestDecodesWhatDom0Writes(t *testing.T) {
 		t.Skip("no python3")
 	}
 	script := `import json,sys; sys.path.insert(0, "../../../dom0")
-from lintel import derive
+from torii import derive
 import hashlib
 cfg = {"version": "v", "workloads": {f"q{i}": {"x": hashlib.sha256(str(i).encode()).hexdigest(), "i": i} for i in range(200)}}
 print(json.dumps(derive.encode_chunks(cfg)))`
@@ -33,7 +33,7 @@ print(json.dumps(derive.encode_chunks(cfg)))`
 		}
 		return []byte(v), nil
 	}
-	raw, err := Config(read, "lintel")
+	raw, err := Config(read, "torii")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,12 +45,12 @@ print(json.dumps(derive.encode_chunks(cfg)))`
 		t.Errorf("expected several parts, got %d features", len(feats))
 	}
 	// A part from another write: refused, not half-read.
-	feats["vm-config.lintel.1"] = feats["vm-config.lintel.0"]
-	if _, err := Config(read, "lintel"); err == nil {
+	feats["vm-config.torii.1"] = feats["vm-config.torii.0"]
+	if _, err := Config(read, "torii"); err == nil {
 		t.Error("mixed parts accepted")
 	}
-	delete(feats, "vm-config.lintel.0")
-	if _, err := Config(read, "lintel"); err == nil {
+	delete(feats, "vm-config.torii.0")
+	if _, err := Config(read, "torii"); err == nil {
 		t.Error("missing part accepted")
 	}
 	_ = os.Stdout

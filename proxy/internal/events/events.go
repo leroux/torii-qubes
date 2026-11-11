@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/policy"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
 )
 
 // Direction of a connection relative to the workload.

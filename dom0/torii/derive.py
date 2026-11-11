@@ -13,30 +13,30 @@ from typing import Any
 
 from .machine import Machine, Qube
 
-POLICY_NAME = "50-lintel"  # the default mesh's; a named mesh's is 50-lintel-<mesh>
-DENY_POLICY = "59-lintel-deny"  # shared by every mesh, after all of their allows
-OWNED_TAG = "lintel-owned"  # qubes the tool created and may delete
-MANAGED_TAG = "lintel-managed"  # workloads whose network settings it set; -<mesh> for a named mesh
-MESH_TAG = "lintel-mesh-"  # + mesh: on a named mesh's proxy qubes
-KEEP_TAG = "lintel-netvm-kept"  # the earlier `network-card: keep`; only cleaned up now
+POLICY_NAME = "50-torii"  # the default mesh's; a named mesh's is 50-torii-<mesh>
+DENY_POLICY = "59-torii-deny"  # shared by every mesh, after all of their allows
+OWNED_TAG = "torii-owned"  # qubes the tool created and may delete
+MANAGED_TAG = "torii-managed"  # workloads whose network settings it set; -<mesh> for a named mesh
+MESH_TAG = "torii-mesh-"  # + mesh: on a named mesh's proxy qubes
+KEEP_TAG = "torii-netvm-kept"  # the earlier `network-card: keep`; only cleaned up now
 DEFAULT_NETVM = "<default>"  # network: default: Qubes' default netvm, followed as it changes
-PROXY_SERVICE = "lintel-proxy"
-CLIENT_SERVICE = "lintel-client"
-CONFIG_FEATURE = "vm-config.lintel"  # chunks: vm-config.lintel.0, .1, ...
-CLIENT_FEATURE = "vm-config.lintel-client"
+PROXY_SERVICE = "torii-proxy"
+CLIENT_SERVICE = "torii-client"
+CONFIG_FEATURE = "vm-config.torii"  # chunks: vm-config.torii.0, .1, ...
+CLIENT_FEATURE = "vm-config.torii-client"
 CHUNK = 2800  # QubesDB refuses values of 3072 bytes or more
-STATE_DIR = "/rw/lintel/state"
-LOG_DIR = "/rw/lintel/log"
-KEY_DIR = "/rw/lintel/keys"  # the sign-in fallback: one-time keys, put there by `lintel sign-in-key`
-CLIENT_VERSION_FEATURE = "lintel-client-version"  # on templates that carry the client
+STATE_DIR = "/rw/torii/state"
+LOG_DIR = "/rw/torii/log"
+KEY_DIR = "/rw/torii/keys"  # the sign-in fallback: one-time keys, put there by `torii sign-in-key`
+CLIENT_VERSION_FEATURE = "torii-client-version"  # on templates that carry the client
 # On a proxy qube: the package version apply last started it on. A proxy
 # runs what its template had when it started, so a template upgraded by
 # another mesh (or by hand) leaves it on the old one until it restarts.
-STARTED_VERSION_FEATURE = "lintel-started-version"
+STARTED_VERSION_FEATURE = "torii-started-version"
 # On a workload, written once at its first adoption and never applied: the
-# netvm it had before lintel ("none", "<default>" or a name), and the date.
-PRIOR_NETVM_FEATURE = "lintel-prior-netvm"
-ADOPTED_FEATURE = "lintel-adopted"
+# netvm it had before torii ("none", "<default>" or a name), and the date.
+PRIOR_NETVM_FEATURE = "torii-prior-netvm"
+ADOPTED_FEATURE = "torii-adopted"
 
 
 @dataclasses.dataclass
@@ -131,8 +131,8 @@ def _inbound_cfg(inbound) -> list[dict[str, Any]]:
 def encode_chunks(cfg: dict[str, Any]) -> dict[str, str]:
     """The config as features: gzip, base64, split under QubesDB's limit.
 
-    vm-config.lintel holds "<parts> <sha256 of the JSON>"; the program reads
-    vm-config.lintel.0 .. parts-1, joins, decodes, and checks the hash, so a
+    vm-config.torii holds "<parts> <sha256 of the JSON>"; the program reads
+    vm-config.torii.0 .. parts-1, joins, decodes, and checks the hash, so a
     half-finished apply is refused rather than half-read.
     """
     raw = json.dumps(cfg, sort_keys=True, separators=(",", ":")).encode()
@@ -163,14 +163,14 @@ def config_version(m: Machine, addresses: dict[str, str]) -> str:
 
 
 def client_config(q: Qube) -> dict[str, Any] | None:
-    """The workload-side listeners (lintel-client), or None if it needs none."""
+    """The workload-side listeners (torii-client), or None if it needs none."""
     listen = []
     if q.socks_port:
-        listen.append({"port": q.socks_port, "service": "lintel.Connect+socks", "target": "@default"})
+        listen.append({"port": q.socks_port, "service": "torii.Connect+socks", "target": "@default"})
     if q.http_port:
-        listen.append({"port": q.http_port, "service": "lintel.Connect+http", "target": "@default"})
+        listen.append({"port": q.http_port, "service": "torii.Connect+http", "target": "@default"})
     for f in q.forwards:
-        listen.append({"port": f.port, "service": f"lintel.Connect+f.{f.name}", "target": "@default"})
+        listen.append({"port": f.port, "service": f"torii.Connect+f.{f.name}", "target": "@default"})
     return {"listen": listen} if listen else None
 
 
@@ -210,7 +210,7 @@ def policy(m: Machine) -> str:
     """The tool's own qrexec policy file. Every call runs in the direction
     of the connection it carries."""
     lines = [
-        "# Written by lintel apply from the machine file. Do not edit: the next",
+        "# Written by torii apply from the machine file. Do not edit: the next",
         "# apply replaces it. Hand-written policy belongs in other files.",
         "",
     ]
@@ -225,8 +225,8 @@ def policy(m: Machine) -> str:
             args = (["+socks"] if q.socks_port else []) + (["+http"] if q.http_port else []) \
                 + [f"+f.{f.name}" for f in q.forwards]
             for a in args:
-                outbound.append(f"lintel.Connect  {a}  {q.name}  @default  allow target={p}")
-                outbound.append(f"lintel.Connect  {a}  {q.name}  {p}  allow")
+                outbound.append(f"torii.Connect  {a}  {q.name}  @default  allow target={p}")
+                outbound.append(f"torii.Connect  {a}  {q.name}  {p}  allow")
         for li in q.local_inbound:
             for s in li.sources:
                 local.append(f"qubes.ConnectTCP  +{li.port}  {s}  {q.name}  allow")
@@ -243,10 +243,10 @@ def policy(m: Machine) -> str:
         lines += ["# local-inbound: qubes on this machine, by port."] + local + [""]
     lines += ["# dom0 and the named admin qubes read status and the decision log."]
     for p in sorted(m.proxies):
-        lines.append(f"lintel.Status  *  dom0  {p}  allow user=root")
+        lines.append(f"torii.Status  *  dom0  {p}  allow user=root")
         for r in m.status_readers:
-            lines.append(f"lintel.Status  *  {r}  {p}  allow user=root")
-    lines += ["", "# Everything else is denied by 59-lintel-deny.policy, after every mesh's file.", ""]
+            lines.append(f"torii.Status  *  {r}  {p}  allow user=root")
+    lines += ["", "# Everything else is denied by 59-torii-deny.policy, after every mesh's file.", ""]
     return "\n".join(lines)
 
 
@@ -304,6 +304,6 @@ def deny_policy() -> str:
     first match wins, so a mesh's deny in its own file would block the
     allows of a mesh whose file sorts after it."""
     return "\n".join([
-        "# Written by lintel apply, the same from every mesh. Do not edit.",
-        "lintel.Connect  *  @anyvm  @anyvm  deny",
-        "lintel.Status   *  @anyvm  @anyvm  deny", ""])
+        "# Written by torii apply, the same from every mesh. Do not edit.",
+        "torii.Connect  *  @anyvm  @anyvm  deny",
+        "torii.Status   *  @anyvm  @anyvm  deny", ""])

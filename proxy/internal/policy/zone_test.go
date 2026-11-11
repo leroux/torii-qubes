@@ -4,7 +4,7 @@ import (
 	"net/netip"
 	"testing"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/config"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
 )
 
 func TestZoneOf(t *testing.T) {

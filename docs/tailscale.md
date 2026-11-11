@@ -7,7 +7,7 @@ the admin console).
 
 ## How identities appear
 
-Every qube with an identity is a device on the tailnet, held by `sys-lintel`:
+Every qube with an identity is a device on the tailnet, held by `sys-torii`:
 
 - **Tagged** (`identity: tagged`, and every entry under `services:`):
   a device with the file's tags, owned by the tags rather than a person.
@@ -38,13 +38,13 @@ approve such a device:
 },
 ```
 
-`lintel grants` lists every tag the file uses. Keep tags per role (`tag:chat`),
+`torii grants` lists every tag the file uses. Keep tags per role (`tag:chat`),
 not per machine. Then grants read as what they allow, and a second machine
 reuses them.
 
 ## Grants
 
-`lintel grants` prints a proposal from the file: a grant per inbound
+`torii grants` prints a proposal from the file: a grant per inbound
 identity, with `autogroup:member` (every signed-in person's devices) as the
 source. Review it, narrow `src` where needed, and paste it in:
 
@@ -66,7 +66,7 @@ Notes:
 
 - A tagged device is not a member, so `autogroup:member` doesn't let one
   machine's qubes reach another's. Name the tag as `src` for that.
-- `outbound.tailnet: yes` without a grant reaches nothing. In `lintel log` the
+- `outbound.tailnet: yes` without a grant reaches nothing. In `torii log` the
   connection is `allow tailnet-outbound` with a timeout: the machine let it
   out, the tailnet dropped it.
 - Use the policy's `tests` section to pin what must and must not be
@@ -102,7 +102,7 @@ certificate is issued.
 
 ## Signing identities in
 
-A new identity waits for sign-in. `lintel show` (and `lintel apply`) prints its
+A new identity waits for sign-in. `torii show` (and `torii apply`) prints its
 link:
 
 ```
@@ -111,8 +111,8 @@ waiting for sign-in: wiki: https://login.tailscale.com/a/0123456789abcd
 
 **By link** (no credential anywhere): open it in a browser signed in to the
 tailnet as an owner of the identity's tags, and approve. Each link is for one
-identity. A link is replaced when `sys-lintel` restarts, so take the current
-one from `lintel show`.
+identity. A link is replaced when `sys-torii` restarts, so take the current
+one from `torii show`.
 
 **By key**, when clicking isn't practical (many identities, scripts): admin
 console → Settings → Keys → Generate auth key, with:
@@ -125,11 +125,11 @@ console → Settings → Keys → Generate auth key, with:
 Then, in dom0:
 
 ```sh
-lintel sign-in-key wiki < key.txt                 # a qube's identity
-lintel sign-in-key chat < key.txt               # a service
+torii sign-in-key wiki < key.txt                 # a qube's identity
+torii sign-in-key chat < key.txt               # a service
 ```
 
-The key is stored in `sys-lintel` (`/rw/lintel/keys/`), never in dom0, and the
+The key is stored in `sys-torii` (`/rw/torii/keys/`), never in dom0, and the
 proxy restarts to use it. The key only joins the device once; after that the
 device's own state keeps it signed in.
 
@@ -164,7 +164,7 @@ party from every exit node.
    it: `"autoApprovers": {"exitNode": ["tag:exit"]}`.
 2. Grant the egress the internet, and nothing else:
    `{"src": ["tag:m1-egress"], "dst": ["autogroup:internet"], "ip": ["*"]}`.
-   (`lintel grants` proposes it.) The proxy never sends tailnet destinations
+   (`torii grants` proposes it.) The proxy never sends tailnet destinations
    through an egress either; a qube that needs the tailnet gets its own
    identity, which carries its tailnet traffic while the egress carries its
    internet.
@@ -173,7 +173,7 @@ party from every exit node.
 
 Taking a qube out of the file stops its identity, but its device stays in the
 admin console, offline, until you remove it (Machines → ⋯ → Remove). If the
-qube comes back with its state still in `sys-lintel`, it reuses the same
+qube comes back with its state still in `sys-torii`, it reuses the same
 device.
 
 ## Headscale
@@ -189,10 +189,10 @@ coordination server you'll use. Headscale is tested at the program's level 4
 
 | Symptom | Look at |
 |---|---|
-| Nothing in `lintel log QUBE` for a laptop's attempt | The grant; that the laptop is on the same tailnet; the device's tags in the admin console |
+| Nothing in `torii log QUBE` for a laptop's attempt | The grant; that the laptop is on the same tailnet; the device's tags in the admin console |
 | `allow` with `context deadline exceeded` for outbound | No grant for that destination, or it is offline |
 | `refuse not-allowlisted` | The name isn't in `outbound.internet` (or `.lan`) |
 | `refuse no-lan` | The address is on the LAN, and `outbound.lan` is none |
 | `refuse forbidden-address` | Another qube's address, or the proxy's own: never reachable |
-| `waiting for sign-in` won't go away | The approver doesn't own the tag; or the link was replaced (take the new one from `lintel show`) |
+| `waiting for sign-in` won't go away | The approver doesn't own the tag; or the link was replaced (take the new one from `torii show`) |
 | A web app loads but won't work under the new name | The app checks its own address (a base URL or allowed origin in its config). Point it at the new name |

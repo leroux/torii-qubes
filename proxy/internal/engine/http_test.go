@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/lintel-qubes/proxy/internal/policy"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
+	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
 )
 
-// httpCall opens lintel.Connect+http as caller.
+// httpCall opens torii.Connect+http as caller.
 func (w *world) httpCall(caller string) (net.Conn, *bufio.Reader) {
 	a, b := net.Pipe()
 	go w.eng.HandleQrexec(context.Background(), caller, "http", b)
