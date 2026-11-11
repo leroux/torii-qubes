@@ -106,8 +106,13 @@ def cmd_apply(a) -> int:
     for s in steps:
         print(" ", s)
     if not a.yes:
-        if input(f"Make these {len(steps)} changes? [y/N] ").strip().lower() not in ("y", "yes"):
-            print("Nothing changed.")
+        try:
+            answer = input(f"Make these {len(steps)} changes? [y/N] ")
+        except EOFError:  # no terminal: no answer is no
+            answer = ""
+            print()
+        if answer.strip().lower() not in ("y", "yes"):
+            print("Nothing changed. (`apply -y` does not ask.)")
             return 1
     try:
         Applier(app, _policy_client(), BUNDLE_DIR).run(steps)

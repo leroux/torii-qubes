@@ -32,11 +32,30 @@
 - Measurements: memory per identity (throughput and load are in `docs/performance.md`).
 - A GUI: a read-only Connectivity window and a tray widget first.
 
+## Tried on a real machine
+
+- Egress, 2026-11-11, on the lab (`dev/headscale`, `torii apply` from dom0,
+  `torii-routed` behind `sys-torii-test`, exit nodes `torii-peer` and
+  `torii-peer2` as real `tailscaled`): healthy after sign-in; a hard-killed
+  exit node failed over in 14 s, back after the 120 s hold-down (131 s);
+  with both killed, connections refused in under 20 ms, logged
+  `egress-no-healthy-exit`, the exit node kept, and a capture at the netvm
+  showed no packet from the proxy qube to the destination. On Tailscale
+  (`TestTailscaleEgress` with `TORII_TS_EXIT`, a laptop as the second exit
+  node): failover 35 s, failback after the hold-down.
+
+## Found on a real machine, not yet fixed
+
+- **tsnet's own traffic goes direct from the proxy qube**: every identity
+  (the egress's too) uploads its client logs to `log.tailscale.com`, and
+  the port mapper sends SSDP (UPnP discovery). No workload traffic, but it
+  bypasses the egress and tells Tailscale about the machine. Off with
+  `TS_NO_LOGS_NO_SUPPORT=true` and the port mapper disabled; Tailscale's
+  support then has no client logs. Decide the default.
+
 ## Not yet tried on a real machine
 
-- Egresses on a real tailnet: TSMP ping health, failover and failback with
-  real exit nodes, an unlisted disposable through `sys-torii-dvm` (the
-  in-process tailnet test, `internal/itest`, skips on a Qubes qube).
+- An unlisted disposable through `sys-torii-dvm`.
 - `identity: login`, dedicated proxies (`proxies:`, `proxy: <name>`),
   `network: default` and `network: <netvm>`, `local-inbound`, adoption
   records and refusals (`adopt: force`, `disposables: yes`).
