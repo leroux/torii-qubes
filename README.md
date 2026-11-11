@@ -123,7 +123,7 @@ the same steps with the output to expect at each one.
 everything:
 
 ```sh
-git clone https://github.com/Gaia-PBC/torii-qubes.git && cd torii-qubes
+git clone https://github.com/leroux/torii-qubes.git && cd torii-qubes
 make          # build/torii-dom0-<version>.noarch.rpm
 ```
 

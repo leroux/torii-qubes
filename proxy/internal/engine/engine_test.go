@@ -18,10 +18,10 @@ import (
 	"golang.org/x/net/dns/dnsmessage"
 	"golang.org/x/net/proxy"
 
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/tailnet"
+	"github.com/leroux/torii-qubes/proxy/internal/config"
+	"github.com/leroux/torii-qubes/proxy/internal/events"
+	"github.com/leroux/torii-qubes/proxy/internal/policy"
+	"github.com/leroux/torii-qubes/proxy/internal/tailnet"
 )
 
 const testCfg = `{

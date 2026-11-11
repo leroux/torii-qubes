@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/tailnet"
+	"github.com/leroux/torii-qubes/proxy/internal/config"
+	"github.com/leroux/torii-qubes/proxy/internal/events"
+	"github.com/leroux/torii-qubes/proxy/internal/tailnet"
 )
 
 func TestChoose(t *testing.T) {

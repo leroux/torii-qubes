@@ -46,6 +46,7 @@ devices stay in the admin console until you remove them.
 | `template`, `base-template` | `torii-<base-template>`, `fedora-44-minimal` | The tool's own template and what it's cloned from. A new base is a new template: `apply` creates it, moves the proxies onto it (one restart each) and removes the old one once nothing uses it. |
 | `tailnet.control-url` | Tailscale | A Headscale (or other) coordination server. |
 | `tailnet.tag-owners` | `[autogroup:admin]` | For `torii grants`. |
+| `tailnet.tailscale-logs` | `no` | `yes` lets each identity upload Tailscale's client logs to `log.tailscale.com`, which Tailscale support asks for. They go over the proxy qube's own network, not through an egress. Off, the control server is told so (no logs, no support). tsnet's port mapper (UPnP, NAT-PMP, PCP) is always off: behind Qubes' NAT it only broadcasts. |
 | `status-readers` | | Admin qubes that may read `torii.Status` besides dom0. |
 | `defaults` | | Any per-qube key below except `forwards` and `local-inbound`. |
 

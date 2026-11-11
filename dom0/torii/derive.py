@@ -120,6 +120,8 @@ def proxy_config(m: Machine, proxy: str, addresses: dict[str, str], version: str
                            **({"egress": u.egress} if u.egress != "direct" else {})}
     if m.control_url:
         cfg["control_url"] = m.control_url
+    if m.tailscale_logs:
+        cfg["tailscale_logs"] = True
     return cfg
 
 

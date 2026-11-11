@@ -28,13 +28,13 @@ import (
 
 	"golang.org/x/net/dns/dnsmessage"
 
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/admin"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/daemon"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/engine"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/tailnet"
+	"github.com/leroux/torii-qubes/proxy/internal/admin"
+	"github.com/leroux/torii-qubes/proxy/internal/config"
+	"github.com/leroux/torii-qubes/proxy/internal/daemon"
+	"github.com/leroux/torii-qubes/proxy/internal/engine"
+	"github.com/leroux/torii-qubes/proxy/internal/events"
+	"github.com/leroux/torii-qubes/proxy/internal/policy"
+	"github.com/leroux/torii-qubes/proxy/internal/tailnet"
 )
 
 func TestMain(m *testing.M) {

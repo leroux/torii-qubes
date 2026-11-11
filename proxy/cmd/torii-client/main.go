@@ -27,7 +27,7 @@ import (
 	"regexp"
 	"syscall"
 
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/qubesdb"
+	"github.com/leroux/torii-qubes/proxy/internal/qubesdb"
 )
 
 type listen struct {

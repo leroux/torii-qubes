@@ -4,7 +4,7 @@ import (
 	"net/netip"
 	"testing"
 
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
+	"github.com/leroux/torii-qubes/proxy/internal/config"
 )
 
 func testConfig(t *testing.T) *config.Config {

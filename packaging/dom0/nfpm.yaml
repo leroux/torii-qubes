@@ -7,7 +7,7 @@ description: |
   torii, declarative and visible connectivity for qubes: one file per
   machine, plan / apply / show / check. Carries the proxy and client
   packages that it installs into templates, so they need no repository.
-homepage: https://github.com/Gaia-PBC/torii-qubes
+homepage: https://github.com/leroux/torii-qubes
 license: MIT
 depends: [python3-qubesadmin, python3-pyyaml, qubes-core-qrexec]
 contents:

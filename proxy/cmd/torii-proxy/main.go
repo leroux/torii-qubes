@@ -20,12 +20,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/admin"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/daemon"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/intercept"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/qrexec"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/qubesdb"
+	"github.com/leroux/torii-qubes/proxy/internal/admin"
+	"github.com/leroux/torii-qubes/proxy/internal/config"
+	"github.com/leroux/torii-qubes/proxy/internal/daemon"
+	"github.com/leroux/torii-qubes/proxy/internal/intercept"
+	"github.com/leroux/torii-qubes/proxy/internal/qrexec"
+	"github.com/leroux/torii-qubes/proxy/internal/qubesdb"
+	"github.com/leroux/torii-qubes/proxy/internal/tailnet"
 )
 
 func main() {
@@ -127,6 +128,12 @@ func run(args []string) error {
 		}()
 	}
 	for {
+		if tailnet.SetTelemetry(cfg.TailscaleLogs) {
+			// Log uploads were turned off in this process for good; the
+			// service manager starts it again with them on.
+			log.Printf("config %s turns Tailscale log uploads on: restarting", cfg.Version)
+			return nil
+		}
 		d, err := daemon.Start(ctx, cfg, opt)
 		if err != nil {
 			return err

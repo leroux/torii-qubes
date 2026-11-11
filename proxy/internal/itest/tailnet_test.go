@@ -27,11 +27,11 @@ import (
 	"tailscale.com/tstest/integration/testcontrol"
 	"tailscale.com/types/logger"
 
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/engine"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/tailnet"
+	"github.com/leroux/torii-qubes/proxy/internal/config"
+	"github.com/leroux/torii-qubes/proxy/internal/engine"
+	"github.com/leroux/torii-qubes/proxy/internal/events"
+	"github.com/leroux/torii-qubes/proxy/internal/policy"
+	"github.com/leroux/torii-qubes/proxy/internal/tailnet"
 )
 
 func startControl(t *testing.T, requireAuth bool) (string, *testcontrol.Server) {

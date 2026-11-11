@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/policy"
+	"github.com/leroux/torii-qubes/proxy/internal/policy"
 )
 
 // go test ./internal/engine -run TestStress -stress 20 -v

@@ -43,15 +43,9 @@
   showed no packet from the proxy qube to the destination. On Tailscale
   (`TestTailscaleEgress` with `TORII_TS_EXIT`, a laptop as the second exit
   node): failover 35 s, failback after the hold-down.
-
-## Found on a real machine, not yet fixed
-
-- **tsnet's own traffic goes direct from the proxy qube**: every identity
-  (the egress's too) uploads its client logs to `log.tailscale.com`, and
-  the port mapper sends SSDP (UPnP discovery). No workload traffic, but it
-  bypasses the egress and tells Tailscale about the machine. Off with
-  `TS_NO_LOGS_NO_SUPPORT=true` and the port mapper disabled; Tailscale's
-  support then has no client logs. Decide the default.
+- Found there: tsnet uploaded client logs to `log.tailscale.com` and its
+  port mapper broadcast SSDP, both straight from the proxy qube. Now both
+  off by default (`tailnet.tailscale-logs: yes` turns the logs back on).
 
 ## Not yet tried on a real machine
 

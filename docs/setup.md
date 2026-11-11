@@ -22,7 +22,7 @@ needs it. Every command and key is in [`reference.md`](reference.md).
 In `dev`, in your home directory:
 
 ```sh
-git clone https://github.com/Gaia-PBC/torii-qubes.git && cd torii-qubes
+git clone https://github.com/leroux/torii-qubes.git && cd torii-qubes
 make
 ```
 

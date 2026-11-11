@@ -7,7 +7,7 @@ import (
 	"net/netip"
 	"strings"
 
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
+	"github.com/leroux/torii-qubes/proxy/internal/config"
 )
 
 // Verdict is allow or refuse; an event may also say closed.

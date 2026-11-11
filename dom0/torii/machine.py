@@ -188,6 +188,7 @@ class Machine:
     egresses: dict[str, Egress] = dataclasses.field(default_factory=dict)
     name: str = ""  # the machine: prefixes its tags and its qubes' device names
     mesh: str = ""  # this file's mesh; "" is the default. Meshes never touch each other's qubes
+    tailscale_logs: bool = False  # tsnet may upload client logs to Tailscale (off: nothing goes direct)
 
     @property
     def machine_tag(self) -> str:
@@ -587,7 +588,7 @@ def parse(text: str) -> Machine:
         proxies[p.name] = p
 
     tnet = doc.get("tailnet", {}) or {}
-    _check_keys("tailnet", tnet, {"control-url", "tag-owners"})
+    _check_keys("tailnet", tnet, {"control-url", "tag-owners", "tailscale-logs"})
     defaults = doc.get("defaults", {}) or {}
     _moved("defaults", defaults)
     _check_keys("defaults", defaults, QUBE_KEYS - ENTRY_ONLY_KEYS)
@@ -634,7 +635,8 @@ def parse(text: str) -> Machine:
                 tag_owners=tuple(tnet.get("tag-owners", ["autogroup:admin"])),
                 proxies=proxies, default_proxy=main.name,
                 status_readers=tuple(_qube_name("status-readers", s) for s in doc.get("status-readers", []) or []),
-                qubes=qubes, defaults=defaults, services=services, egresses=egresses, name=mname, mesh=mesh)
+                qubes=qubes, defaults=defaults, services=services, egresses=egresses, name=mname, mesh=mesh,
+                tailscale_logs=_bool("tailnet.tailscale-logs", tnet.get("tailscale-logs", False)))
     # The defaults themselves must resolve (network may come from entries).
     _resolve("defaults-check", {} if "network" in defaults else {"network": "none"}, defaults, main.name,
              proxies, "defaults", mname, egresses)

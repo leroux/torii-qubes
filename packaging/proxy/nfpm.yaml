@@ -7,7 +7,7 @@ description: |
   torii proxy program for a Qubes proxy qube: one tailnet identity per
   workload, qrexec and routed workloads, decisions per connection.
   Installed into the proxy template by the dom0 tool, torii.
-homepage: https://github.com/Gaia-PBC/torii-qubes
+homepage: https://github.com/leroux/torii-qubes
 license: MIT
 contents:
   - src: ../../LICENSE   # a plain file: nfpm puts type: license in RPMs only

@@ -15,13 +15,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/admin"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/engine"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/intercept"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/qrexec"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/tailnet"
+	"github.com/leroux/torii-qubes/proxy/internal/admin"
+	"github.com/leroux/torii-qubes/proxy/internal/config"
+	"github.com/leroux/torii-qubes/proxy/internal/engine"
+	"github.com/leroux/torii-qubes/proxy/internal/events"
+	"github.com/leroux/torii-qubes/proxy/internal/intercept"
+	"github.com/leroux/torii-qubes/proxy/internal/qrexec"
+	"github.com/leroux/torii-qubes/proxy/internal/tailnet"
 )
 
 // Options adjust a run; the zero value is production.

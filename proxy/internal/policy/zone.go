@@ -4,7 +4,7 @@ import (
 	"net/netip"
 	"strings"
 
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/config"
+	"github.com/leroux/torii-qubes/proxy/internal/config"
 )
 
 // Zone is where an address is. Every address is in exactly one zone, and a

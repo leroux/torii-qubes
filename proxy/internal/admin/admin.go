@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/engine"
-	"github.com/Gaia-PBC/torii-qubes/proxy/internal/events"
+	"github.com/leroux/torii-qubes/proxy/internal/engine"
+	"github.com/leroux/torii-qubes/proxy/internal/events"
 )
 
 // Handler serves the API for e.

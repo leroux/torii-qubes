@@ -45,6 +45,10 @@ type Config struct {
 	// ControlURL is the coordination server: Tailscale, Headscale, or a
 	// test server. Empty means Tailscale's default.
 	ControlURL string `json:"control_url,omitempty"`
+	// TailscaleLogs lets tsnet upload its client logs to Tailscale
+	// (log.tailscale.com), over the proxy qube's own network. Off unless
+	// set: see tailnet.SetTelemetry.
+	TailscaleLogs bool `json:"tailscale_logs,omitempty"`
 	// StateDir holds one folder per identity, on the private volume.
 	StateDir string `json:"state_dir"`
 	// LogDir holds one connection log per workload; empty keeps the log

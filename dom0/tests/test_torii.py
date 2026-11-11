@@ -457,6 +457,15 @@ class Schema(unittest.TestCase):
     """The file says each fact once: a qube's proxy in proxy:, the kind of
     identity in tailnet.identity, its network explicitly."""
 
+    def test_tailscale_logs_off_unless_asked(self):
+        body = "qubes:\n  w: {network: proxy, outbound: {internet: all}}\n"
+        off = derive.proxy_config(mparse(body), "sys-torii", {"w": "10.137.0.9"}, "v1")
+        self.assertNotIn("tailscale_logs", off)
+        on = derive.proxy_config(mparse("tailnet: {tailscale-logs: yes}\n" + body), "sys-torii", {"w": "10.137.0.9"}, "v1")
+        self.assertIs(on["tailscale_logs"], True)
+        with self.assertRaises(machine.FileError):
+            mparse("tailnet: {tailscale-logs: maybe}\n" + body)
+
     def bad(self, text, msg):
         with self.assertRaises(machine.FileError) as e:
             mparse(text)

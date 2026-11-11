@@ -1,4 +1,4 @@
-module github.com/Gaia-PBC/torii-qubes/proxy
+module github.com/leroux/torii-qubes/proxy
 
 go 1.27.3
 
