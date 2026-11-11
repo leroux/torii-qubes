@@ -161,6 +161,165 @@ allows is never reached.
 Offline qubes that reach out also need the client package in their template
 (`torii install-client <template>`); `plan` tells you which templates lack it.
 
+## Advanced
+
+Every key below is optional except `machine` and `network`. Full details are in
+[`docs/reference.md`](docs/reference.md).
+
+### Machine name and control server
+
+```yaml
+machine: m1          # required; prefixes tags (tag:m1-server) and device names (m1-wiki)
+mesh: test           # a separate file, applied on its own: torii -f ~/test.yaml apply
+tailnet:
+  control-url: https://headscale.example.org   # default: Tailscale
+  tag-owners: [autogroup:admin]                # used by `torii grants`
+  tailscale-logs: no                           # yes: tsnet uploads client logs to Tailscale
+```
+
+Files with different `mesh:` values never change each other's qubes.
+
+### Netvm per qube
+
+`network:` is required for every qube, in its entry or in `defaults`.
+
+| Value | Netvm |
+|---|---|
+| `none` | none; tailnet and internet only over qrexec, as the file allows |
+| `proxy` | the qube's proxy qube, which decides every connection and DNS query |
+| `default` | Qubes' default netvm |
+| a qube name | that netvm |
+
+torii changes only the qubes listed under `qubes:`. The first `apply` records each
+qube's previous netvm. `adopt: force` is required to move a qube off a netvm
+torii doesn't recognize, such as `sys-whonix` or a VPN qube. `disposables: yes`
+is required to list a disposable template. A qube removed from the file gets
+netvm none, and `plan` prints the command that restores its old netvm.
+
+### Outbound allowlists
+
+```yaml
+  build:                    # a qube, under qubes:
+    network: none
+    outbound:
+      internet: [pypi.org, "*.github.com:443", "example.com:443/udp", 203.0.113.0/24]   # or all, or none
+      lan: [192.168.1.10:631]   # private addresses; not included in internet: all
+      tailnet: yes              # tailnet destinations; the tailnet's grants decide which
+    tailnet: { identity: tagged }   # outbound.tailnet needs an identity
+```
+
+An entry is a name, `*.domain`, an address or a range, with an optional `:port`.
+Entries are TCP unless they end in `/udp`.
+
+### Exit nodes
+
+```yaml
+egress:
+  vpn:
+    exits: [exit-home, exit-cloud]   # tried in order
+    failback-after: 2m               # how long a higher node must stay healthy before torii switches back
+    tags: [egress]                   # tags of the egress identity
+    hostname: m1-egress-vpn          # its device name
+    probe: example.com:443           # optional check through the active exit node
+qubes:
+  browser: { network: proxy, egress: vpn, outbound: { internet: all } }
+```
+
+The qube's internet traffic and DNS go through the first healthy exit node. All
+qubes on the egress share one identity, which may only reach the internet. When
+no exit node is healthy, connections are refused and DNS fails. Nothing goes out
+directly. LAN traffic doesn't go through the exit node. `torii log --egress vpn`
+shows switches between exit nodes.
+
+### Proxy qubes
+
+```yaml
+egress: { vpn: { exits: [exit-home] } }
+proxy: { name: sys-torii, netvm: sys-firewall, label: orange, unlisted: refuse }
+proxies:
+  - { name: sys-torii-dvm, unlisted: { internet: all, egress: vpn } }
+  - { name: sys-torii-vpn, netvm: sys-vpn }
+template: torii-fedora-44-minimal    # the proxies' template
+base-template: fedora-44-minimal     # what that template is cloned from
+status-readers: [admin-qube]         # qubes other than dom0 that may read status
+```
+
+A qube uses another proxy with `proxy: <name>`. A proxy qube is created the first
+time something uses it. `unlisted:` sets what qubes attached to that proxy, but
+not listed in the file, may reach: `refuse` (the default), or `internet` and
+`egress` as for a qube. A disposable takes its netvm from its disposable
+template, so put that template on a proxy such as `sys-torii-dvm` to decide what
+its disposables get.
+
+### Tailnet identity and inbound ports
+
+```yaml
+  wiki:                      # a qube, under qubes:
+    network: none
+    tailnet:
+      identity: tagged       # none | tagged | login (signed in as a person)
+      tags: [server]         # becomes tag:<machine>-server
+      hostname: wiki         # default: the qube's name
+      inbound: [22, { port: 443, target: 8080, tls: yes }]   # tls: HTTPS with a Tailscale certificate
+```
+
+`torii show` prints a sign-in link for each new identity. To use an auth key
+instead: `torii sign-in-key QUBE < key`. The key is stored only in the proxy qube.
+
+### Services
+
+```yaml
+services:
+  chat:
+    qube: infra
+    tags: [tag:chat]     # full tags are allowed here, for tags shared between machines
+    hostname: chat
+    proxy: sys-torii
+    ports: [{ port: 443, target: 8008, tls: yes }]
+```
+
+Each service is its own tailnet device. torii leaves the hosting qube's netvm
+alone unless the qube is also listed under `qubes:`.
+
+### Offline qubes: forwards, SOCKS, HTTP proxy, local ports
+
+```yaml
+  job:                       # a qube, under qubes:
+    network: none
+    outbound: { internet: [pypi.org], tailnet: yes }
+    tailnet: { identity: tagged }
+    forwards: { db: { to: "store:5432", port: 5432 } }   # listens on 127.0.0.1:5432 in the qube
+    socks: 1080                                          # SOCKS port, or no
+    http-proxy: 3128                                     # HTTP proxy port, or no
+    local-inbound: [{ port: 8000, from: [build] }]       # qubes on this machine allowed to reach port 8000
+```
+
+`forwards`, `socks` and `http-proxy` need the client package in the qube's
+template: `torii install-client TEMPLATE`.
+
+### Defaults
+
+`defaults:` accepts every per-qube key except `forwards` and `local-inbound`.
+A qube's own entry overrides it.
+
+### Commands
+
+| Command | |
+|---|---|
+| `torii plan [--diff]` | every change `apply` would make, in order |
+| `torii apply [-y]` | make the changes; after a failure, run it again to continue |
+| `torii show [QUBE] [--json]` | what each qube can reach, read from the live system |
+| `torii check` | where the live system differs from the file |
+| `torii log QUBE` | recent connections and why each was allowed or refused |
+| `torii log --egress NAME` | exit node switches and health changes |
+| `torii grants` | proposed tag owners and grants for the tailnet policy |
+| `torii sign-in-key NAME < key` | sign in a qube, a service or `egress:NAME` with an auth key |
+| `torii install-client TEMPLATE` | install the client package in a template |
+| `torii snapshot` | the live state `plan` reads, for bug reports |
+
+Every command takes `-f FILE` (default `~/torii.yaml`). For many machines, see
+[`docs/salt.md`](docs/salt.md).
+
 ## Documentation
 
 | | |
