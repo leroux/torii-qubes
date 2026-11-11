@@ -266,6 +266,84 @@ origin (a configured base URL or public address) must be told its new address,
 identity. The exit nodes and the egress's grant are in
 [`tailscale.md`, "Exit nodes"](tailscale.md#exit-nodes).
 
+## 10. Adopt it a step at a time
+
+Each step changes only what it names, and can be undone on its own:
+
+1. **Nothing yet.** A file with only `machine:` plans no changes; no proxy
+   qube is created until something uses one.
+2. **One qube through exit nodes.** Add an egress and one qube:
+   ```yaml
+   machine: m1
+   egress:
+     vpn: { exits: [exit1, exit2] }
+   qubes:
+     browser: { network: proxy, egress: vpn, outbound: { internet: all } }
+   ```
+   `apply` creates `sys-lintel` and one identity, `m1-egress-vpn`; sign it in
+   (`lintel show` prints the link) and grant it the internet
+   ([`tailscale.md`](tailscale.md#exit-nodes)). Only `browser` changes: its
+   netvm becomes `sys-lintel`, and its old netvm is recorded. Nothing is
+   installed in it or its template.
+3. **More qubes**, one entry each. Others stay as they are.
+4. **A tailnet identity** for a qube that needs the tailnet:
+   `tailnet: {identity: tagged}`. Its tailnet traffic uses it; its internet
+   stays on the egress.
+5. **Qubes with no network card** (`network: none` with `outbound:`) need the
+   client in their template; `plan` says which.
+
+To undo a step, take its lines out and `apply`. A qube leaving the file gets
+no netvm, and `plan` prints the command that puts back the one it had.
+
+## Disposables through an egress
+
+A disposable gets its netvm from its disposable template, not from the qube
+that opens it, and can't be listed in the file. So give the disposables a
+disposable template of their own behind a proxy whose `unlisted:` sends
+them through the egress, and keep `sys-lintel` refusing qubes nobody listed:
+
+1. Create the disposable template (here from `fedora-43-xfce`):
+   ```sh
+   qvm-create --class AppVM --template fedora-43-xfce --label red browser-dvm
+   qvm-prefs browser-dvm template_for_dispvms True
+   ```
+2. In the file:
+   ```yaml
+   machine: m1
+   egress:
+     vpn: { exits: [exit1, exit2] }
+   proxies:
+     - { name: sys-lintel-dvm, unlisted: { internet: all, egress: vpn } }
+   qubes:
+     browser-dvm:            # its disposables use sys-lintel-dvm
+       network: proxy
+       proxy: sys-lintel-dvm
+       disposables: yes      # listing a disposable template changes every disposable made from it
+       egress: vpn
+       outbound: { internet: all }
+   ```
+   `sys-lintel-dvm` carries its own `vpn` identity, `m1-egress-vpn-sys-lintel-dvm`;
+   sign it in too.
+3. Make the qubes that open links in disposables use it:
+   `qvm-prefs browser default_dispvm browser-dvm`. lintel doesn't set this.
+4. `lintel check` warns about any qube on an egress whose `default_dispvm`
+   would still go out another way, and `lintel show` lists the disposables
+   it sees on `sys-lintel-dvm`, by name.
+
+## Everything through lintel by default
+
+Qubes' global default netvm decides where new qubes go. Point it at a lintel
+proxy and choose what that means with the proxy's `unlisted:`:
+
+- `unlisted: refuse` (the default): **new qubes are offline** until you list
+  them.
+- `unlisted: { internet: all, egress: vpn }`: **new qubes reach the internet
+  only through the exit nodes**, failing closed.
+
+lintel never changes the global default; set it yourself
+(`qubes-prefs default_netvm sys-lintel`) once `sys-lintel` exists. Qubes'
+own service qubes keep their netvms.
+
 ## Day to day
 
 - **Change something:** edit `~/lintel.yaml`, then `lintel plan` and `lintel apply`.

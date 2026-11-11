@@ -310,3 +310,23 @@ def egress_problems(proxy: str, st: dict[str, Any], now) -> list[str]:
             if now - since > datetime.timedelta(days=1):
                 out.append(f"{where}: on fallback {g['active']} since {_when(g['active_since'])} ({_down(g)})")
     return out
+
+
+def dispvm_escapes(m, snap: Snapshot) -> list[str]:
+    """Listed qubes on an egress whose disposables would go out another way:
+    a disposable's netvm is its disposable template's, not its opener's. A
+    template behind a lintel proxy, or with no netvm, is no escape."""
+    out = []
+    for name, q in sorted(m.qubes.items()):
+        info = snap.qubes.get(name)
+        if q.egress == "direct" or info is None or not info.default_dispvm:
+            continue
+        dvm = snap.qubes.get(info.default_dispvm)
+        if dvm is None or not dvm.netvm:
+            continue
+        nv = snap.qubes.get(dvm.netvm)
+        if nv is not None and derive.OWNED_TAG in nv.tags:
+            continue
+        out.append(f"{name} uses egress {q.egress}, but its default_dispvm ({dvm.name}) has netvm {dvm.netvm}: "
+                   f"disposables opened from {name} go out directly")
+    return out

@@ -123,8 +123,17 @@ Services (top level, `services:`):
 - No IPv6 behind the proxy: the tool turns Qubes' `ipv6` feature off on
   proxy qubes (their clients inherit it), and the proxy drops any IPv6 a
   workload sets up for itself. The proxy qube's own IPv6 is unaffected.
-- Disposables can't be networked workloads,
-  since their address changes on each start.
+- Disposables can't be listed, since their address changes on each start.
+  A routed disposable is an unlisted qube of its disposable template's proxy
+  and gets that proxy's `unlisted:`; disposables with no network card that
+  call the proxy over qrexec are not supported.
+- A disposable's netvm is its disposable template's, not that of the qube
+  that opened it. `check` warns when a qube on an egress has a
+  `default_dispvm` whose netvm isn't a lintel proxy; lintel never sets
+  `default_dispvm` itself.
+- With an egress, LAN traffic (`outbound.lan`) still goes direct through the
+  proxy's netvm; `plan` notes it. Connections open through an exit node break
+  when the egress switches to another one: the public address changes.
 - One tailnet per machine file (one coordination server).
 - Not built yet: removing tailnet devices from `check`; a GUI; Tailscale
   Services; measurements of memory per identity and userspace throughput.

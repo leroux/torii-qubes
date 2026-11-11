@@ -194,6 +194,7 @@ def cmd_check(a) -> int:
         for line in show.unlisted_lines(snap, d.get("status") or {}):
             if not line.endswith(", 0 refused"):
                 problems.append(f"{p}:{line.strip()} (attached, not in the file)")
+    problems += show.dispvm_escapes(m, snap)
     # Hand-written policy that widens what the tool set.
     for r in show.rules(snap):
         if r.file.startswith(derive.POLICY_NAME) or r.file == derive.DENY_POLICY or r.action != "allow":

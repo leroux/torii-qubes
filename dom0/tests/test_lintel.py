@@ -4,6 +4,7 @@
 import copy
 import json
 import os
+import textwrap
 import unittest
 
 from lintel import derive, machine, plan
@@ -146,7 +147,7 @@ class MachineFile(unittest.TestCase):
     def test_every_machine_file_in_the_docs_parses(self):
         """Every ```yaml block in the README and docs/ parses with the tool's
         own parser. An indented block is a fragment of qubes: and is parsed
-        under it. Blocks that are not machine files (none yet) would be
+        under it, unless it starts with machine: (a whole file in a list). Blocks that are not machine files (none yet) would be
         marked with a first line `# not a machine file`."""
         import glob
         import re
@@ -160,7 +161,10 @@ class MachineFile(unittest.TestCase):
                 if block.startswith("# not a machine file"):
                     continue
                 first = next((l for l in block.splitlines() if l.strip() and not l.lstrip().startswith("#")), "")
-                doc = ("qubes:\n" + block) if first.startswith(" ") else block
+                if first.lstrip().startswith("machine:"):
+                    doc = textwrap.dedent(block)  # a whole file, indented inside a list item
+                else:
+                    doc = ("qubes:\n" + block) if first.startswith(" ") else block
                 with self.subTest(file=os.path.basename(path), block=i):
                     try:
                         mparse("defaults: {network: none, tailnet: {tags: [t]}}\n" + doc if "defaults:" not in doc else doc)
@@ -493,11 +497,12 @@ qubes:
         self.bad("defaults: {network: none, adopt: force}\nqubes: {}", "unknown key 'adopt'")
 
 
-def with_qube(s: Snapshot, name, netvm="", provides_network=False, dvm=False, tags=None, qid=60) -> Snapshot:
+def with_qube(s: Snapshot, name, netvm="", provides_network=False, dvm=False, tags=None, qid=60,
+              default_dispvm="") -> Snapshot:
     from lintel.live import QubeInfo
     s = copy.deepcopy(s)
     s.qubes[name] = QubeInfo(name, "AppVM", "Halted", "fedora-43-xfce", netvm, provides_network, qid, "", False,
-                             "red", list(tags or []), {}, template_for_dispvms=dvm)
+                             "red", list(tags or []), {}, template_for_dispvms=dvm, default_dispvm=default_dispvm)
     return s
 
 
@@ -683,6 +688,27 @@ PROXY_STATUS = {"status": {
         {"workload": "unlisted:10.137.0.51", "direction": "out", "source": "unlisted:10.137.0.51",
          "dest": "1.1.1.1:443", "verdict": "allow", "reason": "internet-full"},
         {"workload": "egress:vpn", "direction": "egress", "dest": "exit-ams", "reason": "exit-switch"}]}
+
+
+class Disposables(unittest.TestCase):
+    """A disposable takes its netvm from its disposable template, not from
+    the qube that opened it: a qube forced through an egress can still open
+    a disposable that goes out direct."""
+
+    def test_escape_through_default_dispvm(self):
+        from lintel import show
+        m = mparse(EGRESS)
+        after = simulate(snap(), plan.make(full_machine(), snap(), VERSION))  # sys-lintel exists, owned
+        s = with_qube(after, "default-dvm", "sys-firewall", dvm=True, qid=70)
+        s = with_qube(s, "browser-dvm", "sys-lintel", dvm=True, qid=71)
+        s = with_qube(s, "offline-dvm", "", dvm=True, qid=72)
+        for name, dvm in (("browser", "default-dvm"), ("build", "offline-dvm")):
+            s = with_qube(s, name, "", default_dispvm=dvm, qid=80 + len(name))
+        self.assertEqual(show.dispvm_escapes(m, s), [
+            "browser uses egress vpn, but its default_dispvm (default-dvm) has netvm sys-firewall: "
+            "disposables opened from browser go out directly"])
+        s.qubes["browser"].default_dispvm = "browser-dvm"
+        self.assertEqual(show.dispvm_escapes(m, s), [], "a disposable template behind a lintel proxy")
 
 
 class EgressStatus(unittest.TestCase):

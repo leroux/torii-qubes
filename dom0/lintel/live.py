@@ -29,6 +29,7 @@ class QubeInfo:
     features: dict[str, str]
     netvm_default: bool = False  # its netvm follows Qubes' default
     template_for_dispvms: bool = False  # a disposable template
+    default_dispvm: str = ""  # the disposable template its disposables come from
 
     @property
     def address(self) -> str:
@@ -108,6 +109,7 @@ def take(app, policy_client, interesting: set[str], policy_name: str = derive.PO
             tags=tags,
             netvm_default=_is_default(vm, "netvm"),
             template_for_dispvms=bool(_prop(vm, "template_for_dispvms", False)),
+            default_dispvm=str(_prop(vm, "default_dispvm", "") or ""),
             features={k: str(v) for k, v in vm.features.items()} if want else {},
         )
     policy = None

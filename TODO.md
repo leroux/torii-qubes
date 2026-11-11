@@ -2,6 +2,18 @@
 
 ## Later
 
+- **Per-qube firewalling, Little Snitch-style.** An `ask` verdict
+  (`outbound.internet: ask`): the engine holds a TCP connection while dom0,
+  or a GUI qube, asks through a `lintel.Ask` qrexec call (never a prompt in
+  the proxy qube); UDP and QUIC decided when the name is resolved. "Always"
+  answers become learned rules in the proxy, which `lintel rules` offers to
+  write into the file. Rules attach to the qube (or a proxy's `unlisted:`),
+  never to an identity or an egress.
+- **Shared tailnet identities**, explicit (`identities:`) and for listed
+  qubes only, if a real need appears; egress identities stay internet-only.
+- **Offline disposables through an egress** (the client over qrexec): the
+  proxy sees `disp1234` and can't tell its template.
+
 - **Tailnet outbound for a qube on its own netvm, over qrexec** ("option 2").
   A qube with `network: default` or `network: <netvm>` keeps that netvm for
   the internet, and gets the client's SOCKS port, HTTP proxy and forwards for
@@ -22,6 +34,9 @@
 
 ## Not yet tried on a real machine
 
+- Egresses on a real tailnet: TSMP ping health, failover and failback with
+  real exit nodes, an unlisted disposable through `sys-lintel-dvm` (the
+  in-process tailnet test, `internal/itest`, skips on a Qubes qube).
 - `identity: login`, dedicated proxies (`proxies:`, `proxy: <name>`),
   `network: default` and `network: <netvm>`, `local-inbound`, adoption
   records and refusals (`adopt: force`, `disposables: yes`).
