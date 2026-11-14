@@ -9,6 +9,20 @@
   answers become learned rules in the proxy, which `torii rules` offers to
   write into the file. Rules attach to the qube (or a proxy's `unlisted:`),
   never to an identity or an egress.
+- **Strict protocols on allowlist entries** (e.g. `pypi.org:443/tls`, or a
+  qube's `protocols: [tls, http]`). Today an intercepted connection whose
+  first bytes aren't TLS passes on the looked-up name alone, so raw TCP or
+  plain HTTP to a shared (CDN) address can reach another site there. Strict
+  entries would refuse anything not readable: TLS must carry a matching
+  server name, plain HTTP a matching `Host`. The peek in `engine.go`
+  (`sni.Peek`) is the hook. Opt-in, since it breaks SSH, databases and
+  custom protocols; UDP refused at first (QUIC's server name is readable
+  from the Initial packet, later); ECH hides the real name and is refused.
+  Doesn't stop fronting by `Host` inside TLS; that needs the next item.
+- **TLS interception, opt-in per qube.** The only full answer to domain
+  fronting (`Host` inside TLS differing from the server name). Heavy: a
+  torii CA in each qube's template, pinned apps break, and `sys-torii` holds
+  plaintext. Only if a real need appears.
 - **Shared tailnet identities**, explicit (`identities:`) and for listed
   qubes only, if a real need appears; egress identities stay internet-only.
 - **Offline disposables through an egress** (the client over qrexec): the
@@ -66,6 +80,13 @@
 - CI running `make test` and the model's tests on pull requests.
 
 ## Small
+
+- `docs/design.md` says the server-name check "stops domain fronting with
+  an allowed name". It stops a mismatched server name, not the classic form
+  (allowed server name, other `Host` inside TLS). Reword.
+- `docs/reference.md` gives `outbound.tailnet` as `yes | no`, but the machine
+  file also takes a list of devices (`dom0/torii/machine.py`, `tailnet_allow`).
+  Document it.
 
 - The first `apply` after an upgrade turns the proxy's IPv6 feature off one
   step after restarting it; the guard covers the gap, but the order should

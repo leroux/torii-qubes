@@ -4,6 +4,7 @@
 #                   the toolchain in proxy/go.mod and nfpm pinned in tools/go.mod)
 #   make test       unit tests, Go and Python
 #   make test-all   every level that can run here (see proxy/README.md)
+#   make diagrams   docs/diagrams/*.svg from their .d2 sources (needs d2)
 #
 # Install: copy build/torii-dom0-*.noarch.rpm to dom0 and
 #   sudo dnf install ./torii-dom0-*.noarch.rpm      (see README.md)
@@ -13,7 +14,7 @@ NFPM    ?= $(CURDIR)/build/nfpm
 export TORII_VERSION := $(VERSION)
 GOFLAGS := -trimpath -ldflags=-s
 
-.PHONY: all binaries packages test test-go test-py test-all clean
+.PHONY: all binaries packages test test-go test-py test-all diagrams clean
 
 all: packages
 
@@ -52,6 +53,12 @@ test-py:
 
 test-all: test-py
 	cd proxy && $(MAKE) test-all
+
+# The README's diagrams, light and dark in one SVG.
+# d2: go install oss.terrastruct.com/d2@latest
+D2 ?= d2
+diagrams:
+	for f in docs/diagrams/*.d2; do $(D2) --layout elk --theme 0 --dark-theme 200 --pad 20 "$$f" "$${f%.d2}.svg"; done
 
 clean:
 	rm -rf build

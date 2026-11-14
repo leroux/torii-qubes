@@ -39,6 +39,8 @@ devices stay in the admin console until you remove them.
 
 | Key | Default | Meaning |
 |---|---|---|
+| `machine` | required | This machine's name. It prefixes tags (`server` becomes `tag:m1-server`) and device names (`wiki` becomes `m1-wiki`); every tagged device also carries `tag:m1`. |
+| `mesh` | | A name for a file applied on its own (`torii -f ~/test.yaml apply`). Files with different `mesh:` values never change each other's qubes. |
 | `proxy` | `sys-torii` | The proxy qube: a name, or `{name, netvm, label, unlisted}` (netvm `sys-firewall`). |
 | `proxy.unlisted`, `proxies[].unlisted` | `refuse` | Qubes attached to that proxy but not listed under `qubes:`, disposables included: `refuse`, or `{internet, egress}` (`internet` as in `outbound.internet`). Never a tailnet identity. |
 | `egress.<name>` | | A way out through exit nodes: `exits` (in order, required), `failback-after` (`2m`), `tags` (`[egress]`), `hostname` (`<machine>-egress-<name>`; `-<proxy>` is added on other proxies), `probe` (`host:port`, none). See [`tailscale.md`](tailscale.md#exit-nodes). |

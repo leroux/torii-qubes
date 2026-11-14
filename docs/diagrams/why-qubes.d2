@@ -1,0 +1,25 @@
+# Qubes alone: a qube's netvm decides everything.
+grid-rows: 2
+grid-gap: 40
+classes: {
+  row: {style: {fill: transparent; stroke: transparent; font-size: 20}}
+  off: {style: {opacity: 0.35; stroke-dash: 4}}
+}
+
+with: With a netvm {
+  class: row
+  direction: right
+  qube
+  netvm
+  network
+  qube -> netvm
+  netvm -> network: everything the firewall allows
+}
+
+without: Without a netvm {
+  class: row
+  direction: right
+  qube
+  network: {class: off}
+  qube -> network: nothing {class: off}
+}

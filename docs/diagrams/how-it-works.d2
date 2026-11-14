@@ -1,0 +1,20 @@
+# The three parts of torii and how a connection flows through them.
+direction: right
+classes: {
+  torii: {style: {fill: "#fff4e0"; stroke: "#d9822b"}}
+  qrexec: {style: {stroke-dash: 4}}
+}
+
+dom0: "dom0\ntorii" {class: torii}
+proxy: "sys-torii\ntorii-proxy" {class: torii}
+nonet: "qube without netvm\ntorii-client" {class: torii}
+routed: "qube with\nsys-torii as netvm"
+firewall: sys-firewall
+internet
+tailnet
+
+dom0 -> proxy: configures {style.opacity: 0.5}
+nonet <-> proxy: qrexec {class: qrexec}
+routed <-> proxy: network
+proxy -> firewall -> internet
+proxy <-> tailnet

@@ -1,0 +1,27 @@
+# A client and a server on two machines that can reach only each other.
+grid-rows: 2
+grid-columns: 3
+horizontal-gap: 140
+vertical-gap: 60
+classes: {
+  machine: {style: {fill: transparent; stroke-dash: 2; font-size: 18}}
+  off: {style: {opacity: 0.35; stroke-dash: 4}}
+  blank: {label: ""; style: {opacity: 0}}
+}
+
+m2: "machine m2" {
+  class: machine
+  viewer: "viewer\nno netvm"
+}
+gap1: {class: blank}
+m1: "machine m1" {
+  class: machine
+  app: "app\nno netvm"
+}
+gap2: {class: blank}
+internet: {class: off}
+gap3: {class: blank}
+
+m2.viewer -> m1.app: "port 443, over the tailnet"
+m2.viewer -> internet: refused {class: off}
+m1.app -> internet: refused {class: off}

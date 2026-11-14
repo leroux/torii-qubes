@@ -1,0 +1,13 @@
+# With torii: one proxy qube checks and routes each connection.
+direction: right
+
+qube
+sys-torii: "sys-torii\nchecks and routes\neach connection" {style.fill: "#fff4e0"; style.stroke: "#d9822b"}
+internet
+vpn: VPN
+tailnet
+
+qube -> sys-torii
+sys-torii -> internet: only what you allow
+sys-torii -> vpn: if you route it there
+sys-torii <-> tailnet: in and out, port by port
