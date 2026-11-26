@@ -1,0 +1,16 @@
+# torii's charter: what torii guarantees, and the decisions that meet it.
+# The Go is the proxy module (the proxy and the client); the Python is the
+# dom0 tool.
+name = "torii"
+env-patterns = ["^TORII_[A-Z0-9_]+$"]
+ignore = ["build", "tools", "dev", "contrib", "docs"]
+
+[go]
+module = "github.com/leroux/torii-qubes/claims"
+dir = "proxy"
+test = "go test -short ./..."
+
+[python]
+dir = "dom0"
+test = "PYTHONPATH=../claims python3 -m unittest tests.test_torii"
+env = "dom0/torii/env.py"

@@ -2,7 +2,8 @@
 #
 #   make            the three packages in build/ (needs go >= 1.21; it fetches
 #                   the toolchain in proxy/go.mod and nfpm pinned in tools/go.mod)
-#   make test       unit tests, Go and Python
+#   make test       the charter gate, then unit tests, Go and Python
+#   make claims     regenerate claims/ after editing a claims document
 #   make test-all   every level that can run here (see proxy/README.md)
 #   make diagrams   docs/diagrams/*.svg from their .d2 sources (needs d2)
 #
@@ -11,10 +12,13 @@
 
 VERSION ?= $(shell cat VERSION).$(shell git rev-list --count HEAD 2>/dev/null || echo 0)
 NFPM    ?= $(CURDIR)/build/nfpm
+CHARTER ?= $(CURDIR)/build/charter
+# charter is a private module for now: go fetches it with git, not the proxy.
+export GOPRIVATE ?= github.com/leroux/*
 export TORII_VERSION := $(VERSION)
 GOFLAGS := -trimpath -ldflags=-s
 
-.PHONY: all binaries packages test test-go test-py test-all diagrams clean
+.PHONY: all binaries packages test test-go test-py test-all claims check-claims diagrams clean
 
 all: packages
 
@@ -27,6 +31,19 @@ binaries:
 build/nfpm: tools/go.mod tools/go.sum
 	mkdir -p build
 	cd tools && go build -o ../build/nfpm github.com/goreleaser/nfpm/v2/cmd/nfpm
+
+# charter at the version in tools/go.mod. Override with CHARTER=/path/to/charter.
+build/charter: tools/go.mod tools/go.sum
+	mkdir -p build
+	cd tools && go build -o ../build/charter github.com/leroux/charter/cmd/charter
+
+CHARTER_DEP := $(if $(filter $(CURDIR)/build/charter,$(CHARTER)),build/charter)
+
+claims: $(CHARTER_DEP)
+	$(CHARTER) gen
+
+check-claims: $(CHARTER_DEP)
+	$(CHARTER) check
 
 packages: binaries $(if $(filter $(CURDIR)/build/nfpm,$(NFPM)),build/nfpm)
 	rm -rf build/bundle build/python build/*.rpm && mkdir -p build/bundle build/python
@@ -43,13 +60,13 @@ packages: binaries $(if $(filter $(CURDIR)/build/nfpm,$(NFPM)),build/nfpm)
 	cd packaging/dom0   && $(NFPM) pkg -p rpm -t ../../build/
 	@ls -1 build/*.rpm build/bundle/
 
-test: test-go test-py
+test: check-claims test-go test-py
 
 test-go:
 	cd proxy && go vet ./... && go test -short ./...
 
 test-py:
-	cd dom0 && python3 -m unittest tests.test_torii
+	cd dom0 && PYTHONPATH=../claims python3 -m unittest tests.test_torii
 
 test-all: test-py
 	cd proxy && $(MAKE) test-all

@@ -1,14 +1,19 @@
-// Build tools, pinned. Not linked into anything; make builds build/nfpm from here.
+// Build tools, pinned. Not linked into anything; make builds build/nfpm and
+// build/charter from here.
 module github.com/leroux/torii-qubes/tools
 
 go 1.27.3
 
-tool github.com/goreleaser/nfpm/v2/cmd/nfpm
+tool (
+	github.com/goreleaser/nfpm/v2/cmd/nfpm
+	github.com/leroux/charter/cmd/charter
+)
 
 require (
 	charm.land/lipgloss/v2 v2.0.4 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/AlekSi/pointer v1.2.0 // indirect
+	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.3.0 // indirect
@@ -49,6 +54,7 @@ require (
 	github.com/klauspost/compress v1.20.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/klauspost/pgzip v1.2.7 // indirect
+	github.com/leroux/charter v0.0.0-20261126232853-6f129b0523df // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.0 // indirect
 	github.com/mattn/go-runewidth v0.0.24 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect

@@ -21,10 +21,10 @@ import json
 import os
 import sys
 
-from . import __version__, derive, live, machine, plan, show, status
+from . import __version__, derive, env, live, machine, plan, show, status
 
 DEFAULT_FILE = os.path.expanduser("~/torii.yaml")
-BUNDLE_DIR = os.environ.get("TORII_BUNDLE", "/usr/share/torii")
+BUNDLE_DIR = os.environ.get(env.BUNDLE, "/usr/share/torii")
 
 
 def _app():
