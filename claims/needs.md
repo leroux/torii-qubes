@@ -58,7 +58,7 @@ Scenarios:
 3. `interrupted-apply-continues` (agent, provisional): an apply stopped by
    a failed step, run again, makes only the changes left.
 
-## STK-261126-4Q75 The owner can read back what each qube can reach, where that differs from the file, and why each connection was decided
+## STK-261126-4Q75 The owner reads back what each qube can reach, its drift from the file, and why each connection was decided
 
 Status: planned
 

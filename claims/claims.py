@@ -110,8 +110,8 @@ def pytest_runtest_logreport(report):
 #: STK_261126_346B is STK-261126-346B: A qube's traffic leaves the way its entry routes it, or not at all
 STK_261126_346B = Spec("STK-261126-346B", "A qube's traffic leaves the way its entry routes it, or not at all", "planned", "")
 
-#: STK_261126_4Q75 is STK-261126-4Q75: The owner can read back what each qube can reach, where that differs from the file, and why each connection was decided
-STK_261126_4Q75 = Spec("STK-261126-4Q75", "The owner can read back what each qube can reach, where that differs from the file, and why each connection was decided", "planned", "")
+#: STK_261126_4Q75 is STK-261126-4Q75: The owner reads back what each qube can reach, its drift from the file, and why each connection was decided
+STK_261126_4Q75 = Spec("STK-261126-4Q75", "The owner reads back what each qube can reach, its drift from the file, and why each connection was decided", "planned", "")
 
 #: STK_261126_B4CP is STK-261126-B4CP: One file in dom0 declares every qube's connectivity, and apply makes the machine match it
 STK_261126_B4CP = Spec("STK-261126-B4CP", "One file in dom0 declares every qube's connectivity, and apply makes the machine match it", "planned", "")

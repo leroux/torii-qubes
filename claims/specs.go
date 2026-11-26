@@ -107,8 +107,8 @@ func record(tb testing.TB, id string, handles []string) {
 // STK_261126_346B is STK-261126-346B: A qube's traffic leaves the way its entry routes it, or not at all
 var STK_261126_346B = &Spec{ID: "STK-261126-346B", Title: "A qube's traffic leaves the way its entry routes it, or not at all", Status: Planned}
 
-// STK_261126_4Q75 is STK-261126-4Q75: The owner can read back what each qube can reach, where that differs from the file, and why each connection was decided
-var STK_261126_4Q75 = &Spec{ID: "STK-261126-4Q75", Title: "The owner can read back what each qube can reach, where that differs from the file, and why each connection was decided", Status: Planned}
+// STK_261126_4Q75 is STK-261126-4Q75: The owner reads back what each qube can reach, its drift from the file, and why each connection was decided
+var STK_261126_4Q75 = &Spec{ID: "STK-261126-4Q75", Title: "The owner reads back what each qube can reach, its drift from the file, and why each connection was decided", Status: Planned}
 
 // STK_261126_B4CP is STK-261126-B4CP: One file in dom0 declares every qube's connectivity, and apply makes the machine match it
 var STK_261126_B4CP = &Spec{ID: "STK-261126-B4CP", Title: "One file in dom0 declares every qube's connectivity, and apply makes the machine match it", Status: Planned}
