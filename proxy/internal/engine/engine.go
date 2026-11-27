@@ -917,10 +917,14 @@ func (e *Engine) Explain(ctx context.Context, r ExplainRequest) (Explanation, er
 	if err != nil {
 		return Explanation{}, err
 	}
+	// The way a real connection of this workload would arrive: intercepted
+	// when routed, else SOCKS, or the HTTP proxy when only that is declared.
 	entry := policy.EntrySOCKS
-	switch w.Link {
-	case config.LinkRouted:
+	switch {
+	case w.Link == config.LinkRouted:
 		entry = policy.EntryIntercept
+	case !w.SOCKS && w.HTTP:
+		entry = policy.EntryHTTP
 	}
 	o := e.classify(ctx, policy.Outbound{Workload: r.Workload, Entry: entry, Port: port, SNI: strings.ToLower(r.SNI)}, host)
 	if entry == policy.EntryIntercept && o.Host != "" {
@@ -1012,6 +1016,10 @@ func (e *Engine) peekName(c net.Conn, ev events.Event) (name string, prefix []by
 	return "", nil, false
 }
 
+// fill copies a decision into its event: verdict, reason, path, identity
+// and the name it rested on.
+//
+//charter:realizes SW-261127-R4CD
 func fill(ev *events.Event, d policy.Decision) {
 	ev.Verdict, ev.Reason, ev.Path, ev.Identity, ev.Host = d.Verdict, d.Reason, d.Path, d.Identity, d.Host
 }

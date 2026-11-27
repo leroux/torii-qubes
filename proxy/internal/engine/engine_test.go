@@ -838,4 +838,22 @@ func TestExplainAgreesAndDialsNothing(t *testing.T) {
 	if xs["pypi.org:443"].Verdict != policy.Allow || xs["evil.com:443"].Verdict != policy.Refuse {
 		t.Errorf("explanations %+v", xs)
 	}
+	// A routed qube on an egress with no exit node up: explain refuses as
+	// the connection is refused, and the proxy's own address is refused.
+	x, err := w.eng.Explain(context.Background(), ExplainRequest{Workload: "work", Dest: "93.184.216.34:443"})
+	if err != nil || x.Reason != policy.ReasonNoHealthyExit {
+		t.Errorf("egress down: %+v %v", x, err)
+	}
+	a, b := net.Pipe()
+	go w.eng.HandleIntercepted(context.Background(), b, netip.MustParseAddrPort("10.137.0.22:1"), netip.MustParseAddrPort("93.184.216.34:443"))
+	expectClosed(t, a)
+	ev := waitEvent(t, w.eng.Log(), func(e events.Event) bool { return e.Workload == "work" })
+	if ev.Reason != x.Reason {
+		t.Errorf("explain %s, the connection %s", x.Reason, ev.Reason)
+	}
+	w.eng.d.SelfAddrs = func() []netip.Addr { return []netip.Addr{netip.MustParseAddr("93.184.216.99")} }
+	w.eng.self = nil
+	if x, _ := w.eng.Explain(context.Background(), ExplainRequest{Workload: "web", Dest: "93.184.216.99:443"}); x.Reason != policy.ReasonForbiddenAddress {
+		t.Errorf("the proxy's own address: %+v", x)
+	}
 }

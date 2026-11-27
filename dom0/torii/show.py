@@ -23,17 +23,33 @@ class Rule:
     source: str
     target: str  # the effective target (target= for redirects)
     action: str
+    requested: str = ""  # the target the rule matches, before a redirect
+    include: bool = False  # an !include line: a file show does not read
+
+    @property
+    def tokens(self) -> bool:
+        """Its source or target is a token show does not evaluate, such as
+        @tag:, @type:, @dispvm or @default as a source."""
+        def tok(x: str) -> bool:
+            return x.startswith("@") and x not in ("@anyvm", "@default")
+        return tok(self.source) or tok(self.requested or self.target)
 
 
 # charter:realizes SW-261127-62WV
-def rules(snap: Snapshot) -> list[Rule]:
+def rules(snap: Snapshot, own: str = derive.POLICY_NAME) -> list[Rule]:
+    """Every rule of every policy file; own is the name torii's file for
+    the snapshot's mesh has."""
     files = dict(snap.other_policy)
     if snap.policy is not None:
-        files[derive.POLICY_NAME] = snap.policy
+        files[own] = snap.policy
     out = []
     for name, text in sorted(files.items()):
         for line in text.splitlines():
             line = line.split("#", 1)[0]
+            if line.strip().startswith("!include"):
+                out.append(Rule(name, "!include", "", "", line.split(None, 1)[1].strip() if len(line.split()) > 1 else "",
+                                "", include=True))
+                continue
             m = POLICY_LINE.match(line)
             if not m or m["svc"].startswith("!"):
                 continue
@@ -41,32 +57,39 @@ def rules(snap: Snapshot) -> list[Rule]:
             t = re.search(r"\btarget=(\S+)", m["rest"])
             if t:
                 dst = t.group(1)
-            out.append(Rule(name, m["svc"], m["arg"], m["src"], dst, m["action"]))
+            out.append(Rule(name, m["svc"], m["arg"], m["src"], dst, m["action"], requested=m["dst"]))
     return out
 
 
 # charter:realizes SW-261127-62WV
 def _allowed(rs: list[Rule], service: str, src: str, dst: str) -> dict[str, str]:
-    """arg -> file, for allow rules of service from src to dst, first match wins
-    per (arg) like qrexec's own reading order (files sorted by name)."""
+    """arg -> file, for the rules of service (or of every service, `*`)
+    that let src call dst, first match deciding per argument as qrexec
+    reads policy: files in name order, a rule matching on the target
+    asked for, a redirect (target=) reaching only its new target, and
+    `ask` shown as "<file> (ask)". Exact names and @anyvm are matched;
+    other tokens are not evaluated (check names the rules that use them)."""
     seen: dict[str, str] = {}
     decided: set[str] = set()
     for r in rs:
-        if r.service != service:
+        if r.include or r.service not in (service, "*"):
             continue
-        if r.source not in (src, "@anyvm") or r.target not in (dst, "@anyvm"):
+        asked = r.requested or r.target
+        if r.source not in (src, "@anyvm") or asked not in (dst, "@anyvm"):
             continue
         if r.arg in decided:
             continue
+        reaches = r.action in ("allow", "ask") and (r.target in (dst, asked) or dst == "@default")
+        label = r.file + (" (ask)" if r.action == "ask" else "")
         if r.arg == "*":
             # A wildcard decides every argument not yet decided; we only list
             # explicit ones and mark a wildcard allow loudly.
-            if r.action == "allow":
-                seen["*"] = r.file
+            if reaches:
+                seen["*"] = label
             break
         decided.add(r.arg)
-        if r.action == "allow":
-            seen[r.arg] = r.file
+        if reaches:
+            seen[r.arg] = label
     return seen
 
 
@@ -379,11 +402,24 @@ def check_problems(m, snap: Snapshot, ps: dict[str, dict[str, Any]], bundle_vers
             if not line.endswith(", 0 refused"):
                 problems.append(f"{p}:{line.strip()} (attached, not in the file)")
     problems += dispvm_escapes(m, snap)
-    # Hand-written policy that widens what the tool set.
-    for r in rules(snap):
-        if r.file.startswith(derive.POLICY_NAME) or r.file == derive.DENY_POLICY or r.action != "allow":
+    # Policy torii did not write that widens what it set: only this mesh's
+    # own file and the shared deny file are torii's here; another mesh's
+    # file is named too, since check cannot tell it from a hand-written one.
+    own = {derive.policy_name(m), derive.DENY_POLICY}
+    names = set(m.qubes) | set(m.proxies)
+    for r in rules(snap, derive.policy_name(m)):
+        if r.file in own:
             continue
-        if r.service in ("torii.Connect", "torii.Status") or \
-                (r.service == "qubes.ConnectTCP" and (r.target in m.qubes or r.source in m.proxies)):
-            problems.append(f"policy {r.file}: also allows {r.service} {r.arg} {r.source} -> {r.target}")
+        if r.include:
+            problems.append(f"policy {r.file}: includes {r.target}, which check does not read")
+            continue
+        if r.action not in ("allow", "ask"):
+            continue
+        ends = (r.source, r.requested or r.target, r.target)
+        widens = r.service in ("torii.Connect", "torii.Status", "*") or \
+            (r.service == "qubes.ConnectTCP" and any(x in names or x.startswith("@") for x in ends))
+        if widens:
+            what = "also allows" if r.action == "allow" else "may allow, on a prompt,"
+            note = " (a token check does not evaluate)" if r.tokens else ""
+            problems.append(f"policy {r.file}: {what} {r.service} {r.arg} {r.source} -> {r.target}{note}")
     return problems

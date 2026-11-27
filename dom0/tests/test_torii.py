@@ -1064,6 +1064,14 @@ class Show(unittest.TestCase):
         after.other_policy["30-mine"] = "qubes.ConnectTCP  +22  torii-probe  personal  allow\n"
         v = show.qube_view(after, "personal", ps)
         self.assertIn({"from": "torii-probe", "port": "22", "policy": "30-mine"}, v["local_inbound"])
+        # From any qube, and on a prompt: shown as reach, the prompt named.
+        after.other_policy["31-any"] = "qubes.ConnectTCP  +2222  @anyvm  personal  ask\n"
+        v = show.qube_view(after, "personal", ps)
+        self.assertIn({"from": "torii-probe2", "port": "2222", "policy": "31-any (ask)"}, v["local_inbound"])
+        # A file that names no service of torii's, by the wildcard service.
+        after.other_policy["32-all"] = "*  *  torii-probe2  personal  allow\n"
+        v = show.qube_view(after, "personal", ps)
+        self.assertIn({"from": "torii-probe2", "port": "*", "policy": "32-all"}, v["local_inbound"])
 
     def test_the_first_matching_rule_decides(self):
         claims.verifies(self, claims.SW_261127_62WV, "first-match-wins")
@@ -1076,6 +1084,12 @@ class Show(unittest.TestCase):
         del after.other_policy["20-deny"]
         v = show.qube_view(after, "personal", ps)
         self.assertIn({"from": "torii-probe", "port": "*", "policy": "30-mine"}, v["local_inbound"])
+        # A redirect decides for the target asked for, and reaches only its
+        # new target.
+        after.other_policy = {"20-redirect": "qubes.ConnectTCP  +22  torii-probe  personal  allow target=work\n",
+                              "30-mine": "qubes.ConnectTCP  +22  torii-probe  personal  allow\n"}
+        v = show.qube_view(after, "personal", ps)
+        self.assertEqual([x for x in v["local_inbound"] if x["from"] == "torii-probe"], [])
 
     def test_the_live_netvm_is_shown(self):
         claims.verifies(self, claims.SW_261127_62WV, "live-netvm-shown")
@@ -1110,6 +1124,20 @@ class Check(unittest.TestCase):
         after.other_policy["30-mine"] = "torii.Connect  +socks  work  sys-torii  allow\n"
         self.assertIn("policy 30-mine: also allows torii.Connect +socks work -> sys-torii",
                       show.check_problems(m, after, ps, VERSION, NOW))
+        # A file named like torii's but not this mesh's is not exempt.
+        after.other_policy = {"50-torii-evil": "torii.Connect  +socks  work  sys-torii  allow\n",
+                              "31-all": "*  *  work  sys-torii  allow\n",
+                              "32-ask": "qubes.ConnectTCP  +22  @anyvm  personal  ask\n",
+                              "33-tag": "qubes.ConnectTCP  +22  @tag:x  personal  allow\n",
+                              "34-inc": "!include  include/more\n",
+                              derive.DENY_POLICY: derive.deny_policy()}
+        got = show.check_problems(m, after, ps, VERSION, NOW)
+        for want in ("policy 50-torii-evil: also allows torii.Connect +socks work -> sys-torii",
+                     "policy 31-all: also allows * * work -> sys-torii",
+                     "policy 32-ask: may allow, on a prompt, qubes.ConnectTCP +22 @anyvm -> personal",
+                     "policy 33-tag: also allows qubes.ConnectTCP +22 @tag:x -> personal (a token check does not evaluate)",
+                     "policy 34-inc: includes include/more, which check does not read"):
+            self.assertIn(want, got)
 
     def test_a_matching_machine_has_no_problem(self):
         claims.verifies(self, claims.SW_261127_SMYC, "clean-is-zero")

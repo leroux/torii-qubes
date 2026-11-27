@@ -122,7 +122,6 @@ def take(app, policy_client, interesting: set[str], policy_name: str = derive.PO
             if f == policy_name:
                 continue
             text, _ = policy_client.policy_get(f)
-            if "torii." in text or "qubes.ConnectTCP" in text:
-                other[f] = text
+            other[f] = text  # every file: a wildcard service names no service
     dn = _prop(app, "default_netvm")
     return Snapshot(qubes=qubes, policy=policy, other_policy=other, default_netvm=str(dn) if dn else "")

@@ -209,11 +209,11 @@ var SW_261127_QMVP = &Spec{ID: "SW-261127-QMVP", Title: "apply goes on past a pr
 // SW_261127_QQYS is SW-261127-QQYS: UDP is decided per flow, and each qube has a cap on open flows
 var SW_261127_QQYS = &Spec{ID: "SW-261127-QQYS", Title: "UDP is decided per flow, and each qube has a cap on open flows", Status: Active, Kind: "bound"}
 
-// SW_261127_R4CD is SW-261127-R4CD: Every decision the proxy makes is logged with its verdict and the rule that made it
-var SW_261127_R4CD = &Spec{ID: "SW-261127-R4CD", Title: "Every decision the proxy makes is logged with its verdict and the rule that made it", Status: Active, Kind: "invariant"}
+// SW_261127_R4CD is SW-261127-R4CD: Every connection the proxy decides is logged with its verdict and the rule that made it
+var SW_261127_R4CD = &Spec{ID: "SW-261127-R4CD", Title: "Every connection the proxy decides is logged with its verdict and the rule that made it", Status: Active, Kind: "invariant"}
 
-// SW_261127_SMYC is SW-261127-SMYC: check names every difference between the live machine and the file, and fails when there is one
-var SW_261127_SMYC = &Spec{ID: "SW-261127-SMYC", Title: "check names every difference between the live machine and the file, and fails when there is one", Status: Active, Kind: "invariant"}
+// SW_261127_SMYC is SW-261127-SMYC: check names each difference it looks for between the live machine and the file, and fails on one
+var SW_261127_SMYC = &Spec{ID: "SW-261127-SMYC", Title: "check names each difference it looks for between the live machine and the file, and fails on one", Status: Active, Kind: "invariant"}
 
 // SW_261127_T7GG is SW-261127-T7GG: An inbound connection reaches a qube only on a port its entry or a service lists
 var SW_261127_T7GG = &Spec{ID: "SW-261127-T7GG", Title: "An inbound connection reaches a qube only on a port its entry or a service lists", Status: Active, Kind: "invariant"}
