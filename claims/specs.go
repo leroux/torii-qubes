@@ -104,20 +104,20 @@ func record(tb testing.TB, id string, handles []string) {
 	})
 }
 
-// STK_261126_346B is STK-261126-346B: A qube's traffic leaves the way its entry routes it, or not at all
-var STK_261126_346B = &Spec{ID: "STK-261126-346B", Title: "A qube's traffic leaves the way its entry routes it, or not at all", Status: Planned}
+// STK_261126_346B is STK-261126-346B: A qube on an egress reaches the internet only through that egress's exit nodes, or not at all
+var STK_261126_346B = &Spec{ID: "STK-261126-346B", Title: "A qube on an egress reaches the internet only through that egress's exit nodes, or not at all", Status: Planned}
 
-// STK_261126_4Q75 is STK-261126-4Q75: The owner reads back what each qube can reach, its drift from the file, and why each connection was decided
-var STK_261126_4Q75 = &Spec{ID: "STK-261126-4Q75", Title: "The owner reads back what each qube can reach, its drift from the file, and why each connection was decided", Status: Planned}
+// STK_261126_4Q75 is STK-261126-4Q75: show reads each qube's reach from the live machine; check names every difference from the file
+var STK_261126_4Q75 = &Spec{ID: "STK-261126-4Q75", Title: "show reads each qube's reach from the live machine; check names every difference from the file", Status: Planned}
 
-// STK_261126_B4CP is STK-261126-B4CP: One file in dom0 declares every qube's connectivity, and apply makes the machine match it
-var STK_261126_B4CP = &Spec{ID: "STK-261126-B4CP", Title: "One file in dom0 declares every qube's connectivity, and apply makes the machine match it", Status: Planned}
+// STK_261126_B4CP is STK-261126-B4CP: apply changes only what torii owns, and exactly the steps plan showed
+var STK_261126_B4CP = &Spec{ID: "STK-261126-B4CP", Title: "apply changes only what torii owns, and exactly the steps plan showed", Status: Planned}
 
-// STK_261126_KHZB is STK-261126-KHZB: Each qube can be its own tailnet device, without merging compartments or keeping a credential in dom0
-var STK_261126_KHZB = &Spec{ID: "STK-261126-KHZB", Title: "Each qube can be its own tailnet device, without merging compartments or keeping a credential in dom0", Status: Planned}
+// STK_261126_KHZB is STK-261126-KHZB: Each tailnet identity is one qube's, joins only by a person's approval, and dom0 holds no tailnet credential
+var STK_261126_KHZB = &Spec{ID: "STK-261126-KHZB", Title: "Each tailnet identity is one qube's, joins only by a person's approval, and dom0 holds no tailnet credential", Status: Planned}
 
-// STK_261126_KZK8 is STK-261126-KZK8: A qube gets exactly the connections its entry lists, in each direction, and nothing else
-var STK_261126_KZK8 = &Spec{ID: "STK-261126-KZK8", Title: "A qube gets exactly the connections its entry lists, in each direction, and nothing else", Status: Planned}
+// STK_261126_KZK8 is STK-261126-KZK8: A carried qube's connection is relayed only if its entry allows it; every other connection is refused
+var STK_261126_KZK8 = &Spec{ID: "STK-261126-KZK8", Title: "A carried qube's connection is relayed only if its entry allows it; every other connection is refused", Status: Planned}
 
-// STK_261126_SM33 is STK-261126-SM33: torii leaves Qubes' isolation no weaker than it found it
-var STK_261126_SM33 = &Spec{ID: "STK-261126-SM33", Title: "torii leaves Qubes' isolation no weaker than it found it", Status: Planned}
+// STK_261126_SM33 is STK-261126-SM33: torii adds no qrexec call, network path or dom0 exposure beyond those the file declares
+var STK_261126_SM33 = &Spec{ID: "STK-261126-SM33", Title: "torii adds no qrexec call, network path or dom0 exposure beyond those the file declares", Status: Planned}

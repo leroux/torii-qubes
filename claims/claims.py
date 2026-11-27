@@ -107,20 +107,20 @@ def pytest_runtest_logreport(report):
         for id, handles, file in _pending.pop(report.nodeid, []):
             _write(id, handles, report.nodeid, file, outcome)
 
-#: STK_261126_346B is STK-261126-346B: A qube's traffic leaves the way its entry routes it, or not at all
-STK_261126_346B = Spec("STK-261126-346B", "A qube's traffic leaves the way its entry routes it, or not at all", "planned", "")
+#: STK_261126_346B is STK-261126-346B: A qube on an egress reaches the internet only through that egress's exit nodes, or not at all
+STK_261126_346B = Spec("STK-261126-346B", "A qube on an egress reaches the internet only through that egress's exit nodes, or not at all", "planned", "")
 
-#: STK_261126_4Q75 is STK-261126-4Q75: The owner reads back what each qube can reach, its drift from the file, and why each connection was decided
-STK_261126_4Q75 = Spec("STK-261126-4Q75", "The owner reads back what each qube can reach, its drift from the file, and why each connection was decided", "planned", "")
+#: STK_261126_4Q75 is STK-261126-4Q75: show reads each qube's reach from the live machine; check names every difference from the file
+STK_261126_4Q75 = Spec("STK-261126-4Q75", "show reads each qube's reach from the live machine; check names every difference from the file", "planned", "")
 
-#: STK_261126_B4CP is STK-261126-B4CP: One file in dom0 declares every qube's connectivity, and apply makes the machine match it
-STK_261126_B4CP = Spec("STK-261126-B4CP", "One file in dom0 declares every qube's connectivity, and apply makes the machine match it", "planned", "")
+#: STK_261126_B4CP is STK-261126-B4CP: apply changes only what torii owns, and exactly the steps plan showed
+STK_261126_B4CP = Spec("STK-261126-B4CP", "apply changes only what torii owns, and exactly the steps plan showed", "planned", "")
 
-#: STK_261126_KHZB is STK-261126-KHZB: Each qube can be its own tailnet device, without merging compartments or keeping a credential in dom0
-STK_261126_KHZB = Spec("STK-261126-KHZB", "Each qube can be its own tailnet device, without merging compartments or keeping a credential in dom0", "planned", "")
+#: STK_261126_KHZB is STK-261126-KHZB: Each tailnet identity is one qube's, joins only by a person's approval, and dom0 holds no tailnet credential
+STK_261126_KHZB = Spec("STK-261126-KHZB", "Each tailnet identity is one qube's, joins only by a person's approval, and dom0 holds no tailnet credential", "planned", "")
 
-#: STK_261126_KZK8 is STK-261126-KZK8: A qube gets exactly the connections its entry lists, in each direction, and nothing else
-STK_261126_KZK8 = Spec("STK-261126-KZK8", "A qube gets exactly the connections its entry lists, in each direction, and nothing else", "planned", "")
+#: STK_261126_KZK8 is STK-261126-KZK8: A carried qube's connection is relayed only if its entry allows it; every other connection is refused
+STK_261126_KZK8 = Spec("STK-261126-KZK8", "A carried qube's connection is relayed only if its entry allows it; every other connection is refused", "planned", "")
 
-#: STK_261126_SM33 is STK-261126-SM33: torii leaves Qubes' isolation no weaker than it found it
-STK_261126_SM33 = Spec("STK-261126-SM33", "torii leaves Qubes' isolation no weaker than it found it", "planned", "")
+#: STK_261126_SM33 is STK-261126-SM33: torii adds no qrexec call, network path or dom0 exposure beyond those the file declares
+STK_261126_SM33 = Spec("STK-261126-SM33", "torii adds no qrexec call, network path or dom0 exposure beyond those the file declares", "planned", "")
