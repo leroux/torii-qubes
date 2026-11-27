@@ -20,16 +20,18 @@ qubes:
 The property:
 
 <!-- charter:embed STK-261126-346B -->
-> **[STK-261126-346B](../claims/needs.md#stk-261126-346b-a-qube-on-an-egress-reaches-the-internet-only-through-that-egresss-exit-nodes-or-not-at-all) A qube on an egress reaches the internet only through that egress's exit nodes, or not at all**
+> **[STK-261126-346B](../claims/needs.md#stk-261126-346b-torii-must-send-an-egress-qubes-internet-traffic-only-through-that-egresss-exit-nodes-and-must-refuse-it-when-none-is-healthy) torii MUST send an egress qube's internet traffic only through that egress's exit nodes, and MUST refuse it when none is healthy**
 >
-> A carried qube whose entry names an egress sends its internet connections
-> and their DNS only through an exit node of that egress: the first in the
-> list that is healthy. While none is healthy, its internet connections are
-> refused and its DNS answered with a failure; nothing is sent by another
-> route. Switching exit nodes never clears the exit node.
+> - A carried qube whose entry names an egress MUST send its internet
+>   connections, and their DNS, only through an exit node of that egress:
+>   the first in the list that is healthy.
+> - While no exit node is healthy, its internet connections MUST be
+>   refused and its DNS queries MUST be answered with a failure; torii
+>   MUST NOT send any of it by another route.
+> - Switching exit nodes MUST NOT clear the exit node.
 >
-> Not covered: its LAN connections, which go through the proxy's netvm
-> directly; and connections open through an exit node when the egress
+> Not covered: the qube's LAN connections, which go directly through the
+> proxy's netvm; and connections open through an exit node when the egress
 > switches, which break.
 <!-- /charter:embed -->
 

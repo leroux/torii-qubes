@@ -52,7 +52,7 @@ mechanisms the design leans on (qrexec caller naming, `vif*`
 anti-spoofing, QubesDB's dom0-only write path for features); and, in the
 proxy qube, the kernel, the guard ruleset and `torii-proxy`. The proxy
 qube is netvm-equivalent: compromising it yields every identity it holds
-and the plaintext of what it relays, which [STK-261126-SM33](../claims/needs.md#stk-261126-sm33-torii-adds-no-qrexec-call-network-path-or-dom0-exposure-beyond-those-the-file-declares) accepts
+and the plaintext of what it relays, which [STK-261126-SM33](../claims/needs.md#stk-261126-sm33-torii-must-not-add-a-qrexec-call-network-path-or-dom0-exposure-beyond-those-the-file-declares) accepts
 and bounds; a workload that must not share that exposure gets a
 dedicated proxy (`proxies:`).
 
@@ -299,7 +299,7 @@ that grants `qubes.ConnectTCP` to or from a managed qube.
 |---|---|---|---|
 | workload → proxy, qrexec | a TCP stream and the service argument | dom0 names the caller; policy names the target | [SW-261127-7C3Y](../claims/links.md#sw-261127-7c3y-a-qrexec-caller-is-the-qube-dom0-names-never-one-the-caller-states) |
 | workload → proxy, `vif*` | IPv4 packets | Qubes anti-spoofing on the source address | [SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-a-routed-qube-is-named-by-its-qubes-source-address-which-qubes-keeps-it-from-forging) |
-| proxy → workload | `qubes.ConnectTCP` to a declared port | dom0 policy, per port | [SW-261127-T7GG](../claims/connections.md#sw-261127-t7gg-an-inbound-connection-reaches-a-qube-only-on-a-port-its-entry-or-a-service-lists) |
+| proxy → workload | `qubes.ConnectTCP` to a declared port | dom0 policy, per port | [SW-261127-T7GG](../claims/connections.md#sw-261127-t7gg-the-proxy-must-relay-an-inbound-connection-to-a-qube-only-on-a-port-its-entry-or-a-service-lists) |
 | dom0 → proxy | config as features | dom0-only write path; SHA-256 over the parts | [SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-takes-its-config-whole-or-not-at-all-and-a-failed-check-never-replaces-the-running-one) |
 | proxy → dom0 | status and log JSON | qrexec, as root, read-only service | [SW-261127-B8BM](../claims/seeing.md#sw-261127-b8bm-the-status-service-is-read-only-it-reports-and-changes-nothing-in-the-proxy) |
 | proxy → netvm | connections the program opens | kernel forwarding off, guard at −400 | [SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-a-routed-qubes-traffic-reaches-the-program-and-nothing-else-interception-with-forwarding-off) |

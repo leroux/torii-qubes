@@ -39,7 +39,7 @@ torii-apply:
 The first `apply` on a machine downloads the base template and builds the
 tool's own; it takes minutes. Later ones take seconds. A machine that
 already matches its file plans nothing, so the state does nothing
-([STK-261126-B4CP](../claims/needs.md#stk-261126-b4cp-apply-changes-only-what-torii-owns-and-exactly-the-steps-plan-showed)).
+([STK-261126-B4CP](../claims/needs.md#stk-261126-b4cp-torii-apply-must-change-only-what-torii-owns-and-must-make-exactly-the-steps-torii-plan-showed)).
 
 ## The pillar
 

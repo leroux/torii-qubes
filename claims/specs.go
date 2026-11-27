@@ -125,11 +125,11 @@ var STK_261126_SM33 = &Spec{ID: "STK-261126-SM33", Title: "torii MUST NOT add a 
 // SW_261127_2JH3 is SW-261127-2JH3: plan refuses before any step a file that names what this machine cannot be given
 var SW_261127_2JH3 = &Spec{ID: "SW-261127-2JH3", Title: "plan refuses before any step a file that names what this machine cannot be given", Status: Active, Kind: "invariant"}
 
-// SW_261127_2R9T is SW-261127-2R9T: A name entry counts only for a name the qube asked for, or resolved through the proxy to that address
-var SW_261127_2R9T = &Spec{ID: "SW-261127-2R9T", Title: "A name entry counts only for a name the qube asked for, or resolved through the proxy to that address", Status: Active, Kind: "invariant"}
+// SW_261127_2R9T is SW-261127-2R9T: The proxy MUST count a name entry only for a name the qube asked for, or resolved through the proxy to the address dialled
+var SW_261127_2R9T = &Spec{ID: "SW-261127-2R9T", Title: "The proxy MUST count a name entry only for a name the qube asked for, or resolved through the proxy to the address dialled", Status: Active, Kind: "invariant"}
 
-// SW_261127_2XS6 is SW-261127-2XS6: Allow entries match by exact name or subdomain, port and protocol, TCP unless they say UDP
-var SW_261127_2XS6 = &Spec{ID: "SW-261127-2XS6", Title: "Allow entries match by exact name or subdomain, port and protocol, TCP unless they say UDP", Status: Active, Kind: "invariant"}
+// SW_261127_2XS6 is SW-261127-2XS6: The proxy MUST match an allow entry by exact name or subdomain, port and protocol, treating an entry without a protocol as TCP only
+var SW_261127_2XS6 = &Spec{ID: "SW-261127-2XS6", Title: "The proxy MUST match an allow entry by exact name or subdomain, port and protocol, treating an entry without a protocol as TCP only", Status: Active, Kind: "invariant"}
 
 // SW_261127_3Q23 is SW-261127-3Q23: Every proxy qube has IPv6 off, for itself and every qube behind it
 var SW_261127_3Q23 = &Spec{ID: "SW-261127-3Q23", Title: "Every proxy qube has IPv6 off, for itself and every qube behind it", Status: Active, Kind: "invariant"}
@@ -143,8 +143,8 @@ var SW_261127_62WV = &Spec{ID: "SW-261127-62WV", Title: "show reports each qube'
 // SW_261127_63CS is SW-261127-63CS: apply makes the plan's steps in order, stops at the first that fails, and a second run continues
 var SW_261127_63CS = &Spec{ID: "SW-261127-63CS", Title: "apply makes the plan's steps in order, stops at the first that fails, and a second run continues", Status: Active, Kind: "invariant"}
 
-// SW_261127_6S2F is SW-261127-6S2F: Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read
-var SW_261127_6S2F = &Spec{ID: "SW-261127-6S2F", Title: "Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read", Status: Active, Kind: "invariant"}
+// SW_261127_6S2F is SW-261127-6S2F: The proxy MUST check an allowlisted connection's TLS server name before relaying any of the client's bytes
+var SW_261127_6S2F = &Spec{ID: "SW-261127-6S2F", Title: "The proxy MUST check an allowlisted connection's TLS server name before relaying any of the client's bytes", Status: Active, Kind: "invariant"}
 
 // SW_261127_6YGC is SW-261127-6YGC: An egress's exit node is never cleared: a switch is one change from the old node to the new
 var SW_261127_6YGC = &Spec{ID: "SW-261127-6YGC", Title: "An egress's exit node is never cleared: a switch is one change from the old node to the new", Status: Active, Kind: "invariant"}
@@ -179,8 +179,8 @@ var SW_261127_DH6R = &Spec{ID: "SW-261127-DH6R", Title: "torii proposes grants f
 // SW_261127_G26T is SW-261127-G26T: apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings
 var SW_261127_G26T = &Spec{ID: "SW-261127-G26T", Title: "apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings", Status: Active, Kind: "invariant"}
 
-// SW_261127_H3W9 is SW-261127-H3W9: The HTTP proxy carries one host per connection
-var SW_261127_H3W9 = &Spec{ID: "SW-261127-H3W9", Title: "The HTTP proxy carries one host per connection", Status: Active, Kind: "invariant"}
+// SW_261127_H3W9 is SW-261127-H3W9: The proxy's HTTP proxy MUST carry only one host and port per connection
+var SW_261127_H3W9 = &Spec{ID: "SW-261127-H3W9", Title: "The proxy's HTTP proxy MUST carry only one host and port per connection", Status: Active, Kind: "invariant"}
 
 // SW_261127_HJNX is SW-261127-HJNX: While an egress has no healthy exit node, its connections are refused at once and its DNS fails
 var SW_261127_HJNX = &Spec{ID: "SW-261127-HJNX", Title: "While an egress has no healthy exit node, its connections are refused at once and its DNS fails", Status: Active, Kind: "invariant"}
@@ -203,8 +203,8 @@ var SW_261127_KYZW = &Spec{ID: "SW-261127-KYZW", Title: "A qube's LAN traffic ne
 // SW_261127_M36P is SW-261127-M36P: Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed
 var SW_261127_M36P = &Spec{ID: "SW-261127-M36P", Title: "Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed", Status: Active, Kind: "invariant"}
 
-// SW_261127_M7G9 is SW-261127-M7G9: A name resolves, for the qube and for the proxy, only to addresses the qube may reach under it
-var SW_261127_M7G9 = &Spec{ID: "SW-261127-M7G9", Title: "A name resolves, for the qube and for the proxy, only to addresses the qube may reach under it", Status: Active, Kind: "invariant"}
+// SW_261127_M7G9 is SW-261127-M7G9: The proxy MUST resolve a name, for the qube and for itself, only to addresses the qube may reach under that name
+var SW_261127_M7G9 = &Spec{ID: "SW-261127-M7G9", Title: "The proxy MUST resolve a name, for the qube and for itself, only to addresses the qube may reach under that name", Status: Active, Kind: "invariant"}
 
 // SW_261127_N3N8 is SW-261127-N3N8: In a qube with no netvm, the client listens on loopback only, one qrexec call per connection
 var SW_261127_N3N8 = &Spec{ID: "SW-261127-N3N8", Title: "In a qube with no netvm, the client listens on loopback only, one qrexec call per connection", Status: Active, Kind: "invariant"}
@@ -212,14 +212,14 @@ var SW_261127_N3N8 = &Spec{ID: "SW-261127-N3N8", Title: "In a qube with no netvm
 // SW_261127_P8H7 is SW-261127-P8H7: A tagged identity carries exactly the file's tags, prefixed by the machine, and check names any other
 var SW_261127_P8H7 = &Spec{ID: "SW-261127-P8H7", Title: "A tagged identity carries exactly the file's tags, prefixed by the machine, and check names any other", Status: Active, Kind: "invariant"}
 
-// SW_261127_PXX9 is SW-261127-PXX9: A connection is decided against the entry of the qube it came from, by the way it arrived
-var SW_261127_PXX9 = &Spec{ID: "SW-261127-PXX9", Title: "A connection is decided against the entry of the qube it came from, by the way it arrived", Status: Active, Kind: "invariant"}
+// SW_261127_PXX9 is SW-261127-PXX9: The proxy MUST decide a connection against the entry of the qube it came from, and only by a way that entry offers
+var SW_261127_PXX9 = &Spec{ID: "SW-261127-PXX9", Title: "The proxy MUST decide a connection against the entry of the qube it came from, and only by a way that entry offers", Status: Active, Kind: "invariant"}
 
 // SW_261127_QMVP is SW-261127-QMVP: apply goes on past a proxy's config only once the proxy reports running it
 var SW_261127_QMVP = &Spec{ID: "SW-261127-QMVP", Title: "apply goes on past a proxy's config only once the proxy reports running it", Status: Active, Kind: "invariant"}
 
-// SW_261127_QQYS is SW-261127-QQYS: UDP is decided per flow, and each qube has a cap on open flows
-var SW_261127_QQYS = &Spec{ID: "SW-261127-QQYS", Title: "UDP is decided per flow, and each qube has a cap on open flows", Status: Active, Kind: "bound"}
+// SW_261127_QQYS is SW-261127-QQYS: The proxy MUST decide UDP once per flow and MUST cap each qube's open flows
+var SW_261127_QQYS = &Spec{ID: "SW-261127-QQYS", Title: "The proxy MUST decide UDP once per flow and MUST cap each qube's open flows", Status: Active, Kind: "bound"}
 
 // SW_261127_R4CD is SW-261127-R4CD: Every connection the proxy decides is logged with its verdict and the rule that made it
 var SW_261127_R4CD = &Spec{ID: "SW-261127-R4CD", Title: "Every connection the proxy decides is logged with its verdict and the rule that made it", Status: Active, Kind: "invariant"}
@@ -227,8 +227,8 @@ var SW_261127_R4CD = &Spec{ID: "SW-261127-R4CD", Title: "Every connection the pr
 // SW_261127_SMYC is SW-261127-SMYC: check names each difference it looks for between the live machine and the file, and fails on one
 var SW_261127_SMYC = &Spec{ID: "SW-261127-SMYC", Title: "check names each difference it looks for between the live machine and the file, and fails on one", Status: Active, Kind: "invariant"}
 
-// SW_261127_T7GG is SW-261127-T7GG: An inbound connection reaches a qube only on a port its entry or a service lists
-var SW_261127_T7GG = &Spec{ID: "SW-261127-T7GG", Title: "An inbound connection reaches a qube only on a port its entry or a service lists", Status: Active, Kind: "invariant"}
+// SW_261127_T7GG is SW-261127-T7GG: The proxy MUST relay an inbound connection to a qube only on a port its entry or a service lists
+var SW_261127_T7GG = &Spec{ID: "SW-261127-T7GG", Title: "The proxy MUST relay an inbound connection to a qube only on a port its entry or a service lists", Status: Active, Kind: "invariant"}
 
 // SW_261127_VPGK is SW-261127-VPGK: A qube adopted records its netvm once; a qube leaving the file is left with no netvm
 var SW_261127_VPGK = &Spec{ID: "SW-261127-VPGK", Title: "A qube adopted records its netvm once; a qube leaving the file is left with no netvm", Status: Active, Kind: "invariant"}
@@ -236,8 +236,8 @@ var SW_261127_VPGK = &Spec{ID: "SW-261127-VPGK", Title: "A qube adopted records 
 // SW_261127_WNGN is SW-261127-WNGN: Each identity is a tailnet device of its own, with its own name and state
 var SW_261127_WNGN = &Spec{ID: "SW-261127-WNGN", Title: "Each identity is a tailnet device of its own, with its own name and state", Status: Active, Kind: "invariant"}
 
-// SW_261127_WNYB is SW-261127-WNYB: Every address is in exactly one zone, and a forbidden address is never dialled
-var SW_261127_WNYB = &Spec{ID: "SW-261127-WNYB", Title: "Every address is in exactly one zone, and a forbidden address is never dialled", Status: Active, Kind: "invariant"}
+// SW_261127_WNYB is SW-261127-WNYB: The proxy MUST place every address in exactly one zone and MUST NOT dial a forbidden address
+var SW_261127_WNYB = &Spec{ID: "SW-261127-WNYB", Title: "The proxy MUST place every address in exactly one zone and MUST NOT dial a forbidden address", Status: Active, Kind: "invariant"}
 
 // SW_261127_WSWG is SW-261127-WSWG: An egress's identity carries only the internet, and grants propose it nothing else
 var SW_261127_WSWG = &Spec{ID: "SW-261127-WSWG", Title: "An egress's identity carries only the internet, and grants propose it nothing else", Status: Active, Kind: "invariant"}

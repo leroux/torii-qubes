@@ -35,16 +35,16 @@ Every qube behind it becomes one tailnet device with one set of grants.
 - **Declare.** One file per machine states each qube's network card,
   internet access, tailnet identity, inbound ports and outbound reach.
 - **Apply.** Make the machine match the file. Running it twice changes
-  nothing the second time ([STK-261126-B4CP](../claims/needs.md#stk-261126-b4cp-apply-changes-only-what-torii-owns-and-exactly-the-steps-plan-showed)).
+  nothing the second time ([STK-261126-B4CP](../claims/needs.md#stk-261126-b4cp-torii-apply-must-change-only-what-torii-owns-and-must-make-exactly-the-steps-torii-plan-showed)).
 - **See and check.** Show what each qube can reach, read from the live
   system and not from the file, and report where the two disagree
-  ([STK-261126-4Q75](../claims/needs.md#stk-261126-4q75-show-reads-each-qubes-reach-from-the-live-machine-check-names-every-difference-from-the-file)).
+  ([STK-261126-4Q75](../claims/needs.md#stk-261126-4q75-torii-show-must-report-each-qubes-reach-from-the-live-machine-and-torii-check-must-name-every-difference-from-the-file)).
 - **Keep Qubes' isolation.** An offline qube stays without a network card.
   dom0 never handles traffic, and the code in dom0 stays small
-  ([STK-261126-SM33](../claims/needs.md#stk-261126-sm33-torii-adds-no-qrexec-call-network-path-or-dom0-exposure-beyond-those-the-file-declares)).
+  ([STK-261126-SM33](../claims/needs.md#stk-261126-sm33-torii-must-not-add-a-qrexec-call-network-path-or-dom0-exposure-beyond-those-the-file-declares)).
 - **No standing credentials.** Identities join by sign-in links approved by a
   tag owner. Grants are printed as proposals for a person to review, never
-  pushed ([STK-261126-KHZB](../claims/needs.md#stk-261126-khzb-each-tailnet-identity-is-one-qubes-joins-only-by-a-persons-approval-and-dom0-holds-no-tailnet-credential)).
+  pushed ([STK-261126-KHZB](../claims/needs.md#stk-261126-khzb-torii-must-give-each-tailnet-identity-to-one-qube-join-it-only-with-a-persons-approval-and-keep-no-tailnet-credential-in-dom0)).
 - **Stock Qubes**, through supported interfaces only: the Admin API,
   features, policy files and services. No patches.
 
@@ -69,7 +69,7 @@ Every connection, in every pattern, is made of four parts:
 Two layers of policy sit on top. The file says what a qube *offers* and what
 it *may try*. The tailnet's grants decide who may use those ports and where
 on the tailnet a qube may go. A port must be allowed by both
-([STK-261126-KZK8](../claims/needs.md#stk-261126-kzk8-a-carried-qubes-connection-is-relayed-only-if-its-entry-allows-it-every-other-connection-is-refused)). Where each part runs is in
+([STK-261126-KZK8](../claims/needs.md#stk-261126-kzk8-torii-must-relay-a-carried-qubes-connection-only-if-the-qubes-entry-allows-it-and-must-refuse-every-other-connection)). Where each part runs is in
 [`architecture.md`](architecture.md).
 
 ## Decisions
@@ -83,7 +83,7 @@ workload identities. Workloads that need stronger separation get a dedicated
 proxy qube (`proxies:`, `proxy: <name>`), much as Istio adds
 sidecars only where they are needed. Each identity is a device of its own
 ([SW-261127-WNGN](../claims/identity.md#sw-261127-wngn-each-identity-is-a-tailnet-device-of-its-own-with-its-own-name-and-state)); what a shared proxy qube holds if compromised is
-stated in [STK-261126-SM33](../claims/needs.md#stk-261126-sm33-torii-adds-no-qrexec-call-network-path-or-dom0-exposure-beyond-those-the-file-declares).
+stated in [STK-261126-SM33](../claims/needs.md#stk-261126-sm33-torii-must-not-add-a-qrexec-call-network-path-or-dom0-exposure-beyond-those-the-file-declares).
 
 ### Our own `tsnet` program rather than stock `tailscaled`
 
@@ -155,9 +155,9 @@ IPv6 is turned off behind the proxy ([SW-261127-3Q23](../claims/apply.md#sw-2611
 IP rules can't follow names whose addresses change or are shared by a CDN.
 So `torii-proxy` answers the workload's DNS, remembers which names each
 workload resolved, and decides each connection by name: the name asked for
-(SOCKS, HTTP proxy, forward) or resolved ([SW-261127-2R9T](../claims/connections.md#sw-261127-2r9t-a-name-entry-counts-only-for-a-name-the-qube-asked-for-or-resolved-through-the-proxy-to-that-address),
-[SW-261127-M7G9](../claims/connections.md#sw-261127-m7g9-a-name-resolves-for-the-qube-and-for-the-proxy-only-to-addresses-the-qube-may-reach-under-it)), plus the TLS server name when one is sent, read from
-the ClientHello without decrypting anything ([SW-261127-6S2F](../claims/connections.md#sw-261127-6s2f-under-an-allowlist-a-tls-server-name-must-be-allowed-too-and-nothing-is-relayed-before-it-is-read)). A raw
+(SOCKS, HTTP proxy, forward) or resolved ([SW-261127-2R9T](../claims/connections.md#sw-261127-2r9t-the-proxy-must-count-a-name-entry-only-for-a-name-the-qube-asked-for-or-resolved-through-the-proxy-to-the-address-dialled),
+[SW-261127-M7G9](../claims/connections.md#sw-261127-m7g9-the-proxy-must-resolve-a-name-for-the-qube-and-for-itself-only-to-addresses-the-qube-may-reach-under-that-name)), plus the TLS server name when one is sent, read from
+the ClientHello without decrypting anything ([SW-261127-6S2F](../claims/connections.md#sw-261127-6s2f-the-proxy-must-check-an-allowlisted-connections-tls-server-name-before-relaying-any-of-the-clients-bytes)). A raw
 address that nobody resolved is refused. This stops domain fronting with an
 allowed name, though not raw traffic to another site on a shared address.
 The remaining gaps are listed under [Limits](#limits).
@@ -181,7 +181,7 @@ behind one exit node shares its address anyway. Sharing tailnet
 *authorisation* is how compartments merge, so egresses don't do it.
 
 Rules attach to the qube, not to the identity or the egress
-([SW-261127-PXX9](../claims/connections.md#sw-261127-pxx9-a-connection-is-decided-against-the-entry-of-the-qube-it-came-from-by-the-way-it-arrived)). That is what leaves room for per-qube firewalling
+([SW-261127-PXX9](../claims/connections.md#sw-261127-pxx9-the-proxy-must-decide-a-connection-against-the-entry-of-the-qube-it-came-from-and-only-by-a-way-that-entry-offers)). That is what leaves room for per-qube firewalling
 (prompts, learned rules) later without changing either.
 
 ### Exit nodes in order, failing closed
@@ -216,7 +216,7 @@ Tailscale client clearing it is exactly the switch back to direct
 
 A qube attached to a proxy but not in the file is decided by that proxy's
 `unlisted:`, `refuse` by default: attaching a qube by mistake gets it
-nothing, and never a tailnet identity ([SW-261127-PXX9](../claims/connections.md#sw-261127-pxx9-a-connection-is-decided-against-the-entry-of-the-qube-it-came-from-by-the-way-it-arrived),
+nothing, and never a tailnet identity ([SW-261127-PXX9](../claims/connections.md#sw-261127-pxx9-the-proxy-must-decide-a-connection-against-the-entry-of-the-qube-it-came-from-and-only-by-a-way-that-entry-offers),
 [SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-a-routed-qube-is-named-by-its-qubes-source-address-which-qubes-keeps-it-from-forging)). A disposable can't be listed (its address changes per start), so
 its disposable template's proxy's `unlisted:` is its policy; the documented
 way is a proxy of their own, so the main proxy can stay `refuse`.
@@ -255,20 +255,20 @@ golden-tested without a Qubes machine ([`testing.md`](testing.md)).
   zones, and on the tailnet only where grants let its identity go. Other
   qubes' addresses and the proxy qube's own sockets are never reachable
   through the proxy. An offline workload with no outbound access can make no
-  calls at all ([STK-261126-KZK8](../claims/needs.md#stk-261126-kzk8-a-carried-qubes-connection-is-relayed-only-if-its-entry-allows-it-every-other-connection-is-refused)).
+  calls at all ([STK-261126-KZK8](../claims/needs.md#stk-261126-kzk8-torii-must-relay-a-carried-qubes-connection-only-if-the-qubes-entry-allows-it-and-must-refuse-every-other-connection)).
 - **The proxy qube** holds every identity on it and sees the traffic it
   relays, as any netvm does, so treat it like one. From there it can call
   into workloads only on their declared inbound ports. torii's policy
   gives it no calls into dom0: dom0 reads its status, and hands it its config
   as features. Put sensitive workloads on a dedicated proxy to keep them
-  apart ([STK-261126-SM33](../claims/needs.md#stk-261126-sm33-torii-adds-no-qrexec-call-network-path-or-dom0-exposure-beyond-those-the-file-declares)).
+  apart ([STK-261126-SM33](../claims/needs.md#stk-261126-sm33-torii-must-not-add-a-qrexec-call-network-path-or-dom0-exposure-beyond-those-the-file-declares)).
 - **dom0** stores no Tailscale credential. Auth keys, when used, go only to
   the proxy qube ([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-signs-in-by-a-link-a-person-approves-or-a-one-time-key-that-only-the-proxy-qube-keeps)).
 
 ## Limits
 
-What torii does not cover, as the needs state it ([STK-261126-KZK8](../claims/needs.md#stk-261126-kzk8-a-carried-qubes-connection-is-relayed-only-if-its-entry-allows-it-every-other-connection-is-refused),
-[STK-261126-346B](../claims/needs.md#stk-261126-346b-a-qube-on-an-egress-reaches-the-internet-only-through-that-egresss-exit-nodes-or-not-at-all)), and how the code stands today.
+What torii does not cover, as the needs state it ([STK-261126-KZK8](../claims/needs.md#stk-261126-kzk8-torii-must-relay-a-carried-qubes-connection-only-if-the-qubes-entry-allows-it-and-must-refuse-every-other-connection),
+[STK-261126-346B](../claims/needs.md#stk-261126-346b-torii-must-send-an-egress-qubes-internet-traffic-only-through-that-egresss-exit-nodes-and-must-refuse-it-when-none-is-healthy)), and how the code stands today.
 
 - Other qubes' addresses (`10.137–10.139/16`) are never reachable through
   the proxy, whatever the file says; use `local-inbound`.

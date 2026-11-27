@@ -237,7 +237,7 @@ Run that, then `torii apply`, then restart `job-1`. Inside it, programs that
 honour `HTTPS_PROXY` (pip, curl, git, most others) just work for the
 allowlisted names. `ALL_PROXY` points at SOCKS for the rest, and
 `curl -x http://127.0.0.1:3128 https://wikipedia.org` is refused. How an
-entry matches is [SW-261127-2XS6](../claims/connections.md#sw-261127-2xs6-allow-entries-match-by-exact-name-or-subdomain-port-and-protocol-tcp-unless-they-say-udp); the client listens on loopback only
+entry matches is [SW-261127-2XS6](../claims/connections.md#sw-261127-2xs6-the-proxy-must-match-an-allow-entry-by-exact-name-or-subdomain-port-and-protocol-treating-an-entry-without-a-protocol-as-tcp-only); the client listens on loopback only
 ([SW-261127-N3N8](../claims/links.md#sw-261127-n3n8-in-a-qube-with-no-netvm-the-client-listens-on-loopback-only-one-qrexec-call-per-connection)).
 
 The client package does nothing in qubes where dom0 hasn't enabled it, so
@@ -352,7 +352,7 @@ Qubes' global default netvm decides where new qubes go. Point it at a torii
 proxy and choose what that means with the proxy's `unlisted:`:
 
 - `unlisted: refuse` (the default): **new qubes are offline** until you list
-  them ([SW-261127-PXX9](../claims/connections.md#sw-261127-pxx9-a-connection-is-decided-against-the-entry-of-the-qube-it-came-from-by-the-way-it-arrived)).
+  them ([SW-261127-PXX9](../claims/connections.md#sw-261127-pxx9-the-proxy-must-decide-a-connection-against-the-entry-of-the-qube-it-came-from-and-only-by-a-way-that-entry-offers)).
 - `unlisted: { internet: all, egress: vpn }`: **new qubes reach the internet
   only through the exit nodes**, failing closed.
 

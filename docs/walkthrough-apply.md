@@ -8,20 +8,21 @@ in [`architecture.md`](architecture.md); the rules are in
 [`claims/seeing.md`](../claims/seeing.md).
 
 <!-- charter:embed STK-261126-B4CP -->
-> **[STK-261126-B4CP](../claims/needs.md#stk-261126-b4cp-apply-changes-only-what-torii-owns-and-exactly-the-steps-plan-showed) apply changes only what torii owns, and exactly the steps plan showed**
+> **[STK-261126-B4CP](../claims/needs.md#stk-261126-b4cp-torii-apply-must-change-only-what-torii-owns-and-must-make-exactly-the-steps-torii-plan-showed) torii apply MUST change only what torii owns, and MUST make exactly the steps torii plan showed**
 >
-> plan is a function of the machine file and a snapshot of the live
-> machine, and lists every change in the order apply makes it. apply makes
-> those changes and no others, stops at the first that fails, and run again
-> makes only the changes left. On a machine that matches the file, plan is
-> empty.
->
-> torii owns: its template, the proxy qubes it created, the policy file
-> `/etc/qubes/policy.d/50-torii.policy`, and on each managed qube only its
-> netvm, the `torii-client` service and feature, its torii tags and the
-> adoption features it writes once. It
-> creates or deletes no other qube and writes no other policy file. A qube
-> removed from the file is left with no netvm, never its old one.
+> - `torii plan` MUST be a function of the machine file and a snapshot of
+>   the live machine, and MUST list every change in the order apply makes
+>   it. On a machine that matches the file, the plan MUST be empty.
+> - `torii apply` MUST make those changes and no others, MUST stop at the
+>   first change that fails, and, run again, MUST make only the changes
+>   left.
+> - torii owns its template, the proxy qubes it created, the policy file
+>   `/etc/qubes/policy.d/50-torii.policy`, and, on each managed qube, only
+>   its netvm, the `torii-client` service and feature, its torii tags and
+>   the adoption features it writes once. torii MUST NOT create or delete
+>   any other qube, and MUST NOT write any other policy file.
+> - A qube removed from the file MUST be left with no netvm, never its old
+>   one.
 <!-- /charter:embed -->
 
 The design constraint is that this code runs in dom0 with full control of

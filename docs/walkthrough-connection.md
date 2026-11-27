@@ -10,7 +10,7 @@ connections from the tailnet. Components are described in
 [`claims/links.md`](../claims/links.md).
 
 Terms. A *workload* (the code's word; the record's is *carried qube*,
-[STK-261126-KZK8](../claims/needs.md#stk-261126-kzk8-a-carried-qubes-connection-is-relayed-only-if-its-entry-allows-it-every-other-connection-is-refused)) is a qube whose traffic the proxy relays. Its
+[STK-261126-KZK8](../claims/needs.md#stk-261126-kzk8-torii-must-relay-a-carried-qubes-connection-only-if-the-qubes-entry-allows-it-and-must-refuse-every-other-connection)) is a qube whose traffic the proxy relays. Its
 *link* is `routed` (the proxy qube is its netvm, `network: proxy`) or
 `qrexec` (no netvm, `network: none`). The *zone* of a destination is a
 function of the address dialled: tailnet, LAN or internet.
@@ -34,7 +34,7 @@ to. Against it the proxy must:
 Stated non-goals: raw TCP or QUIC to another site behind an address an
 allowed name shares; a connection that sends no TLS server name; DNS
 exfiltration by a workload with `internet: all`
-([STK-261126-KZK8](../claims/needs.md#stk-261126-kzk8-a-carried-qubes-connection-is-relayed-only-if-its-entry-allows-it-every-other-connection-is-refused), the owner's answer to Q-261127-YZQC in [questions.md](../claims/questions.md)).
+([STK-261126-KZK8](../claims/needs.md#stk-261126-kzk8-torii-must-relay-a-carried-qubes-connection-only-if-the-qubes-entry-allows-it-and-must-refuse-every-other-connection), the owner's answer to Q-261127-YZQC in [questions.md](../claims/questions.md)).
 
 ## Ingress, routed workloads
 
@@ -176,14 +176,14 @@ Queries redirected to :15053, over UDP or TCP, reach
    cannot rebind the workload to the LAN, another qube or the proxy qube:
 
 <!-- charter:embed SW-261127-M7G9 -->
-> **[SW-261127-M7G9](../claims/connections.md#sw-261127-m7g9-a-name-resolves-for-the-qube-and-for-the-proxy-only-to-addresses-the-qube-may-reach-under-it) A name resolves, for the qube and for the proxy, only to addresses the qube may reach under it**
+> **[SW-261127-M7G9](../claims/connections.md#sw-261127-m7g9-the-proxy-must-resolve-a-name-for-the-qube-and-for-itself-only-to-addresses-the-qube-may-reach-under-that-name) The proxy MUST resolve a name, for the qube and for itself, only to addresses the qube may reach under that name**
 >
-> The proxy answers a routed qube's DNS. A name the entry allows in no
-> zone is answered with no such name. For an allowed name, the answer
-> holds only the addresses that the entry allows under that name in their
-> zone and that are not forbidden. When the proxy resolves a name itself,
-> for a qube with no netvm, it dials only the addresses that pass the same
-> test.
+> - The proxy answers a routed qube's DNS. It MUST answer a name that the
+>   entry allows in no zone with "no such name" (NXDOMAIN).
+> - For an allowed name, the answer MUST hold only the addresses that the
+>   entry allows under that name in their zone and that are not forbidden.
+> - When the proxy resolves a name itself, for a qube with no netvm, it
+>   MUST dial only the addresses that pass the same test.
 <!-- /charter:embed -->
 
 6. The answer goes out with a TTL of 60 s, whatever upstream gave, and the
@@ -195,14 +195,17 @@ That binding is what lets a later connection to a bare address be
 authorized by name:
 
 <!-- charter:embed SW-261127-2R9T -->
-> **[SW-261127-2R9T](../claims/connections.md#sw-261127-2r9t-a-name-entry-counts-only-for-a-name-the-qube-asked-for-or-resolved-through-the-proxy-to-that-address) A name entry counts only for a name the qube asked for, or resolved through the proxy to that address**
+> **[SW-261127-2R9T](../claims/connections.md#sw-261127-2r9t-the-proxy-must-count-a-name-entry-only-for-a-name-the-qube-asked-for-or-resolved-through-the-proxy-to-the-address-dialled) The proxy MUST count a name entry only for a name the qube asked for, or resolved through the proxy to the address dialled**
 >
-> A name entry allows a connection only when the name it matches is the
-> one the qube asked for (SOCKS, a forward, the HTTP proxy) or one the
-> proxy's DNS resolved for that qube to the address dialled. The proxy
-> remembers, per qube, each name it resolved and its addresses for five
-> minutes from the last answer, whatever the answer's TTL. A connection to an address no name of
-> the qube's leads to, and no address entry covers, is refused.
+> - A name entry MUST allow a connection only when the name it matches is
+>   the name the qube asked for (through SOCKS, a forward or the HTTP
+>   proxy), or a name the proxy's DNS resolved for that qube to the address
+>   dialled.
+> - The proxy MUST remember, per qube, each name it resolved and the
+>   addresses it returned, for five minutes from the last answer, whatever
+>   the answer's TTL.
+> - The proxy MUST refuse a connection to an address that no name of the
+>   qube's leads to and no address entry covers.
 <!-- /charter:embed -->
 
 Two consequences a reviewer should weigh. The binding authorizes the
@@ -229,7 +232,7 @@ exit path while the egress is unusable
 
 1. **Entry against link.** An intercepted connection is accepted only from
    a routed workload; SOCKS, HTTP and forwards only from a qrexec one, and
-   SOCKS or HTTP only if declared: [SW-261127-PXX9](../claims/connections.md#sw-261127-pxx9-a-connection-is-decided-against-the-entry-of-the-qube-it-came-from-by-the-way-it-arrived). This prevents a
+   SOCKS or HTTP only if declared: [SW-261127-PXX9](../claims/connections.md#sw-261127-pxx9-the-proxy-must-decide-a-connection-against-the-entry-of-the-qube-it-came-from-and-only-by-a-way-that-entry-offers). This prevents a
    routed workload from presenting itself through the qrexec door, or the
    reverse, to reach a different rule set.
 2. **Tailnet.** Allowed only with `outbound.tailnet`; with a device list,
@@ -240,17 +243,22 @@ exit path while the egress is unusable
    it with [`ZoneOf`](../proxy/internal/policy/zone.go#L44):
 
 <!-- charter:embed SW-261127-WNYB -->
-> **[SW-261127-WNYB](../claims/connections.md#sw-261127-wnyb-every-address-is-in-exactly-one-zone-and-a-forbidden-address-is-never-dialled) Every address is in exactly one zone, and a forbidden address is never dialled**
+> **[SW-261127-WNYB](../claims/connections.md#sw-261127-wnyb-the-proxy-must-place-every-address-in-exactly-one-zone-and-must-not-dial-a-forbidden-address) The proxy MUST place every address in exactly one zone and MUST NOT dial a forbidden address**
 >
-> An address is tailnet if it is in 100.64.0.0/10 or fd7a:115c:a1e0::/48;
-> otherwise forbidden if it is loopback, unspecified, link-local,
-> multicast, 255.255.255.255, in 0.0.0.0/8, or in Qubes' own 10.137.0.0/16
-> to 10.139.0.0/16; otherwise LAN if it is in 10.0.0.0/8, 172.16.0.0/12,
-> 192.168.0.0/16 or fc00::/7; otherwise internet. A connection is decided by
-> the zone of the address it dials, never of the name it used. A forbidden
-> address is refused whatever the file says, and so, on the direct path, is
-> any address of the proxy qube's own; through an exit node those are the
-> exit node's network.
+> - The proxy MUST place an address, in this order of precedence:
+>   - in the tailnet zone if it is in 100.64.0.0/10 or fd7a:115c:a1e0::/48;
+>   - otherwise in the forbidden zone if it is loopback, unspecified,
+>     link-local, multicast, 255.255.255.255, in 0.0.0.0/8, or in Qubes'
+>     own 10.137.0.0/16 to 10.139.0.0/16;
+>   - otherwise in the LAN zone if it is in 10.0.0.0/8, 172.16.0.0/12,
+>     192.168.0.0/16 or fc00::/7;
+>   - otherwise in the internet zone.
+> - The proxy MUST decide a connection by the zone of the address it
+>   dials, never by the name the qube used.
+> - The proxy MUST refuse a forbidden address whatever the file says.
+> - On the direct path, the proxy MUST also refuse any of the proxy qube's
+>   own addresses. Through an exit node those addresses belong to the exit
+>   node's network and are not refused.
 <!-- /charter:embed -->
 
    then applies the zone's rule (`none`, `all`, or a list). A prefix entry
@@ -259,13 +267,15 @@ exit path while the egress is unusable
    name entry too. Matching ([`Match`](../proxy/internal/policy/policy.go#L221)):
 
 <!-- charter:embed SW-261127-2XS6 -->
-> **[SW-261127-2XS6](../claims/connections.md#sw-261127-2xs6-allow-entries-match-by-exact-name-or-subdomain-port-and-protocol-tcp-unless-they-say-udp) Allow entries match by exact name or subdomain, port and protocol, TCP unless they say UDP**
+> **[SW-261127-2XS6](../claims/connections.md#sw-261127-2xs6-the-proxy-must-match-an-allow-entry-by-exact-name-or-subdomain-port-and-protocol-treating-an-entry-without-a-protocol-as-tcp-only) The proxy MUST match an allow entry by exact name or subdomain, port and protocol, treating an entry without a protocol as TCP only**
 >
-> `example.com` matches that name alone; `*.example.com` matches every
-> name under it but not `example.com`; names compare without case and a
-> trailing dot. An address or range matches the address dialled, whatever
-> the names. An entry without a port matches every port; an entry without a
-> protocol matches TCP only, and UDP needs `/udp`.
+> - `example.com` MUST match that name alone; `*.example.com` MUST match
+>   every name under it and MUST NOT match `example.com` itself.
+> - Names MUST compare case-insensitively and without a trailing dot.
+> - An address or range entry MUST match the address dialled, whatever the
+>   names.
+> - An entry without a port MUST match every port.
+> - An entry without a protocol MUST match TCP only; UDP MUST need `/udp`.
 <!-- /charter:embed -->
 
 4. **Name only** (SOCKS, HTTP or a forward with a hostname, before it is
@@ -302,17 +312,20 @@ server-first protocol works; client-to-server bytes are held until
 record:
 
 <!-- charter:embed SW-261127-6S2F -->
-> **[SW-261127-6S2F](../claims/connections.md#sw-261127-6s2f-under-an-allowlist-a-tls-server-name-must-be-allowed-too-and-nothing-is-relayed-before-it-is-read) Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read**
+> **[SW-261127-6S2F](../claims/connections.md#sw-261127-6s2f-the-proxy-must-check-an-allowlisted-connections-tls-server-name-before-relaying-any-of-the-clients-bytes) The proxy MUST check an allowlisted connection's TLS server name before relaying any of the client's bytes**
 >
-> When a zone of the qube's entry is an allowlist, the client's bytes are
-> held until its first bytes have been read; the server's side may speak
-> meanwhile. Unless an address entry allowed the connection, a
-> ClientHello's server name must match a name entry of the zone reached,
-> with its port and protocol; on the tailnet, when the device behind the
-> address is known, it must also name that device. A TLS record from which no
-> ClientHello can be read within two seconds of its first byte is refused.
-> A connection that is not TLS, or a ClientHello with no server name, is
-> decided on the names alone.
+> - When a zone of the qube's entry is an allowlist, the proxy MUST hold
+>   the client's bytes until it has read the client's first bytes. It MAY
+>   relay the server's bytes meanwhile.
+> - Unless an address entry allowed the connection, a ClientHello's server
+>   name MUST match a name entry of the zone reached, including the entry's
+>   port and protocol.
+> - On the tailnet, when the device behind the address is known, the
+>   server name MUST also name that device.
+> - The proxy MUST refuse a TLS record from which no ClientHello can be
+>   read within two seconds of its first byte.
+> - A connection that is not TLS, or a ClientHello with no server name, is
+>   decided on the names alone.
 <!-- /charter:embed -->
 
 `Peek` reads with no deadline until the client's first byte, so pausing
@@ -342,7 +355,7 @@ request's host and port are pinned for the connection, each request is
 re-serialized with that `Host`, and a request for any other is refused
 `http-host-changed` and ends it
 ([`Engine.httpForward`](../proxy/internal/engine/http.go#L97)):
-[SW-261127-H3W9](../claims/connections.md#sw-261127-h3w9-the-http-proxy-carries-one-host-per-connection). Unlike intercepted plain HTTP, this path therefore
+[SW-261127-H3W9](../claims/connections.md#sw-261127-h3w9-the-proxys-http-proxy-must-carry-only-one-host-and-port-per-connection). Unlike intercepted plain HTTP, this path therefore
 cannot be used to reach another virtual host on a shared address.
 
 ## UDP
@@ -356,7 +369,7 @@ transparent socket bound to the original destination, so the workload
 sees the real peer address. Each workload may hold at most 512 flows
 (`MaxUDPFlows`), refused flows included, so a workload cannot exhaust the
 proxy's sockets or conntrack by spraying destinations:
-[SW-261127-QQYS](../claims/connections.md#sw-261127-qqys-udp-is-decided-per-flow-and-each-qube-has-a-cap-on-open-flows). An allowlist entry applies to UDP only with `/udp`;
+[SW-261127-QQYS](../claims/connections.md#sw-261127-qqys-the-proxy-must-decide-udp-once-per-flow-and-must-cap-each-qubes-open-flows). An allowlist entry applies to UDP only with `/udp`;
 QUIC's server name is not read. IPv6 UDP is dropped by the guard. SOCKS
 `UDP ASSOCIATE` is not implemented; a qrexec workload has no UDP.
 
@@ -374,13 +387,15 @@ routed workloads too, since a Qubes app qube's own firewall drops new
 connections from its netvm:
 
 <!-- charter:embed SW-261127-T7GG -->
-> **[SW-261127-T7GG](../claims/connections.md#sw-261127-t7gg-an-inbound-connection-reaches-a-qube-only-on-a-port-its-entry-or-a-service-lists) An inbound connection reaches a qube only on a port its entry or a service lists**
+> **[SW-261127-T7GG](../claims/connections.md#sw-261127-t7gg-the-proxy-must-relay-an-inbound-connection-to-a-qube-only-on-a-port-its-entry-or-a-service-lists) The proxy MUST relay an inbound connection to a qube only on a port its entry or a service lists**
 >
-> A connection arriving at a qube's tailnet identity is relayed only when
-> its port is one the entry's `tailnet.inbound` or a service lists, and
-> goes to the qube's port behind it. An identity listens on no other
-> port, and a connection to one would be refused. Who on the tailnet may
-> connect at all is the grants'.
+> - The proxy MUST relay a connection arriving at a qube's tailnet
+>   identity only when its port is one that the entry's `tailnet.inbound`
+>   or a service lists, and MUST send it to the qube's port mapped behind
+>   it.
+> - An identity MUST NOT listen on any other port, so a connection to one
+>   is refused.
+> - Who on the tailnet may connect at all is decided by the grants.
 <!-- /charter:embed -->
 
 Authorization of the remote peer is the tailnet's: a port declared but
