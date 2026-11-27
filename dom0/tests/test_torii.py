@@ -7,6 +7,7 @@ import os
 import textwrap
 import unittest
 
+import claims
 from torii import derive, machine, plan
 
 
@@ -790,3 +791,60 @@ class Chunks(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+CALLS = """
+qubes:
+  job:
+    outbound: {internet: [pypi.org]}
+  silent:
+    tailnet: {identity: tagged, tags: [s], inbound: [{port: 443, target: 8443}]}
+  peer:
+    local-inbound: [{port: 22, from: [job]}]
+"""
+
+
+def allows(text: str) -> list[tuple[str, str, str, str]]:
+    """The policy's allow lines as (service, argument, source, target)."""
+    out = []
+    for line in text.splitlines():
+        f = line.split()
+        if len(f) >= 5 and not line.startswith("#") and f[4] == "allow":
+            out.append((f[0], f[1], f[2], f[3]))
+    return out
+
+
+class Calls(unittest.TestCase):
+    """The policy apply writes allows each call in the direction of its
+    connection, and only the calls the file declares."""
+
+    def setUp(self):
+        self.m = mparse(CALLS)
+        self.lines = allows(derive.policy(self.m))
+
+    def test_outbound_goes_to_its_own_proxy(self):
+        claims.verifies(self, claims.SW_261127_M36P, "outbound-own-proxy-only")
+        out = [l for l in self.lines if l[0] == "torii.Connect"]
+        self.assertEqual({l[2] for l in out}, {"job"}, "only the qube declaring outbound access calls out")
+        self.assertEqual({l[3] for l in out}, {"@default", "sys-torii"})
+        self.assertEqual({l[1] for l in out}, {"+socks", "+http"})
+        for line in derive.policy(self.m).splitlines():
+            if line.startswith("torii.Connect") and "@default" in line:
+                self.assertTrue(line.endswith("allow target=sys-torii"), line)
+
+    def test_inbound_only_on_listed_ports(self):
+        claims.verifies(self, claims.SW_261127_M36P, "inbound-listed-ports")
+        into = [l for l in self.lines if l[0] == "qubes.ConnectTCP" and l[3] == "silent"]
+        self.assertEqual(into, [("qubes.ConnectTCP", "+8443", "sys-torii", "silent")])
+        local = [l for l in self.lines if l[0] == "qubes.ConnectTCP" and l[3] == "peer"]
+        self.assertEqual(local, [("qubes.ConnectTCP", "+22", "job", "peer")])
+
+    def test_a_qube_with_no_outbound_makes_no_call(self):
+        claims.verifies(self, claims.SW_261127_M36P, "silent-qube-no-calls")
+        self.assertEqual([l for l in self.lines if l[2] in ("silent", "peer")], [])
+
+    def test_every_other_caller_is_denied(self):
+        claims.verifies(self, claims.SW_261127_M36P, "others-denied")
+        deny = derive.deny_policy().splitlines()
+        self.assertIn("torii.Connect  *  @anyvm  @anyvm  deny", deny)
+        self.assertIn("torii.Status   *  @anyvm  @anyvm  deny", deny)

@@ -10,6 +10,8 @@
 # boot on: `attempts` counts what workloads sent, `forward` what was
 # refused forwarding, and `tripwire` any forwarded packet about to leave,
 # which must stay 0 (each one is also logged as "torii-guard-tripwire").
+#
+# charter:realizes SW-261127-JWK2
 table inet torii-guard
 delete table inet torii-guard
 table inet torii-guard {

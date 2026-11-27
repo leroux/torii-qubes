@@ -769,3 +769,20 @@ func waitFor(t *testing.T, f func() bool) {
 	}
 	t.Fatal("condition not met")
 }
+
+// A torii.Connect call is decided against the qube dom0 named; one from a
+// routed qube, or from a qube the file does not list, is refused.
+func TestQrexecCallerMustBeAQrexecWorkload(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_7C3Y, "routed-caller-refused")
+	w := newWorld(t)
+	w.start(t)
+	for caller, reason := range map[string]policy.Reason{"browser": policy.ReasonWrongEntry, "nobody": policy.ReasonUnknownWorkload} {
+		a, b := net.Pipe()
+		go w.eng.HandleQrexec(context.Background(), caller, "socks", b)
+		expectClosed(t, a)
+		ev := waitEvent(t, w.eng.Log(), func(e events.Event) bool { return e.Workload == caller })
+		if ev.Verdict != policy.Refuse || ev.Reason != reason {
+			t.Errorf("%s: %+v, want refused with %s", caller, ev, reason)
+		}
+	}
+}

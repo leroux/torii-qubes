@@ -11,7 +11,7 @@ forwarding off, and the client's ports in the qube.
 
 ## SW-261127-M36P Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-KZK8, STK-261126-SM33
 
@@ -43,7 +43,7 @@ Scenarios:
 
 ## SW-261127-7C3Y A qrexec caller is the qube dom0 names, never one the caller states
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-KZK8
 
@@ -69,7 +69,7 @@ Scenarios:
 
 ## SW-261127-BHHX A routed qube is named by its Qubes source address, which Qubes keeps it from forging
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-KZK8
 
@@ -93,7 +93,7 @@ Scenarios:
 
 ## SW-261127-B6Z6 A routed qube's traffic reaches the program and nothing else: interception, with forwarding off
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-KZK8, STK-261126-SM33
 
@@ -119,7 +119,7 @@ Scenarios:
 
 ## SW-261127-JWK2 A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-SM33, STK-261126-KZK8
 
@@ -148,15 +148,16 @@ Scenarios:
 
 ## SW-261127-N3N8 In a qube with no netvm, the client listens on loopback only, one qrexec call per connection
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-KZK8
 
 The client listens on 127.0.0.1, on the ports dom0's feature for the
 qube lists, and turns each connection into one qrexec call to the
-service and target listed for that port. A service or target outside the
-allowed forms is not listened for. When the feature changes the client
-exits, and starts again with the new list.
+service and target listed for that port. A list with an entry outside
+the allowed forms, a port of zero or a port listed twice is refused
+whole, and the client listens on nothing. When the feature changes the
+client exits, and starts again with the new list.
 
 Why: the qube's programs need ordinary ports to reach out; listening
 only on loopback keeps the ports from being a way in, and one call per
@@ -167,5 +168,10 @@ Scenarios:
    127.0.0.1 only.
 2. `one-call-per-connection` (agent, provisional): two connections to a
    port make two qrexec calls with that port's service and target.
-3. `bad-service-not-listened` (agent, provisional): a listed port whose
-   service is not of the allowed form gets no listener.
+3. `bad-service-not-listened` (agent, provisional): a list with one
+   entry whose service or target is not of the allowed form is refused
+   whole, so no port gets a listener.
+
+Changes:
+- 2026-11-27: a list with a bad entry is refused whole, not that entry
+  alone, which is what the client does.

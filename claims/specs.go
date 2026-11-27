@@ -132,28 +132,28 @@ var SW_261127_2XS6 = &Spec{ID: "SW-261127-2XS6", Title: "Allow entries match by 
 var SW_261127_6S2F = &Spec{ID: "SW-261127-6S2F", Title: "Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read", Status: Active, Kind: "invariant"}
 
 // SW_261127_7C3Y is SW-261127-7C3Y: A qrexec caller is the qube dom0 names, never one the caller states
-var SW_261127_7C3Y = &Spec{ID: "SW-261127-7C3Y", Title: "A qrexec caller is the qube dom0 names, never one the caller states", Status: Planned, Kind: "invariant"}
+var SW_261127_7C3Y = &Spec{ID: "SW-261127-7C3Y", Title: "A qrexec caller is the qube dom0 names, never one the caller states", Status: Active, Kind: "invariant"}
 
 // SW_261127_B6Z6 is SW-261127-B6Z6: A routed qube's traffic reaches the program and nothing else: interception, with forwarding off
-var SW_261127_B6Z6 = &Spec{ID: "SW-261127-B6Z6", Title: "A routed qube's traffic reaches the program and nothing else: interception, with forwarding off", Status: Planned, Kind: "invariant"}
+var SW_261127_B6Z6 = &Spec{ID: "SW-261127-B6Z6", Title: "A routed qube's traffic reaches the program and nothing else: interception, with forwarding off", Status: Active, Kind: "invariant"}
 
 // SW_261127_BHHX is SW-261127-BHHX: A routed qube is named by its Qubes source address, which Qubes keeps it from forging
-var SW_261127_BHHX = &Spec{ID: "SW-261127-BHHX", Title: "A routed qube is named by its Qubes source address, which Qubes keeps it from forging", Status: Planned, Kind: "invariant"}
+var SW_261127_BHHX = &Spec{ID: "SW-261127-BHHX", Title: "A routed qube is named by its Qubes source address, which Qubes keeps it from forging", Status: Active, Kind: "invariant"}
 
 // SW_261127_H3W9 is SW-261127-H3W9: The HTTP proxy carries one host per connection
 var SW_261127_H3W9 = &Spec{ID: "SW-261127-H3W9", Title: "The HTTP proxy carries one host per connection", Status: Active, Kind: "invariant"}
 
 // SW_261127_JWK2 is SW-261127-JWK2: A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does
-var SW_261127_JWK2 = &Spec{ID: "SW-261127-JWK2", Title: "A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does", Status: Planned, Kind: "invariant"}
+var SW_261127_JWK2 = &Spec{ID: "SW-261127-JWK2", Title: "A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does", Status: Active, Kind: "invariant"}
 
 // SW_261127_M36P is SW-261127-M36P: Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed
-var SW_261127_M36P = &Spec{ID: "SW-261127-M36P", Title: "Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed", Status: Planned, Kind: "invariant"}
+var SW_261127_M36P = &Spec{ID: "SW-261127-M36P", Title: "Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed", Status: Active, Kind: "invariant"}
 
 // SW_261127_M7G9 is SW-261127-M7G9: A name resolves, for the qube and for the proxy, only to addresses the qube may reach under it
 var SW_261127_M7G9 = &Spec{ID: "SW-261127-M7G9", Title: "A name resolves, for the qube and for the proxy, only to addresses the qube may reach under it", Status: Active, Kind: "invariant"}
 
 // SW_261127_N3N8 is SW-261127-N3N8: In a qube with no netvm, the client listens on loopback only, one qrexec call per connection
-var SW_261127_N3N8 = &Spec{ID: "SW-261127-N3N8", Title: "In a qube with no netvm, the client listens on loopback only, one qrexec call per connection", Status: Planned, Kind: "invariant"}
+var SW_261127_N3N8 = &Spec{ID: "SW-261127-N3N8", Title: "In a qube with no netvm, the client listens on loopback only, one qrexec call per connection", Status: Active, Kind: "invariant"}
 
 // SW_261127_PXX9 is SW-261127-PXX9: A connection is decided against the entry of the qube it came from, by the way it arrived
 var SW_261127_PXX9 = &Spec{ID: "SW-261127-PXX9", Title: "A connection is decided against the entry of the qube it came from, by the way it arrived", Status: Active, Kind: "invariant"}

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/leroux/torii-qubes/claims"
 	"io"
 	"net"
 	"os"
@@ -34,6 +35,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestHeader(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_7C3Y, "bad-name-refused")
 	h, err := ReadHeader(bufio.NewReader(strings.NewReader("torii.Connect+socks job-1\x00rest")))
 	if err != nil || h.Arg != "socks" || h.Caller != "job-1" {
 		t.Fatalf("%+v %v", h, err)
@@ -54,6 +56,7 @@ func TestHeader(t *testing.T) {
 // The exec helper is an ordinary program on stdin and stdout with the
 // caller in the environment; the daemon sees the caller dom0 named.
 func TestExecServiceReachesDaemon(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_7C3Y, "caller-from-qrexec", "bad-name-refused")
 	sock := filepath.Join(t.TempDir(), "connect.sock")
 	ln, err := ListenUnix(sock, 0o660)
 	if err != nil {

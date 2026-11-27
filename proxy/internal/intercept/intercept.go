@@ -36,6 +36,8 @@ import (
 //     was tproxied, and ICMP. A connection made straight to the
 //     intercept port is accepted too, not dropped: the engine refuses
 //     it as the proxy qube's own address, and logs it.
+//
+//charter:realizes SW-261127-B6Z6
 func Rules(downstream string, tcpPort, dnsPort, udpPort uint16) string {
 	return fmt.Sprintf(`table inet torii
 delete table inet torii
@@ -67,6 +69,8 @@ table inet torii {
 }
 
 // Install applies the rules with nft and turns forwarding off.
+//
+//charter:realizes SW-261127-B6Z6
 func Install(downstream string, tcpPort, dnsPort, udpPort uint16) error {
 	cmd := exec.Command("nft", "-f", "-")
 	cmd.Stdin = strings.NewReader(Rules(downstream, tcpPort, dnsPort, udpPort))
@@ -88,7 +92,15 @@ func Install(downstream string, tcpPort, dnsPort, udpPort uint16) error {
 			return fmt.Errorf("ip %v: %v: %s", args, err, out)
 		}
 	}
-	for _, p := range []string{"/proc/sys/net/ipv4/ip_forward", "/proc/sys/net/ipv6/conf/all/forwarding"} {
+	return forwardingOff(forwardingPaths)
+}
+
+// forwardingPaths are the kernel's forwarding switches, IPv4 and IPv6.
+var forwardingPaths = []string{"/proc/sys/net/ipv4/ip_forward", "/proc/sys/net/ipv6/conf/all/forwarding"}
+
+// forwardingOff writes 0 to each switch that exists.
+func forwardingOff(paths []string) error {
+	for _, p := range paths {
 		if err := os.WriteFile(p, []byte("0\n"), 0o644); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return err
 		}

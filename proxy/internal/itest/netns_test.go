@@ -22,11 +22,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
 
 	"golang.org/x/net/dns/dnsmessage"
+
+	"github.com/leroux/torii-qubes/claims"
 
 	"github.com/leroux/torii-qubes/proxy/internal/admin"
 	"github.com/leroux/torii-qubes/proxy/internal/config"
@@ -381,6 +384,7 @@ func TestNetnsFakeQubes(t *testing.T) {
 	os.WriteFile(cfgPath, b, 0o644)
 	testSock := filepath.Join(e.dir, "test.sock")
 	storeIP := e.start("proxy", "proxy", "CONFIG="+cfgPath, "TESTSOCK="+testSock)
+	proxyProc := e.procs[len(e.procs)-1]
 	adm := admin.Client{Socket: adminSock}
 
 	check := func(name, got, want string) {
@@ -475,6 +479,24 @@ func TestNetnsFakeQubes(t *testing.T) {
 		}
 		if x.Reason != policy.ReasonSNINotAllowed {
 			t.Errorf("explain: %+v", x)
+		}
+	})
+
+	// Last, as it stops the program: the guard alone keeps forwarding off.
+	// The program's own rules are removed and the kernel's forwarding turned
+	// back on, as a crashed program and Qubes' network setup would leave it.
+	t.Run("the guard alone forwards nothing", func(t *testing.T) {
+		claims.Verifies(t, claims.SW_261127_JWK2, "program-stopped")
+		e.in("proxy", "nft", "-f", "../../../packaging/proxy/torii-guard.nft")
+		proxyProc.Process.Kill()
+		proxyProc.Wait()
+		e.in("proxy", "nft", "delete", "table", "inet", "torii")
+		e.in("proxy", "sh", "-c", "echo 1 > /proc/sys/net/ipv4/ip_forward")
+		got := e.client("web", "MODE=tcp", "TO=203.0.113.10:80")
+		check("web -> internet, program stopped", got, "error:")
+		out, _ := exec.Command("ip", "netns", "exec", e.ns("proxy"), "nft", "list", "counter", "inet", "torii-guard", "forward_dropped").Output()
+		if m := regexp.MustCompile(`packets (\d+)`).FindStringSubmatch(string(out)); m == nil || m[1] == "0" {
+			t.Errorf("the guard dropped no forwarded packet:\n%s", out)
 		}
 	})
 	_ = time.Second

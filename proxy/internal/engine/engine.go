@@ -523,6 +523,8 @@ func (e *Engine) dialWorkload(ctx context.Context, workload string, port uint16)
 
 // HandleQrexec serves one torii.Connect call: caller is the calling qube
 // as dom0 named it, arg the service argument ("socks" or "f.<name>").
+//
+//charter:realizes SW-261127-7C3Y
 func (e *Engine) HandleQrexec(ctx context.Context, caller, arg string, c net.Conn) {
 	defer c.Close()
 	if w, ok := e.d.Config.Lookup(caller); !ok || w.Link != config.LinkQrexec {

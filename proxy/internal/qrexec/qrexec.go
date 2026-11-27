@@ -50,6 +50,8 @@ var ErrHeader = errors.New("qrexec: bad header")
 
 // ReadHeader reads the header from r. The reader may have buffered data
 // beyond it; callers use the returned reader for the rest.
+//
+//charter:realizes SW-261127-7C3Y
 func ReadHeader(r *bufio.Reader) (Header, error) {
 	line, err := r.ReadString(0)
 	if err != nil {
@@ -124,6 +126,8 @@ func dirOf(p string) string {
 // ExecService is the body of /etc/qubes-rpc/torii.Connect when it is a
 // program: it forwards stdin and stdout to the daemon's socket, with the
 // caller and argument qrexec put in the environment.
+//
+//charter:realizes SW-261127-7C3Y
 func ExecService(socket string, env func(string) string, stdin io.Reader, stdout io.Writer) error {
 	caller := env("QREXEC_REMOTE_DOMAIN")
 	arg := env("QREXEC_SERVICE_ARGUMENT")

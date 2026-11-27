@@ -208,6 +208,7 @@ def reset_state() -> QubeState:
                      features={CLIENT_FEATURE: None}, managed=False)
 
 
+# charter:realizes SW-261127-M36P
 def policy(m: Machine) -> str:
     """The tool's own qrexec policy file. Every call runs in the direction
     of the connection it carries."""
@@ -301,6 +302,7 @@ def owned_by(m: Machine, tags) -> bool:
     return meshes == ({m.mesh} if m.mesh else set())
 
 
+# charter:realizes SW-261127-M36P
 def deny_policy() -> str:
     """The catch-all denies, in their own file after every mesh's allows:
     first match wins, so a mesh's deny in its own file would block the

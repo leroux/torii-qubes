@@ -511,6 +511,8 @@ func (c *Config) WorkloadNames() []string {
 // ByAddress returns the routed workload whose Qubes address is a; with
 // Unlisted set, an address no workload has is the unlisted workload
 // "unlisted:<a>".
+//
+//charter:realizes SW-261127-BHHX
 func (c *Config) ByAddress(a netip.Addr) (string, *Workload, bool) {
 	a = a.Unmap()
 	for _, n := range c.WorkloadNames() {

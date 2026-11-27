@@ -7,6 +7,11 @@ ignore = ["build", "tools", "dev", "contrib", "docs"]
 # Probes check observations against the real systems; none is written yet.
 probes = ["proxy/internal/probe"]
 
+# The proxy qube's guard is an nftables ruleset and systemd units, not code.
+[[files]]
+patterns = ["packaging/*/*.nft", "packaging/*/*.service", "packaging/*/*.conf"]
+comment = "#"
+
 [go]
 module = "github.com/leroux/torii-qubes/claims"
 dir = "proxy"

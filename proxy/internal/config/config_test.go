@@ -1,8 +1,12 @@
 package config
 
 import (
+	"fmt"
+	"net/netip"
 	"strings"
 	"testing"
+
+	"github.com/leroux/torii-qubes/claims"
 )
 
 const example = `{
@@ -160,5 +164,34 @@ func TestEgressRefuses(t *testing.T) {
 		if _, err := Parse([]byte(body)); err == nil {
 			t.Errorf("%s: accepted", name)
 		}
+	}
+}
+
+// A routed source is named by its Qubes address; an address no entry has
+// is the unlisted source only when the proxy has an unlisted policy.
+func TestByAddressNamesTheRoutedQube(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_BHHX, "source-names-qube", "unknown-address-unlisted")
+	src := `{"proxy_qube":"p","state_dir":"/s","workloads":{
+	  "browser": {"link":"routed","address":"10.137.0.20","internet":"full"},
+	  "job": {"link":"qrexec","internet":"full","socks":true}}%s}`
+	c, err := Parse([]byte(fmt.Sprintf(src, "")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n, w, ok := c.ByAddress(netip.MustParseAddr("10.137.0.20")); !ok || n != "browser" || w != c.Workloads["browser"] {
+		t.Errorf("10.137.0.20 = %q %v", n, ok)
+	}
+	if n, _, ok := c.ByAddress(netip.MustParseAddr("::ffff:10.137.0.20")); !ok || n != "browser" {
+		t.Errorf("v4-mapped = %q %v", n, ok)
+	}
+	if n, _, ok := c.ByAddress(netip.MustParseAddr("10.137.0.99")); ok {
+		t.Errorf("an unknown address named %q with no unlisted policy", n)
+	}
+	c, err = Parse([]byte(fmt.Sprintf(src, `, "unlisted": {"internet": "full"}`)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n, _, ok := c.ByAddress(netip.MustParseAddr("10.137.0.99")); !ok || n != "unlisted:10.137.0.99" {
+		t.Errorf("with unlisted: %q %v", n, ok)
 	}
 }
