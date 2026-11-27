@@ -169,3 +169,6 @@ var SW_261127_WNYB = &Spec{ID: "SW-261127-WNYB", Title: "Every address is in exa
 
 // QubesAntispoof is an observation of qubes: A Qubes netvm drops packets arriving on a qube's `vif` interface whose source address is not that qube's own; a qube cannot send as another.
 var QubesAntispoof = &Observation{Name: "QubesAntispoof", Subject: "qubes", Status: "unsure"}
+
+// QubesConnectTCPDenied is an observation of qubes: Qubes' own policy denies `qubes.ConnectTCP` between qubes unless a policy file allows the call.
+var QubesConnectTCPDenied = &Observation{Name: "QubesConnectTCPDenied", Subject: "qubes", Status: "unsure"}

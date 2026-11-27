@@ -25,9 +25,6 @@ func freePort(t *testing.T) uint16 {
 
 func TestTheClientListensOnLoopbackOnly(t *testing.T) {
 	claims.Verifies(t, claims.SW_261127_N3N8, "loopback-only")
-	if loopback != "127.0.0.1" {
-		t.Fatalf("the default address is %s", loopback)
-	}
 	unit, err := os.ReadFile("../../../packaging/client/torii-client.service")
 	if err != nil {
 		t.Fatal(err)
@@ -38,7 +35,7 @@ func TestTheClientListensOnLoopbackOnly(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	cfg := &clientConfig{Listen: []listen{{Port: freePort(t), Service: "torii.Connect+socks", Target: "@default"}}}
-	lns, err := listenAll(ctx, loopback, cfg, "true")
+	lns, err := listenAll(ctx, cfg, "true")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +61,7 @@ func TestEachConnectionIsOneQrexecCall(t *testing.T) {
 	defer cancel()
 	port := freePort(t)
 	cfg := &clientConfig{Listen: []listen{{Port: port, Service: "torii.Connect+f.db", Target: "@default"}}}
-	lns, err := listenAll(ctx, loopback, cfg, fake)
+	lns, err := listenAll(ctx, cfg, fake)
 	if err != nil {
 		t.Fatal(err)
 	}

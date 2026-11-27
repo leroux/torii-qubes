@@ -800,7 +800,7 @@ qubes:
   silent:
     tailnet: {identity: tagged, tags: [s], inbound: [{port: 443, target: 8443}]}
   peer:
-    local-inbound: [{port: 22, from: [job]}]
+    local-inbound: [{port: 22, from: [job]}, {port: 80, from: [silent]}]
 """
 
 
@@ -837,11 +837,12 @@ class Calls(unittest.TestCase):
         into = [l for l in self.lines if l[0] == "qubes.ConnectTCP" and l[3] == "silent"]
         self.assertEqual(into, [("qubes.ConnectTCP", "+8443", "sys-torii", "silent")])
         local = [l for l in self.lines if l[0] == "qubes.ConnectTCP" and l[3] == "peer"]
-        self.assertEqual(local, [("qubes.ConnectTCP", "+22", "job", "peer")])
+        self.assertEqual(sorted(local), [("qubes.ConnectTCP", "+22", "job", "peer"), ("qubes.ConnectTCP", "+80", "silent", "peer")])
 
     def test_a_qube_with_no_outbound_makes_no_call(self):
         claims.verifies(self, claims.SW_261127_M36P, "silent-qube-no-calls")
-        self.assertEqual([l for l in self.lines if l[2] in ("silent", "peer")], [])
+        self.assertEqual([l for l in self.lines if l[2] == "peer"], [])
+        self.assertEqual([l for l in self.lines if l[2] == "silent"], [("qubes.ConnectTCP", "+80", "silent", "peer")])
 
     def test_every_other_caller_is_denied(self):
         claims.verifies(self, claims.SW_261127_M36P, "others-denied")

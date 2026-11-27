@@ -72,7 +72,6 @@ func parse(b []byte) (*clientConfig, error) {
 
 func main() {
 	src := flag.String("config", "qubesdb:/vm-config/torii-client", "config: a file, or qubesdb:PATH")
-	addr := flag.String("addr", loopback, "address to listen on (tests)")
 	qrexec := flag.String("qrexec-client-vm", "qrexec-client-vm", "qrexec client (tests)")
 	flag.Parse()
 
@@ -92,7 +91,7 @@ func main() {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	if _, err := listenAll(ctx, *addr, cfg, *qrexec); err != nil {
+	if _, err := listenAll(ctx, cfg, *qrexec); err != nil {
 		log.Fatalf("torii-client: %v", err)
 	}
 	if _, ok := cutPrefix(*src, "qubesdb:"); ok {
@@ -112,11 +111,14 @@ func main() {
 	<-ctx.Done()
 }
 
-// listenAll listens on addr at each listed port and serves it.
-func listenAll(ctx context.Context, addr string, cfg *clientConfig, qrexec string) ([]net.Listener, error) {
+// listenAll listens on loopback, and only there, at each listed port, and
+// serves it.
+//
+//charter:realizes SW-261127-N3N8
+func listenAll(ctx context.Context, cfg *clientConfig, qrexec string) ([]net.Listener, error) {
 	var lns []net.Listener
 	for _, l := range cfg.Listen {
-		ln, err := net.Listen("tcp", net.JoinHostPort(addr, fmt.Sprint(l.Port)))
+		ln, err := net.Listen("tcp", net.JoinHostPort(loopback, fmt.Sprint(l.Port)))
 		if err != nil {
 			for _, o := range lns {
 				o.Close()

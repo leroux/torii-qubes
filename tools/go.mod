@@ -54,7 +54,7 @@ require (
 	github.com/klauspost/compress v1.20.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/klauspost/pgzip v1.2.7 // indirect
-	github.com/leroux/charter v0.0.0-20261127020101-e0471b6a688b // indirect
+	github.com/leroux/charter v0.0.0-20261127021351-23fc4e72a337 // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.0 // indirect
 	github.com/mattn/go-runewidth v0.0.24 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect

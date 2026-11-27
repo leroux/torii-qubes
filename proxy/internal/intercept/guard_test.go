@@ -109,8 +109,14 @@ func TestTheGuardDropsEveryForwardedPacket(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(Rules("vif*", 1, 2, 3), "table inet torii\n") || strings.Contains(Rules("vif*", 1, 2, 3), "torii-guard") {
-		t.Error("the program's rules are not a table of their own")
+	r := Rules("vif*", 1, 2, 3)
+	if !strings.HasPrefix(r, "table inet torii\ndelete table inet torii\ntable inet torii {") || strings.Contains(r, "torii-guard") || strings.Contains(r, "flush") {
+		t.Errorf("the program's rules reach beyond their own table:\n%s", r)
+	}
+	for _, l := range strings.Split(r, "\n") {
+		if f := strings.Fields(l); len(f) > 0 && (f[0] == "delete" || f[0] == "flush") && strings.Join(f, " ") != "delete table inet torii" {
+			t.Errorf("the program's rules remove something else: %q", l)
+		}
 	}
 	// The ruleset parses, where nft can check it.
 	if path, err := exec.LookPath("nft"); err == nil && os.Geteuid() == 0 {

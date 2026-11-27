@@ -172,3 +172,6 @@ SW_261127_WNYB = Spec("SW-261127-WNYB", "Every address is in exactly one zone, a
 
 #: QubesAntispoof is an observation of qubes: A Qubes netvm drops packets arriving on a qube's `vif` interface whose source address is not that qube's own; a qube cannot send as another.
 QubesAntispoof = Observation("QubesAntispoof", "qubes", "unsure")
+
+#: QubesConnectTCPDenied is an observation of qubes: Qubes' own policy denies `qubes.ConnectTCP` between qubes unless a policy file allows the call.
+QubesConnectTCPDenied = Observation("QubesConnectTCPDenied", "qubes", "unsure")

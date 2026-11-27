@@ -387,7 +387,9 @@ func TestNetnsFakeQubes(t *testing.T) {
 	proxyProc := e.procs[len(e.procs)-1]
 	adm := admin.Client{Socket: adminSock}
 
-	check := func(name, got, want string) {
+	// check reports on the subtest it is given, so each subtest's outcome
+	// is its own.
+	check := func(t *testing.T, name, got, want string) {
 		t.Helper()
 		if !strings.HasPrefix(got, want) {
 			t.Errorf("%s: got %q, want %q", name, got, want)
@@ -396,53 +398,53 @@ func TestNetnsFakeQubes(t *testing.T) {
 
 	t.Run("forwarding is off in the proxy", func(t *testing.T) {
 		out, _ := exec.Command("ip", "netns", "exec", e.ns("proxy"), "cat", "/proc/sys/net/ipv4/ip_forward").Output()
-		check("ip_forward", strings.TrimSpace(string(out)), "0")
+		check(t, "ip_forward", strings.TrimSpace(string(out)), "0")
 		// A routed qube outside the config gets no UDP through.
-		check("rogue udp", e.client("rogue", "MODE=udp", "TO=203.0.113.10:9999"), "error:")
+		check(t, "rogue udp", e.client("rogue", "MODE=udp", "TO=203.0.113.10:9999"), "error:")
 	})
 
 	t.Run("full internet is relayed, from the proxy's own address", func(t *testing.T) {
 		got := e.client("web", "MODE=tcp", "TO=203.0.113.10:80")
-		check("web -> internet", got, "server 203.0.113.10:80 from 192.168.100.2:")
+		check(t, "web -> internet", got, "server 203.0.113.10:80 from 192.168.100.2:")
 	})
 
 	t.Run("dns through the program", func(t *testing.T) {
-		check("browser pypi.org", e.client("browser", "MODE=dns", "TO=10.139.1.1:53", "NAME=pypi.org"), "203.0.113.10")
-		check("browser evil.com", e.client("browser", "MODE=dns", "TO=10.139.1.1:53", "NAME=evil.com"), "error:")
-		check("browser tailnet", e.client("browser", "MODE=dns", "TO=10.139.1.1:53", "NAME=store.tail.test"), storeIP)
-		check("web www", e.client("web", "MODE=dns", "TO=10.139.1.1:53", "NAME=www.example.com"), "203.0.113.10")
-		check("rogue", e.client("rogue", "MODE=dns", "TO=10.139.1.1:53", "NAME=pypi.org"), "error:")
+		check(t, "browser pypi.org", e.client("browser", "MODE=dns", "TO=10.139.1.1:53", "NAME=pypi.org"), "203.0.113.10")
+		check(t, "browser evil.com", e.client("browser", "MODE=dns", "TO=10.139.1.1:53", "NAME=evil.com"), "error:")
+		check(t, "browser tailnet", e.client("browser", "MODE=dns", "TO=10.139.1.1:53", "NAME=store.tail.test"), storeIP)
+		check(t, "web www", e.client("web", "MODE=dns", "TO=10.139.1.1:53", "NAME=www.example.com"), "203.0.113.10")
+		check(t, "rogue", e.client("rogue", "MODE=dns", "TO=10.139.1.1:53", "NAME=pypi.org"), "error:")
 	})
 
 	t.Run("allowlist by resolved name and server name", func(t *testing.T) {
 		// browser resolved pypi.org above, so its address is allowed...
-		check("pypi", e.client("browser", "MODE=tls", "TO=203.0.113.10:443", "SNI=pypi.org"), "server 203.0.113.10:443")
+		check(t, "pypi", e.client("browser", "MODE=tls", "TO=203.0.113.10:443", "SNI=pypi.org"), "server 203.0.113.10:443")
 		// ...but not for another server name on the same address,
-		check("fronting", e.client("browser", "MODE=tls", "TO=203.0.113.10:443", "SNI=evil.com"), "error:")
+		check(t, "fronting", e.client("browser", "MODE=tls", "TO=203.0.113.10:443", "SNI=evil.com"), "error:")
 		// and an address it never resolved is refused.
-		check("evil ip", e.client("browser", "MODE=tcp", "TO=203.0.113.66:443"), "error:")
+		check(t, "evil ip", e.client("browser", "MODE=tcp", "TO=203.0.113.66:443"), "error:")
 	})
 
 	t.Run("tailnet from a routed workload", func(t *testing.T) {
-		check("store", e.client("browser", "MODE=tcp", "TO="+storeIP+":8000"), "store")
-		check("web has no tailnet outbound", e.client("web", "MODE=tcp", "TO="+storeIP+":8000"), "error:")
+		check(t, "store", e.client("browser", "MODE=tcp", "TO="+storeIP+":8000"), "store")
+		check(t, "web has no tailnet outbound", e.client("web", "MODE=tcp", "TO="+storeIP+":8000"), "error:")
 	})
 
 	t.Run("udp is relayed, decided and answered from the real peer", func(t *testing.T) {
 		// The client's socket is connected, so it accepts the reply only
 		// from 203.0.113.10:9999: the reply socket is bound there. The
 		// server sees the proxy's address: relayed, not forwarded.
-		check("web udp", e.client("web", "MODE=udp", "TO=203.0.113.10:9999"), "ping from 192.168.100.2:")
+		check(t, "web udp", e.client("web", "MODE=udp", "TO=203.0.113.10:9999"), "ping from 192.168.100.2:")
 		// browser resolved pypi.org (203.0.113.10) through the program...
-		check("browser udp resolved", e.client("browser", "MODE=udp", "TO=203.0.113.10:9999"), "ping from 192.168.100.2:")
+		check(t, "browser udp resolved", e.client("browser", "MODE=udp", "TO=203.0.113.10:9999"), "ping from 192.168.100.2:")
 		// ...but never 203.0.113.66.
-		check("browser udp unresolved", e.client("browser", "MODE=udp", "TO=203.0.113.66:9999"), "error:")
-		check("browser udp tailnet", e.client("browser", "MODE=udp", "TO="+storeIP+":5353"), "store-udp:ping")
-		check("web udp tailnet", e.client("web", "MODE=udp", "TO="+storeIP+":5353"), "error:")
+		check(t, "browser udp unresolved", e.client("browser", "MODE=udp", "TO=203.0.113.66:9999"), "error:")
+		check(t, "browser udp tailnet", e.client("browser", "MODE=udp", "TO="+storeIP+":5353"), "store-udp:ping")
+		check(t, "web udp tailnet", e.client("web", "MODE=udp", "TO="+storeIP+":5353"), "error:")
 	})
 
 	t.Run("an unknown source is refused", func(t *testing.T) {
-		check("rogue", e.client("rogue", "MODE=tcp", "TO=203.0.113.10:80"), "error:")
+		check(t, "rogue", e.client("rogue", "MODE=tcp", "TO=203.0.113.10:80"), "error:")
 	})
 
 	t.Run("inbound from the tailnet into a routed workload", func(t *testing.T) {
@@ -454,7 +456,7 @@ func TestNetnsFakeQubes(t *testing.T) {
 			t.Fatal(err)
 		}
 		body, _ := io.ReadAll(resp.Body)
-		check("laptop -> web:80", string(body), "server 0.0.0.0:80 from 10.137.2.1:")
+		check(t, "laptop -> web:80", string(body), "server 0.0.0.0:80 from 10.137.2.1:")
 	})
 
 	t.Run("the decision log and explain agree", func(t *testing.T) {
@@ -493,7 +495,7 @@ func TestNetnsFakeQubes(t *testing.T) {
 		e.in("proxy", "nft", "delete", "table", "inet", "torii")
 		e.in("proxy", "sh", "-c", "echo 1 > /proc/sys/net/ipv4/ip_forward")
 		got := e.client("web", "MODE=tcp", "TO=203.0.113.10:80")
-		check("web -> internet, program stopped", got, "error:")
+		check(t, "web -> internet, program stopped", got, "error:")
 		out, _ := exec.Command("ip", "netns", "exec", e.ns("proxy"), "nft", "list", "counter", "inet", "torii-guard", "forward_dropped").Output()
 		if m := regexp.MustCompile(`packets (\d+)`).FindStringSubmatch(string(out)); m == nil || m[1] == "0" {
 			t.Errorf("the guard dropped no forwarded packet:\n%s", out)

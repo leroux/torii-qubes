@@ -21,8 +21,13 @@ declares. Inbound, the proxy calls `qubes.ConnectTCP` into a carried qube,
 routed or not, only on the target ports its entry or a service lists.
 Between qubes on this machine, `qubes.ConnectTCP` is allowed only from the
 qubes `local-inbound` names, on its port. A qube that declares no
-outbound access is allowed no call at all, and `torii.Connect` is denied
-to every caller the file does not name.
+outbound access is allowed no `torii.Connect` call, and calls
+`qubes.ConnectTCP` only where another qube's `local-inbound` names it.
+torii's deny file, read after every mesh's own, denies `torii.Connect`
+and `torii.Status` to every caller the allows do not name;
+`qubes.ConnectTCP` beyond them is left to Qubes' own policy (observation
+QubesConnectTCPDenied). A hand-written policy file read before torii's
+can widen any of these, and check names it (STK-261126-4Q75).
 
 Why: a call that runs against the connection, such as a tunnel the
 qube holds open to its proxy, would give every qube a standing channel
@@ -37,9 +42,16 @@ Scenarios:
    `qubes.ConnectTCP` into a qube on each listed target port and on no
    other.
 3. `silent-qube-no-calls` (agent, provisional): a qube with no outbound
-   access has no allow line as a caller.
+   access has no `torii.Connect` allow line, and as a caller only the
+   `qubes.ConnectTCP` lines another qube's `local-inbound` gives it.
 4. `others-denied` (agent, provisional): the deny file denies
    `torii.Connect` from any qube to any qube.
+
+Changes:
+- 2026-11-27: a qube with no outbound access may still call
+  `qubes.ConnectTCP` where `local-inbound` names it, and the deny file
+  covers torii's own services only, `qubes.ConnectTCP` resting on Qubes'
+  policy; the text claimed no call at all and a deny it does not write.
 
 ## SW-261127-7C3Y A qrexec caller is the qube dom0 names, never one the caller states
 
@@ -49,8 +61,9 @@ Serves: STK-261126-KZK8
 
 The program takes a `torii.Connect` caller's name and argument from what
 qrexec sets, the header qrexec-agent writes or the environment it gives
-the service. A name or argument outside the allowed forms is refused
-before the program is reached. A caller the file does not list, or one
+the service; nothing the caller sends is read as either. A name or
+argument outside the allowed forms is refused before the call reaches
+its handler. A caller the file does not list, or one
 listed as routed, is refused; an argument other than `socks`, `http` or
 `f.<forward>` is refused.
 
@@ -59,13 +72,18 @@ choose whose entry; dom0 names the caller, and nothing the caller sends
 is read as its name.
 
 Scenarios:
-1. `caller-from-qrexec` (agent, provisional): the program decides a call
-   against the entry of the qube in `QREXEC_REMOTE_DOMAIN`, whatever the
-   connection's bytes say.
+1. `caller-from-qrexec` (agent, provisional): the program takes as the
+   caller the qube in `QREXEC_REMOTE_DOMAIN`, and a forged header in the
+   connection's bytes reaches it as data.
 2. `bad-name-refused` (agent, provisional): a caller or argument that is
    not of the allowed form never reaches the program.
 3. `routed-caller-refused` (agent, provisional): a `torii.Connect` call
    from a qube listed as routed is refused with `wrong-entry`.
+
+Changes:
+- 2026-11-27: a bad name is refused before the handler, in the program on
+  the socket path, not before the program; the scenario says what its test
+  shows.
 
 ## SW-261127-BHHX A routed qube is named by its Qubes source address, which Qubes keeps it from forging
 
@@ -103,7 +121,9 @@ UDP datagram is handed to it keeping its destination. Kernel forwarding
 is turned off, for IPv4 and IPv6, and the forward chain drops
 everything. Input from a `vif` interface is accepted only on the
 program's ports, for what was handed to it, for ICMP, and for
-connections already established; everything else is dropped.
+connections already established; everything else is dropped. A TCP
+connection to any other port of the proxy qube is redirected like any
+other, and the program refuses it as the proxy's own address.
 
 Why: the program can only decide what it is given; redirecting
 everything to it, and forwarding nothing, makes a connection it did not
@@ -114,8 +134,14 @@ Scenarios:
    and DNS from `vif*` to the program's ports and hand it other IPv4 UDP.
 2. `forwarding-off` (agent, provisional): once the program has started,
    the proxy qube's `ip_forward` is 0 and a forwarded packet is dropped.
-3. `input-closed` (agent, provisional): a connection from a routed qube
-   to any other port of the proxy qube is dropped.
+3. `input-closed` (agent, provisional): input from the workloads'
+   interfaces accepts exactly the program's ports, what was handed to
+   it, ICMP and established connections, and drops the rest.
+
+Changes:
+- 2026-11-27: TCP to another port of the proxy qube is redirected and
+  refused by the program, not dropped, which the rules say themselves;
+  input-closed names the exact rules its test checks.
 
 ## SW-261127-JWK2 A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does
 
@@ -124,10 +150,12 @@ Kind: invariant
 Serves: STK-261126-SM33, STK-261126-KZK8
 
 Every qube of the proxy template loads a guard ruleset at boot, before
-Qubes sets up its network; if the guard fails to load, the network does
-not come up. The program never changes or removes it. In base chains at
-the highest priority it drops every forwarded packet, and any packet
-about to leave with an input interface (counted and logged as a
+Qubes sets up its network; if the guard fails to load, neither Qubes'
+network service, which turns forwarding on, nor the program starts. The
+program's rules are a table of their own and never touch the guard. In
+base chains at priority -400 the guard drops every forwarded packet,
+and any packet about to leave with an input interface other than IPv6
+link-local and multicast control traffic (counted and logged as a
 tripwire); drops IPv6 arriving from `vif` interfaces; and drops the
 proxy qube's own connections to other qubes' Qubes addresses.
 
@@ -146,6 +174,11 @@ Scenarios:
    `ip_forward` set to 1, a routed qube's packet to the internet is not
    forwarded.
 
+Changes:
+- 2026-11-27: without the guard, Qubes' network service and the program do
+  not start, but the uplink may, which the text overstated; the tripwire's
+  IPv6 link-local and multicast exception is stated.
+
 ## SW-261127-N3N8 In a qube with no netvm, the client listens on loopback only, one qrexec call per connection
 
 Status: active
@@ -156,8 +189,7 @@ The client listens on 127.0.0.1, on the ports dom0's feature for the
 qube lists, and turns each connection into one qrexec call to the
 service and target listed for that port. A list with an entry outside
 the allowed forms, a port of zero or a port listed twice is refused
-whole, and the client listens on nothing. When the feature changes the
-client exits, and starts again with the new list.
+whole, and the client listens on nothing.
 
 Why: the qube's programs need ordinary ports to reach out; listening
 only on loopback keeps the ports from being a way in, and one call per
@@ -175,3 +207,6 @@ Scenarios:
 Changes:
 - 2026-11-27: a list with a bad entry is refused whole, not that entry
   alone, which is what the client does.
+- 2026-11-27: the client listens on loopback with no option to listen
+  elsewhere; restarting on a changed feature is a convenience, not this
+  decision, and is dropped from the text.

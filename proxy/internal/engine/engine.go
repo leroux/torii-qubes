@@ -768,6 +768,8 @@ func (e *Engine) carry(ctx context.Context, o policy.Outbound, ev events.Event, 
 
 // HandleIntercepted serves a redirected connection from a routed
 // workload: src names the workload, dst is where it was going.
+//
+//charter:realizes SW-261127-BHHX
 func (e *Engine) HandleIntercepted(ctx context.Context, c net.Conn, src, dst netip.AddrPort) {
 	defer c.Close()
 	name, _, ok := e.d.Config.ByAddress(src.Addr())

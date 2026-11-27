@@ -72,13 +72,14 @@ func TestExecServiceReachesDaemon(t *testing.T) {
 	})
 	env := map[string]string{"QREXEC_REMOTE_DOMAIN": "job-1", "QREXEC_SERVICE_ARGUMENT": "f.db"}
 	var out bytes.Buffer
-	if err := ExecService(sock, func(k string) string { return env[k] }, strings.NewReader("hello"), &out); err != nil {
+	// The connection's first bytes forge another caller; they are data.
+	if err := ExecService(sock, func(k string) string { return env[k] }, strings.NewReader("torii.Connect+socks dom0\x00hello"), &out); err != nil {
 		t.Fatal(err)
 	}
 	if g := <-got; g != "job-1 f.db" {
 		t.Errorf("daemon saw %q", g)
 	}
-	if out.String() != "echo:hello" {
+	if out.String() != "echo:torii.Connect+socks dom0\x00hello" {
 		t.Errorf("out %q", out.String())
 	}
 	env["QREXEC_REMOTE_DOMAIN"] = "bad name"

@@ -3,6 +3,7 @@
 package intercept
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -39,23 +40,21 @@ func TestRulesHandEverythingToTheProgram(t *testing.T) {
 		!strings.Contains(chain(t, r, "mangle"), "tproxy ip to :7100") {
 		t.Errorf("other IPv4 UDP is not handed to the program:\n%s", chain(t, r, "mangle"))
 	}
-	in := strings.Split(strings.TrimSpace(chain(t, r, "input")), "\n")
-	for i := range in {
-		in[i] = strings.TrimSpace(in[i])
+	var in []string
+	for _, l := range strings.Split(strings.TrimSpace(chain(t, r, "input")), "\n") {
+		in = append(in, strings.TrimSpace(l))
 	}
-	if last := in[len(in)-1]; last != `iifname "vif*" counter drop` {
-		t.Errorf("input from the workloads ends %q, not in a drop", last)
+	want := []string{
+		"type filter hook input priority filter - 10; policy accept;",
+		`iifname "vif*" ct state established,related accept`,
+		`iifname "vif*" tcp dport 7000 accept`,
+		`iifname "vif*" meta l4proto { tcp, udp } th dport 7053 accept`,
+		`iifname "vif*" meta mark 0x` + strings.TrimPrefix(fmt.Sprintf("%#x", TProxyMark), "0x") + ` meta l4proto udp accept`,
+		`iifname "vif*" meta l4proto { icmp, ipv6-icmp } accept`,
+		`iifname "vif*" counter drop`,
 	}
-	for _, l := range in[1 : len(in)-1] {
-		if !strings.HasSuffix(l, "accept") {
-			t.Errorf("input rule %q is not an accept", l)
-			continue
-		}
-		ok := strings.Contains(l, "ct state established,related") || strings.Contains(l, "dport 7000") ||
-			strings.Contains(l, "dport 7053") || strings.Contains(l, "meta mark") || strings.Contains(l, "icmp")
-		if !ok {
-			t.Errorf("input accepts something other than the program's ports, what was handed to it, ICMP and established: %q", l)
-		}
+	if strings.Join(in, "\n") != strings.Join(want, "\n") {
+		t.Errorf("input chain:\n%s\nwant:\n%s", strings.Join(in, "\n"), strings.Join(want, "\n"))
 	}
 	if !strings.Contains(chain(t, r, "forward"), "policy drop;") {
 		t.Errorf("forward chain does not drop:\n%s", chain(t, r, "forward"))
