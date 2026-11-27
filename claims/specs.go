@@ -104,23 +104,23 @@ func record(tb testing.TB, id string, handles []string) {
 	})
 }
 
-// STK_261126_346B is STK-261126-346B: A qube on an egress reaches the internet only through that egress's exit nodes, or not at all
-var STK_261126_346B = &Spec{ID: "STK-261126-346B", Title: "A qube on an egress reaches the internet only through that egress's exit nodes, or not at all", Status: Planned}
+// STK_261126_346B is STK-261126-346B: torii MUST send an egress qube's internet traffic only through that egress's exit nodes, and MUST refuse it when none is healthy
+var STK_261126_346B = &Spec{ID: "STK-261126-346B", Title: "torii MUST send an egress qube's internet traffic only through that egress's exit nodes, and MUST refuse it when none is healthy", Status: Planned}
 
-// STK_261126_4Q75 is STK-261126-4Q75: show reads each qube's reach from the live machine; check names every difference from the file
-var STK_261126_4Q75 = &Spec{ID: "STK-261126-4Q75", Title: "show reads each qube's reach from the live machine; check names every difference from the file", Status: Planned}
+// STK_261126_4Q75 is STK-261126-4Q75: torii show MUST report each qube's reach from the live machine, and torii check MUST name every difference from the file
+var STK_261126_4Q75 = &Spec{ID: "STK-261126-4Q75", Title: "torii show MUST report each qube's reach from the live machine, and torii check MUST name every difference from the file", Status: Planned}
 
-// STK_261126_B4CP is STK-261126-B4CP: apply changes only what torii owns, and exactly the steps plan showed
-var STK_261126_B4CP = &Spec{ID: "STK-261126-B4CP", Title: "apply changes only what torii owns, and exactly the steps plan showed", Status: Planned}
+// STK_261126_B4CP is STK-261126-B4CP: torii apply MUST change only what torii owns, and MUST make exactly the steps torii plan showed
+var STK_261126_B4CP = &Spec{ID: "STK-261126-B4CP", Title: "torii apply MUST change only what torii owns, and MUST make exactly the steps torii plan showed", Status: Planned}
 
-// STK_261126_KHZB is STK-261126-KHZB: Each tailnet identity is one qube's, joins only by a person's approval, and dom0 holds no tailnet credential
-var STK_261126_KHZB = &Spec{ID: "STK-261126-KHZB", Title: "Each tailnet identity is one qube's, joins only by a person's approval, and dom0 holds no tailnet credential", Status: Planned}
+// STK_261126_KHZB is STK-261126-KHZB: torii MUST give each tailnet identity to one qube, join it only with a person's approval, and keep no tailnet credential in dom0
+var STK_261126_KHZB = &Spec{ID: "STK-261126-KHZB", Title: "torii MUST give each tailnet identity to one qube, join it only with a person's approval, and keep no tailnet credential in dom0", Status: Planned}
 
-// STK_261126_KZK8 is STK-261126-KZK8: A carried qube's connection is relayed only if its entry allows it; every other connection is refused
-var STK_261126_KZK8 = &Spec{ID: "STK-261126-KZK8", Title: "A carried qube's connection is relayed only if its entry allows it; every other connection is refused", Status: Planned}
+// STK_261126_KZK8 is STK-261126-KZK8: torii MUST relay a carried qube's connection only if the qube's entry allows it, and MUST refuse every other connection
+var STK_261126_KZK8 = &Spec{ID: "STK-261126-KZK8", Title: "torii MUST relay a carried qube's connection only if the qube's entry allows it, and MUST refuse every other connection", Status: Planned}
 
-// STK_261126_SM33 is STK-261126-SM33: torii adds no qrexec call, network path or dom0 exposure beyond those the file declares
-var STK_261126_SM33 = &Spec{ID: "STK-261126-SM33", Title: "torii adds no qrexec call, network path or dom0 exposure beyond those the file declares", Status: Planned}
+// STK_261126_SM33 is STK-261126-SM33: torii MUST NOT add a qrexec call, network path or dom0 exposure beyond those the file declares
+var STK_261126_SM33 = &Spec{ID: "STK-261126-SM33", Title: "torii MUST NOT add a qrexec call, network path or dom0 exposure beyond those the file declares", Status: Planned}
 
 // SW_261127_2JH3 is SW-261127-2JH3: plan refuses before any step a file that names what this machine cannot be given
 var SW_261127_2JH3 = &Spec{ID: "SW-261127-2JH3", Title: "plan refuses before any step a file that names what this machine cannot be given", Status: Active, Kind: "invariant"}

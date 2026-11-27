@@ -107,23 +107,23 @@ def pytest_runtest_logreport(report):
         for id, handles, file in _pending.pop(report.nodeid, []):
             _write(id, handles, report.nodeid, file, outcome)
 
-#: STK_261126_346B is STK-261126-346B: A qube on an egress reaches the internet only through that egress's exit nodes, or not at all
-STK_261126_346B = Spec("STK-261126-346B", "A qube on an egress reaches the internet only through that egress's exit nodes, or not at all", "planned", "")
+#: STK_261126_346B is STK-261126-346B: torii MUST send an egress qube's internet traffic only through that egress's exit nodes, and MUST refuse it when none is healthy
+STK_261126_346B = Spec("STK-261126-346B", "torii MUST send an egress qube's internet traffic only through that egress's exit nodes, and MUST refuse it when none is healthy", "planned", "")
 
-#: STK_261126_4Q75 is STK-261126-4Q75: show reads each qube's reach from the live machine; check names every difference from the file
-STK_261126_4Q75 = Spec("STK-261126-4Q75", "show reads each qube's reach from the live machine; check names every difference from the file", "planned", "")
+#: STK_261126_4Q75 is STK-261126-4Q75: torii show MUST report each qube's reach from the live machine, and torii check MUST name every difference from the file
+STK_261126_4Q75 = Spec("STK-261126-4Q75", "torii show MUST report each qube's reach from the live machine, and torii check MUST name every difference from the file", "planned", "")
 
-#: STK_261126_B4CP is STK-261126-B4CP: apply changes only what torii owns, and exactly the steps plan showed
-STK_261126_B4CP = Spec("STK-261126-B4CP", "apply changes only what torii owns, and exactly the steps plan showed", "planned", "")
+#: STK_261126_B4CP is STK-261126-B4CP: torii apply MUST change only what torii owns, and MUST make exactly the steps torii plan showed
+STK_261126_B4CP = Spec("STK-261126-B4CP", "torii apply MUST change only what torii owns, and MUST make exactly the steps torii plan showed", "planned", "")
 
-#: STK_261126_KHZB is STK-261126-KHZB: Each tailnet identity is one qube's, joins only by a person's approval, and dom0 holds no tailnet credential
-STK_261126_KHZB = Spec("STK-261126-KHZB", "Each tailnet identity is one qube's, joins only by a person's approval, and dom0 holds no tailnet credential", "planned", "")
+#: STK_261126_KHZB is STK-261126-KHZB: torii MUST give each tailnet identity to one qube, join it only with a person's approval, and keep no tailnet credential in dom0
+STK_261126_KHZB = Spec("STK-261126-KHZB", "torii MUST give each tailnet identity to one qube, join it only with a person's approval, and keep no tailnet credential in dom0", "planned", "")
 
-#: STK_261126_KZK8 is STK-261126-KZK8: A carried qube's connection is relayed only if its entry allows it; every other connection is refused
-STK_261126_KZK8 = Spec("STK-261126-KZK8", "A carried qube's connection is relayed only if its entry allows it; every other connection is refused", "planned", "")
+#: STK_261126_KZK8 is STK-261126-KZK8: torii MUST relay a carried qube's connection only if the qube's entry allows it, and MUST refuse every other connection
+STK_261126_KZK8 = Spec("STK-261126-KZK8", "torii MUST relay a carried qube's connection only if the qube's entry allows it, and MUST refuse every other connection", "planned", "")
 
-#: STK_261126_SM33 is STK-261126-SM33: torii adds no qrexec call, network path or dom0 exposure beyond those the file declares
-STK_261126_SM33 = Spec("STK-261126-SM33", "torii adds no qrexec call, network path or dom0 exposure beyond those the file declares", "planned", "")
+#: STK_261126_SM33 is STK-261126-SM33: torii MUST NOT add a qrexec call, network path or dom0 exposure beyond those the file declares
+STK_261126_SM33 = Spec("STK-261126-SM33", "torii MUST NOT add a qrexec call, network path or dom0 exposure beyond those the file declares", "planned", "")
 
 #: SW_261127_2JH3 is SW-261127-2JH3: plan refuses before any step a file that names what this machine cannot be given
 SW_261127_2JH3 = Spec("SW-261127-2JH3", "plan refuses before any step a file that names what this machine cannot be given", "active", "invariant")

@@ -21,200 +21,277 @@ tailnet. dom0 and the owner who writes the file are trusted. The tailnet's
 coordination server is trusted to say who is on the tailnet, and its
 grants are the owner's.
 
-## STK-261126-KZK8 A carried qube's connection is relayed only if its entry allows it; every other connection is refused
+The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY in these
+documents are to be interpreted as described in BCP 14 (RFC 2119, RFC 8174)
+when, and only when, they appear in all capitals.
+
+## STK-261126-KZK8 torii MUST relay a carried qube's connection only if the qube's entry allows it, and MUST refuse every other connection
 
 Status: planned
 
-Outbound, a connection from a carried qube is relayed only when its entry
-allows the connection's zone and a destination in that zone matches it by
-name or address, port and protocol, a name counting only if the qube
-asked for it or resolved it to that address; tailnet connections must
-also be allowed by the grants. Inbound, a connection reaches a carried
-qube only on a port its entry or a service lists, and only from the qubes
-`local-inbound` names or the tailnet peers the grants allow.
-
-Whatever the file says, no other qube's address is reachable through the
-proxy, and a carried qube has no IPv6. A qube attached to a proxy but not
-listed, a disposable included, gets that proxy's `unlisted` policy, which
-by default refuses everything, and never a tailnet identity.
+- An outbound connection from a carried qube MUST be relayed only when
+  its entry allows the connection's zone and a destination in that zone
+  matches it by name or address, port and protocol. A name entry counts
+  only for a name the qube asked for, or resolved to that address.
+- A tailnet connection MUST also be allowed by the tailnet's grants.
+- An inbound connection MUST reach a carried qube only on a port its
+  entry or a service lists, and only from the qubes its `local-inbound`
+  names or the tailnet peers the grants allow.
+- Whatever the file says, the proxy MUST NOT make another qube's address
+  reachable, and a carried qube MUST NOT have IPv6.
+- A qube attached to a proxy but not listed, a disposable included, MUST
+  get that proxy's `unlisted` policy, which by default refuses
+  everything, and MUST NOT get a tailnet identity.
 
 Not covered, and documented as limits: raw TCP or QUIC to another site at
 an address an allowed name shares, including any connection that sends
-no TLS server name; data sent out over DNS by a qube
-allowed `internet: all`. A qube with `network: default` or its own netvm
-is not carried: torii sets only its netvm.
+no TLS server name; and data sent out over DNS by a qube allowed
+`internet: all`. A qube with `network: default` or its own netvm is not
+carried: torii sets only its netvm.
 
-Why: a qube with a netvm and a wall of rules is one missing rule from
-everything; deciding each connection by its declared destination, and
-refusing whatever was not declared, is what makes the in-between access
-safe to give.
+Why: a qube that has a netvm and is fenced in by firewall rules is one
+missing rule away from reaching everything. Deciding each connection by
+the destination the file declares, and refusing whatever the file does
+not declare, makes access between "no network" and "full network" safe
+to grant, because a mistake in the file refuses traffic instead of
+leaking it.
 
 Scenarios:
-1. `allowed-name-passes` (agent, provisional): a qube allowed
-   `pypi.org:443` reaches pypi.org on 443, and is refused pypi.org on 80
-   and every other name.
-2. `unresolved-address-refused` (agent, provisional): a connection to a
-   public address the qube never resolved, which no address entry covers,
-   is refused.
-3. `sni-must-match` (agent, provisional): a TLS connection to an allowed
-   name's address whose server name is not allowed is refused.
-4. `udp-needs-udp` (agent, provisional): an entry without `/udp` refuses
-   UDP to that name.
-5. `unlisted-port-refused` (agent, provisional): a connection to a port
-   the qube's entry does not list never reaches the qube.
-6. `other-qubes-unreachable` (agent, provisional): a qube allowed
-   `internet: all` is refused another qube's address.
-7. `unlisted-qube-refused` (agent, provisional): a qube attached to the
-   proxy but absent from the file is refused every connection.
+1. `allowed-name-passes` (agent, provisional): given a qube allowed
+   `pypi.org:443`, when it connects to pypi.org on 443, on 80 and to
+   another name, then only the connection to 443 is relayed.
+2. `unresolved-address-refused` (agent, provisional): given a public
+   address the qube never resolved and no address entry covers, when the
+   qube connects to it, then the connection is refused.
+3. `sni-must-match` (agent, provisional): given a qube allowed a name,
+   when it opens a TLS connection to that name's address with a server
+   name that is not allowed, then the connection is refused.
+4. `udp-needs-udp` (agent, provisional): given an entry for a name
+   without `/udp`, when the qube sends UDP to that name, then the flow is
+   refused.
+5. `unlisted-port-refused` (agent, provisional): given a port the qube's
+   entry does not list, when a connection arrives for that port, then it
+   never reaches the qube.
+6. `other-qubes-unreachable` (agent, provisional): given a qube allowed
+   `internet: all`, when it connects to another qube's address, then the
+   connection is refused.
+7. `unlisted-qube-refused` (agent, provisional): given a qube attached to
+   the proxy but absent from the file, when it opens any connection, then
+   the connection is refused.
 
-## STK-261126-B4CP apply changes only what torii owns, and exactly the steps plan showed
+Changes:
+- 2026-11-27: reworded in the owner's claim form (BCP 14 title and
+  bullets, explanatory Why, given/when/then scenarios); the ruling is
+  unchanged.
+
+## STK-261126-B4CP torii apply MUST change only what torii owns, and MUST make exactly the steps torii plan showed
 
 Status: planned
 
-plan is a function of the machine file and a snapshot of the live
-machine, and lists every change in the order apply makes it. apply makes
-those changes and no others, stops at the first that fails, and run again
-makes only the changes left. On a machine that matches the file, plan is
-empty.
+- `torii plan` MUST be a function of the machine file and a snapshot of
+  the live machine, and MUST list every change in the order apply makes
+  it. On a machine that matches the file, the plan MUST be empty.
+- `torii apply` MUST make those changes and no others, MUST stop at the
+  first change that fails, and, run again, MUST make only the changes
+  left.
+- torii owns its template, the proxy qubes it created, the policy file
+  `/etc/qubes/policy.d/50-torii.policy`, and, on each managed qube, only
+  its netvm, the `torii-client` service and feature, its torii tags and
+  the adoption features it writes once. torii MUST NOT create or delete
+  any other qube, and MUST NOT write any other policy file.
+- A qube removed from the file MUST be left with no netvm, never its old
+  one.
 
-torii owns: its template, the proxy qubes it created, the policy file
-`/etc/qubes/policy.d/50-torii.policy`, and on each managed qube only its
-netvm, the `torii-client` service and feature, its torii tags and the
-adoption features it writes once. It
-creates or deletes no other qube and writes no other policy file. A qube
-removed from the file is left with no netvm, never its old one.
-
-Why: a tool with dom0's power must be reviewable before it acts; a plan
-that is the whole of what will happen, limited to what torii owns, is
-what the owner reviews.
+Why: torii runs with dom0's power over every qube, so the owner has to
+be able to review what it will do before it does it. A plan that is the
+whole of what apply will change, and that can touch only what torii
+owns, is something the owner can actually review; any change outside the
+plan, or outside torii's own objects, would bypass that review.
 
 Scenarios:
-1. `plan-is-apply` (agent, provisional): the steps apply makes on a
-   machine are the steps plan listed for it, in order.
-2. `second-apply-empty` (agent, provisional): plan on a machine apply has
-   just made match the file is empty.
-3. `interrupted-apply-continues` (agent, provisional): an apply stopped by
-   a failed step, run again, makes only the steps left.
-4. `unowned-untouched` (agent, provisional): a qube not in the file and a
-   hand-written policy file are unchanged by apply.
-5. `removed-qube-gets-no-netvm` (agent, provisional): a qube removed from
-   the file ends the next apply with no netvm.
+1. `plan-is-apply` (agent, provisional): given a machine and a file,
+   when apply runs, then the steps it makes are the steps plan listed,
+   in the same order.
+2. `second-apply-empty` (agent, provisional): given a machine apply has
+   just made match the file, when plan runs, then it lists no steps.
+3. `interrupted-apply-continues` (agent, provisional): given an apply
+   stopped by a failed step, when apply runs again, then it makes only
+   the steps not yet made.
+4. `unowned-untouched` (agent, provisional): given a qube not in the file
+   and a hand-written policy file, when apply runs, then neither changes.
+5. `removed-qube-gets-no-netvm` (agent, provisional): given a managed
+   qube removed from the file, when apply runs, then the qube ends with
+   no netvm.
 
-## STK-261126-4Q75 show reads each qube's reach from the live machine; check names every difference from the file
+Changes:
+- 2026-11-27: reworded in the owner's claim form (BCP 14 title and
+  bullets, explanatory Why, given/when/then scenarios); the ruling is
+  unchanged.
+
+## STK-261126-4Q75 torii show MUST report each qube's reach from the live machine, and torii check MUST name every difference from the file
 
 Status: planned
 
-show reads, never from the file: each managed qube's netvm, every policy
-file in dom0 including hand-written ones, the config each proxy qube is
-running, and each identity's state; and reports from them what the qube
-can reach and what can reach it. check names each difference from the
-file: a netvm, a proxy that is down or runs an older config, an identity
-not signed in, and hand-written policy that widens what torii set. log
-gives, for each recent connection decision of a qube, its outcome and the
-rule that decided it.
+- `torii show` MUST read each managed qube's netvm, every policy file in
+  dom0 (hand-written ones included), the config each proxy qube is
+  running and each identity's state, never the file, and MUST report
+  from them what the qube can reach and what can reach it.
+- `torii check` MUST name each difference from the file: a netvm, a
+  proxy that is down or runs an older config, an identity not signed in,
+  and hand-written policy that widens what torii set.
+- `torii log` MUST give, for each recent connection decision of a qube,
+  its outcome and the rule that decided it.
 
-Why: what the owner believes a qube can reach must be what it can reach;
-the live machine is the only evidence, and anything that widens it
-without the file must be shown.
+Why: the owner's decisions about a qube depend on what they believe it
+can reach, so that belief has to match what it can actually reach. The
+file says what was intended; only the live machine shows the result,
+including anything changed by hand. Reading the machine, and naming
+whatever widens reach beyond the file, is what lets the owner trust the
+picture.
 
 Scenarios:
-1. `hand-policy-shown` (agent, provisional): a hand-written policy line
-   granting a qube `qubes.ConnectTCP` to another appears in show and in
-   check.
-2. `netvm-drift-named` (agent, provisional): a qube whose netvm was changed
-   by hand is named by check with the netvm the file wants.
-3. `stale-config-named` (agent, provisional): a proxy running a config
-   older than the file's is named by check.
-4. `log-names-rule` (agent, provisional): a refused connection is in the
-   qube's log with the rule that refused it.
+1. `hand-policy-shown` (agent, provisional): given a hand-written policy
+   line granting a qube `qubes.ConnectTCP` to another, when show and
+   check run, then both name it.
+2. `netvm-drift-named` (agent, provisional): given a qube whose netvm was
+   changed by hand, when check runs, then it names the qube and the netvm
+   the file wants.
+3. `stale-config-named` (agent, provisional): given a proxy running a
+   config older than the file's, when check runs, then it names the
+   proxy.
+4. `log-names-rule` (agent, provisional): given a refused connection,
+   when the qube's log is read, then it holds the connection with the
+   rule that refused it.
 
-## STK-261126-346B A qube on an egress reaches the internet only through that egress's exit nodes, or not at all
+Changes:
+- 2026-11-27: reworded in the owner's claim form (BCP 14 title and
+  bullets, explanatory Why, given/when/then scenarios); the ruling is
+  unchanged.
+
+## STK-261126-346B torii MUST send an egress qube's internet traffic only through that egress's exit nodes, and MUST refuse it when none is healthy
 
 Status: planned
 
-A carried qube whose entry names an egress sends its internet connections
-and their DNS only through an exit node of that egress: the first in the
-list that is healthy. While none is healthy, its internet connections are
-refused and its DNS answered with a failure; nothing is sent by another
-route. Switching exit nodes never clears the exit node.
+- A carried qube whose entry names an egress MUST send its internet
+  connections, and their DNS, only through an exit node of that egress:
+  the first in the list that is healthy.
+- While no exit node is healthy, its internet connections MUST be
+  refused and its DNS queries MUST be answered with a failure; torii
+  MUST NOT send any of it by another route.
+- Switching exit nodes MUST NOT clear the exit node.
 
-Not covered: its LAN connections, which go through the proxy's netvm
-directly; and connections open through an exit node when the egress
+Not covered: the qube's LAN connections, which go directly through the
+proxy's netvm; and connections open through an exit node when the egress
 switches, which break.
 
-Why: a qube routed through exit nodes is so routed to hide where it is;
-one connection sent directly is the leak the routing existed to prevent.
+Why: a qube is routed through exit nodes to hide where it is, so a
+single connection sent directly reveals exactly what the routing exists
+to hide. Refusing traffic while no exit node is healthy, instead of
+falling back to the direct route, keeps a failure from becoming that
+leak.
 
 Scenarios:
-1. `first-healthy-exit` (agent, provisional): with the first exit node
-   down and the second up, a qube's internet connection leaves through
-   the second.
-2. `no-exit-refused` (agent, provisional): with every exit node down, an
-   internet connection is refused and no packet leaves for its
-   destination.
-3. `no-exit-dns-fails` (agent, provisional): with every exit node down, a
-   DNS query from the qube is answered with a failure.
+1. `first-healthy-exit` (agent, provisional): given the first exit node
+   down and the second up, when the qube opens an internet connection,
+   then it leaves through the second.
+2. `no-exit-refused` (agent, provisional): given every exit node down,
+   when the qube opens an internet connection, then it is refused and no
+   packet leaves for its destination.
+3. `no-exit-dns-fails` (agent, provisional): given every exit node down,
+   when the qube sends a DNS query, then it is answered with a failure.
 
-## STK-261126-KHZB Each tailnet identity is one qube's, joins only by a person's approval, and dom0 holds no tailnet credential
+Changes:
+- 2026-11-27: reworded in the owner's claim form (BCP 14 title and
+  bullets, explanatory Why, given/when/then scenarios); the ruling is
+  unchanged.
+
+## STK-261126-KHZB torii MUST give each tailnet identity to one qube, join it only with a person's approval, and keep no tailnet credential in dom0
 
 Status: planned
 
-A qube's identity is a tailnet device of its own, with its own tags; no
-two qubes share one, and an unlisted qube never has one. An egress's
-shared identity carries only internet connections, never a tailnet
-destination. An identity joins through a sign-in link a person approves,
-or a one-time auth key given only to the proxy qube; its state lives only
-in the proxy qube. dom0 stores no key or auth secret, and torii changes
-nothing in the tailnet: the grants it suggests are printed.
+- A qube's identity MUST be a tailnet device of its own, with its own
+  tags. Two qubes MUST NOT share one, and an unlisted qube MUST NOT have
+  one.
+- An egress's shared identity MUST carry only internet connections,
+  never a tailnet destination.
+- An identity MUST join through a sign-in link a person approves, or a
+  one-time auth key given only to the proxy qube, and its state MUST
+  live only in the proxy qube.
+- dom0 MUST NOT store a key or auth secret, and torii MUST NOT change
+  anything in the tailnet: the grants it suggests are printed.
 
-Why: a tailnet that sees one device per machine grants every qube the
-access of all; a credential in dom0, or grants a tool pushes, put the
-tailnet's trust where nobody reviews it.
+Why: a tailnet that sees one device per machine gives every qube on the
+machine the access of all of them, which undoes the separation between
+qubes. A credential stored in dom0, or grants that a tool pushes, would
+place the tailnet's trust somewhere no person reviews it; requiring a
+person to approve each identity and to apply the grants keeps that
+decision with the owner.
 
 Scenarios:
-1. `identity-per-qube` (agent, provisional): two qubes with tagged
-   identities are two tailnet devices, each with only its own tags.
-2. `egress-identity-internet-only` (agent, provisional): a tailnet
-   destination is never dialled on an egress's identity.
-3. `no-secret-in-dom0` (agent, provisional): after an identity signs in,
-   by link or by key, no key or auth secret is in dom0.
-4. `grants-printed` (agent, provisional): grants prints a policy and makes
-   no call to the tailnet.
+1. `identity-per-qube` (agent, provisional): given two qubes with tagged
+   identities, when both sign in, then they are two tailnet devices,
+   each with only its own tags.
+2. `egress-identity-internet-only` (agent, provisional): given a qube on
+   an egress, when it connects to a tailnet destination, then the
+   egress's identity is not used to dial it.
+3. `no-secret-in-dom0` (agent, provisional): given an identity that has
+   signed in, by link or by key, when dom0 is searched, then it holds no
+   key or auth secret.
+4. `grants-printed` (agent, provisional): given a machine file, when
+   `torii grants` runs, then it prints a policy and makes no call to the
+   tailnet.
 
-## STK-261126-SM33 torii adds no qrexec call, network path or dom0 exposure beyond those the file declares
+Changes:
+- 2026-11-27: reworded in the owner's claim form (BCP 14 title and
+  bullets, explanatory Why, given/when/then scenarios); the ruling is
+  unchanged.
+
+## STK-261126-SM33 torii MUST NOT add a qrexec call, network path or dom0 exposure beyond those the file declares
 
 Status: planned
 
-The policy torii writes allows only: a carried qube with outbound access
-to call `torii.Connect` in its own proxy; a proxy to call
-`qubes.ConnectTCP` into a qube on its listed inbound ports; and dom0 and
-the file's `status-readers` to call `torii.Status`. A proxy qube can call
-nothing in dom0, and a carried qube with no outbound access can call
-nothing. A qube with `network: none` has no netvm.
-
-A proxy qube's kernel forwards no packet, whether the proxy program runs,
-has stopped or is reloading; a config half delivered or invalid never
-replaces the running one. dom0 relays no traffic and parses nothing a
-qube sends but the status the owner reads. torii changes Qubes only
-through the Admin API, features, policy files and services.
+- The policy torii writes MUST allow only: a carried qube with outbound
+  access calling `torii.Connect` in its own proxy; a proxy calling
+  `qubes.ConnectTCP` into a qube on its listed inbound ports; and dom0
+  and the file's `status-readers` calling `torii.Status`.
+- A proxy qube MUST NOT be able to call anything in dom0, and a carried
+  qube with no outbound access MUST NOT be able to call anything.
+- A qube with `network: none` MUST NOT have a netvm.
+- A proxy qube's kernel MUST NOT forward any packet, whether the proxy
+  program is running, stopped or reloading. A config that is half
+  delivered or invalid MUST NOT replace the running one.
+- dom0 MUST NOT relay traffic, and MUST NOT parse anything a qube sends
+  except the status the owner reads.
+- torii MUST change Qubes only through the Admin API, features, policy
+  files and services.
 
 Accepted, and stated: a compromised proxy qube holds every identity on it
 and sees the traffic it relays, as any netvm does; a qube that must be
 kept apart from the others gets a dedicated proxy.
 
-Why: torii is given dom0's power to configure compartments; every path
-it opens that the file does not name is a way through them that the
-owner never reviewed.
+Why: torii uses dom0's power to configure the compartments Qubes keeps
+apart. Any qrexec call, network path or dom0 exposure it adds without
+the file naming it is a path between compartments that the owner never
+reviewed, so the set of paths has to be exactly what the file declares.
 
 Scenarios:
-1. `policy-exactly-declared` (agent, provisional): the policy apply writes
-   for a file holds one allow line per declared call and no other.
-2. `proxy-cannot-call-dom0` (agent, provisional): no line of the policy
-   apply writes lets a proxy qube call into dom0.
-3. `no-outbound-no-calls` (agent, provisional): a qube with
-   `network: none` and no outbound access may make no qrexec call.
-4. `forwarding-off-when-stopped` (agent, provisional): with the proxy
-   program stopped, a routed qube's packet to the internet is not
-   forwarded.
-5. `bad-config-kept-out` (agent, provisional): a config whose hash does
-   not match leaves the proxy on its running config.
+1. `policy-exactly-declared` (agent, provisional): given a machine file,
+   when apply writes the policy, then it holds one allow line per
+   declared call and no other.
+2. `proxy-cannot-call-dom0` (agent, provisional): given the policy apply
+   writes, when its lines are read, then none lets a proxy qube call
+   into dom0.
+3. `no-outbound-no-calls` (agent, provisional): given a qube with
+   `network: none` and no outbound access, when it makes any qrexec
+   call, then the call is denied.
+4. `forwarding-off-when-stopped` (agent, provisional): given the proxy
+   program stopped, when a routed qube sends a packet to the internet,
+   then it is not forwarded.
+5. `bad-config-kept-out` (agent, provisional): given a config whose hash
+   does not match, when the proxy reads it, then the proxy stays on its
+   running config.
+
+Changes:
+- 2026-11-27: reworded in the owner's claim form (BCP 14 title and
+  bullets, explanatory Why, given/when/then scenarios); the ruling is
+  unchanged.
