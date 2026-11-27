@@ -131,6 +131,8 @@ func (s *Selector) failback() time.Duration { return time.Duration(s.cfg.Failbac
 
 // Run checks every Interval, and at once after Report trips the passive
 // trigger, until ctx ends. It waits for the identity to sign in first.
+//
+//charter:realizes SW-261127-8DFY
 func (s *Selector) Run(ctx context.Context) {
 	if err := s.id.AwaitRunning(ctx); err != nil {
 		return
@@ -151,7 +153,7 @@ func (s *Selector) Run(ctx context.Context) {
 // Tick checks every exit node once, at the same time and each within
 // CheckTimeout, then uses the one choose picks.
 //
-//charter:realizes SW-261127-8DFY
+//charter:realizes SW-261127-8DFY, SW-261127-6YGC
 func (s *Selector) Tick(ctx context.Context) {
 	type check struct {
 		peer    tailnet.Peer
@@ -310,6 +312,9 @@ func (s *Selector) Usable() bool {
 	defer s.mu.Unlock()
 	return s.active != "" && s.st[s.active].healthy(s.opt.Now())
 }
+
+// HasProbe reports whether the selector runs an end-to-end probe.
+func (s *Selector) HasProbe() bool { return s.opt.Probe != nil }
 
 // Active is the exit node set on the identity, "" before the first.
 func (s *Selector) Active() string {

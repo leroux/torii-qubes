@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/leroux/torii-qubes/claims"
+	"strings"
 	"testing"
 	"time"
 
@@ -173,6 +174,11 @@ func TestPassiveTrigger(t *testing.T) {
 	// Two distinct destinations failing is not enough, nor one failing three times.
 	r.s.Report("a.example:443", fail)
 	r.s.Report("a.example:443", fail)
+	r.s.Report("a.example:443", fail)
+	r.tick(t)
+	if r.set() != "exit-1" {
+		t.Fatal("tripped on one destination failing three times")
+	}
 	r.s.Report("b.example:443", fail)
 	r.s.Report("b.example:443", fail)
 	r.tick(t)
@@ -255,9 +261,50 @@ func TestProbeTripsTheActiveNode(t *testing.T) {
 	if r.set() != "exit-2" || calls != 3 {
 		t.Fatalf("after 3 failed probes: set %q, %d probes", r.set(), calls)
 	}
-	// With no probe named, the selector has none to run.
-	plain := newRig(t, "exit-1")
-	if plain.s.opt.Probe != nil {
-		t.Error("a probe with none named")
+}
+
+// recorder wraps an identity and records every exit node set on it.
+type recorder struct {
+	tailnet.Identity
+	set []string
+}
+
+func (r *recorder) SetExitNode(ctx context.Context, node string) error {
+	r.set = append(r.set, node)
+	return r.Identity.SetExitNode(ctx, node)
+}
+
+// With every exit node down the selector sets nothing: the last stays.
+func TestTheExitNodeIsNeverCleared(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_6YGC, "last-kept-when-none-healthy")
+	r := newRig(t, "exit-1", "exit-2")
+	rec := &recorder{Identity: r.id}
+	r.s = New("vpn", &config.Egress{Hostname: "m1-egress-vpn", Exits: []string{"exit-1", "exit-2"}, FailbackAfter: 120}, rec, Options{
+		Now: r.clk.now, Log: r.log, CheckTimeout: 20 * time.Millisecond,
+	})
+	r.tick(t)
+	r.exits["exit-1"].SetOffline(true)
+	r.exits["exit-2"].SetOffline(true)
+	for i := 0; i < 3; i++ {
+		r.clk.add(10 * time.Second)
+		r.tick(t)
+	}
+	if strings.Join(rec.set, ",") != "exit-1" {
+		t.Errorf("exit nodes set: %q; with none healthy nothing is set, the last never cleared", rec.set)
+	}
+	if r.s.Usable() || r.s.Active() != "exit-1" {
+		t.Errorf("usable %v active %q", r.s.Usable(), r.s.Active())
+	}
+}
+
+// The checking cadence: every 10 seconds, each check within 5.
+func TestTheCheckingCadence(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_8DFY, "cadence")
+	if Interval != 10*time.Second || CheckTimeout != 5*time.Second {
+		t.Errorf("interval %v, check timeout %v", Interval, CheckTimeout)
+	}
+	s := New("vpn", &config.Egress{Exits: []string{"a"}}, nil, Options{})
+	if s.opt.CheckTimeout != 5*time.Second {
+		t.Errorf("default check timeout %v", s.opt.CheckTimeout)
 	}
 }

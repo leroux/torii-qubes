@@ -544,8 +544,12 @@ func TestNoHealthyExitIsRefusedWithoutDialling(t *testing.T) {
 	}
 	// DNS through the egress: SERVFAIL, not NXDOMAIN, and nothing asked locally.
 	q := dnsQuery(t, "example.com", dnsmessage.TypeA)
+	before := w.internet.lookups
 	if rc, _ := dnsAnswer(t, w.eng.AnswerDNS(context.Background(), netip.MustParseAddr("10.137.0.22"), q)); rc != dnsmessage.RCodeServerFailure {
 		t.Errorf("rcode %v", rc)
+	}
+	if w.internet.lookups != before {
+		t.Error("the question was asked on the local network")
 	}
 }
 
@@ -617,6 +621,7 @@ type fakeInternet struct {
 	servers map[string]string
 	names   map[string][]netip.Addr
 	count   map[string]int
+	lookups int
 }
 
 func newFakeInternet(t *testing.T) *fakeInternet {
@@ -668,6 +673,7 @@ func (f *fakeInternet) dial(ctx context.Context, dst netip.AddrPort) (net.Conn, 
 func (f *fakeInternet) LookupNetIP(ctx context.Context, network, host string) ([]netip.Addr, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.lookups++
 	a, ok := f.names[host]
 	if !ok {
 		return nil, &net.DNSError{Err: "no such host", Name: host, IsNotFound: true}
@@ -855,5 +861,21 @@ func TestExplainAgreesAndDialsNothing(t *testing.T) {
 	w.eng.self = nil
 	if x, _ := w.eng.Explain(context.Background(), ExplainRequest{Workload: "web", Dest: "93.184.216.99:443"}); x.Reason != policy.ReasonForbiddenAddress {
 		t.Errorf("the proxy's own address: %+v", x)
+	}
+}
+
+// A probe runs only for an egress that names one.
+func TestAProbeRunsOnlyWhenNamed(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_8DFY, "probe-trips")
+	w := newWorld(t)
+	w.start(t)
+	if w.eng.egress["vpn"].HasProbe() {
+		t.Error("a probe with none named")
+	}
+	w2 := newWorld(t)
+	w2.cfg.Egresses["vpn"].Probe = "1.1.1.1:443"
+	w2.start(t)
+	if !w2.eng.egress["vpn"].HasProbe() {
+		t.Error("the named probe is not run")
 	}
 }

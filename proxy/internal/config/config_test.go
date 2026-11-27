@@ -115,11 +115,12 @@ const egressConfig = `{
 }`
 
 func TestEgressAndUnlisted(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_BNFC, "default-two-minutes")
 	c, err := Parse([]byte(egressConfig))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if g := c.Egresses["vpn"]; g.FailbackAfter != DefaultFailbackAfter {
+	if g := c.Egresses["vpn"]; g.FailbackAfter != 120 {
 		t.Errorf("failback default: %d", g.FailbackAfter)
 	}
 	// An egress workload needs no identity of its own.

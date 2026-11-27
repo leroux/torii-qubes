@@ -654,6 +654,7 @@ class Egresses(unittest.TestCase):
         self.assertIn(msg, str(e.exception))
 
     def test_parse(self):
+        claims.verifies(self, claims.SW_261127_BNFC, "default-two-minutes")
         m = mparse(EGRESS)
         g = m.egresses["vpn"]
         self.assertEqual((g.exits, g.failback_after, g.tags, g.hostname),
@@ -713,6 +714,8 @@ class Egresses(unittest.TestCase):
         s = with_qube(snap(), "build", "")
         notes = plan.notes(mparse(EGRESS), s)
         self.assertIn("build: its LAN access goes direct through sys-torii's netvm, never through egress vpn", notes)
+        lan = [n for n in notes if "LAN access goes direct" in n]
+        self.assertEqual([n.split(":")[0] for n in lan], ["build"], "a qube without both an egress and LAN access was noted")
 
 
 PROXY_STATUS = {"status": {

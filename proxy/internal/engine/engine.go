@@ -282,7 +282,7 @@ func (e *Engine) Log() *events.Log { return e.d.Log }
 // exit-node selection. It does not wait for sign-in. An identity listens
 // only on the inbound ports its workload declares.
 //
-//charter:realizes SW-261127-T7GG
+//charter:realizes SW-261127-T7GG, SW-261127-8DFY
 func (e *Engine) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	e.cancel = cancel

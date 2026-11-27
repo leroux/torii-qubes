@@ -18,8 +18,10 @@ behind the egress are dialled into the userspace network stack of the
 egress's identity, from the identity's own address; the program never
 uses tsnet's `Server.Dial`, which falls back to the system network for
 an address with no tailnet route, nor the proxy qube's netvm. DNS goes
-over TCP, through the same stack, to the egress's resolver. Without an
-exit node that stack has no route to the internet.
+over TCP, through the same stack, to the egress's resolver; a name in
+the proxy qube's own hosts file is answered from it, and its search
+domains may be added to a query. Without an exit node that stack has no
+route to the internet.
 
 Why: failing closed must not depend on the selector being right; if the
 only way out is through the exit node, a missing exit node is a refused
@@ -31,6 +33,10 @@ Scenarios:
    local network.
 2. `udp-exit-down-no-local-dial` (agent, provisional): the same for a UDP
    flow.
+
+Changes:
+- 2026-11-27: the resolver reads the proxy qube's hosts file and search
+  domains, which the text did not say; DialUDP is anchored.
 
 ## SW-261127-HJNX While an egress has no healthy exit node, its connections are refused at once and its DNS fails
 
@@ -96,6 +102,13 @@ Scenarios:
    node healthy, it is used; with it down and the second up, the second.
 2. `failback-after-hold-down` (agent, provisional): the first comes back
    and is used only once it has been healthy for `failback-after`.
+3. `default-two-minutes` (agent, provisional): an egress that names no
+   `failback-after` holds down for 120 seconds, in the file and in the
+   proxy's config.
+
+Changes:
+- 2026-11-27: a scenario holds the two-minute default to its number on
+  both sides.
 
 ## SW-261127-8DFY An exit node is healthy while listed, answering pings, and not failing every real connection through it
 
@@ -126,6 +139,12 @@ Scenarios:
    or one failing three times, do not.
 4. `probe-trips` (agent, provisional): a named probe failing three times
    in a row trips the active node; with no probe named, none runs.
+5. `cadence` (agent, provisional): checks run every 10 seconds, each
+   bounded to 5.
+
+Changes:
+- 2026-11-27: a scenario holds the cadence to its numbers; Run and the
+  probe's wiring in Engine.Start are anchored.
 
 ## SW-261127-KYZW A qube's LAN traffic never goes through its egress, and plan says so
 
@@ -146,4 +165,8 @@ Scenarios:
 1. `lan-direct` (agent, provisional): an allowed LAN address of a qube on
    an egress takes the direct path, an internet address the exit path.
 2. `lan-noted` (agent, provisional): plan notes a qube on an egress that
-   may reach the LAN.
+   may reach the LAN, and no qube without both.
+
+Changes:
+- 2026-11-27: lan-noted also holds that a qube without an egress, or
+  without LAN access, is not noted.

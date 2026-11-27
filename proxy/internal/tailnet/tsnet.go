@@ -203,6 +203,8 @@ func (t *TSNet) srcFor(dst netip.AddrPort) (netip.Addr, error) {
 }
 
 // DialUDP is Dial for UDP: into the netstack, bound to the identity.
+//
+//charter:realizes SW-261127-K5TK
 func (t *TSNet) DialUDP(ctx context.Context, dst netip.AddrPort) (net.Conn, error) {
 	ns, err := t.netstack()
 	if err != nil {
