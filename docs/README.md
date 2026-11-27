@@ -1,12 +1,16 @@
 # torii's docs
 
-torii decides, for each qube on a Qubes machine, what it may connect to,
-what may connect to it, and which way its traffic leaves. One file in dom0
-declares it; a tool in dom0 makes Qubes match the file; a proxy qube,
-`sys-torii`, decides and relays every connection and gives each qube a
-tailnet identity of its own; and dom0 reads the result back from the live
-machine. The [README](../README.md) is the front page; these docs are the
-rest.
+torii is per-qube network policy for Qubes OS. A machine file in dom0
+declares, for each qube, its link (no netvm with qrexec-only access, or a
+proxy qube as netvm), its outbound allowlist by zone (internet, LAN,
+tailnet), its inbound ports, its egress through Tailscale exit nodes,
+and an optional tailnet identity of its own. A dom0 tool plans and
+applies that file through the Admin API and qrexec policy; a proxy qube,
+`sys-torii`, runs `torii-proxy`, which attributes, authorizes and relays
+every connection in userspace with kernel forwarding off and holds one
+tsnet node per identity; and `show` and `check` reconstruct each qube's
+reach from the live machine. The [README](../README.md) is the user-facing
+overview; this directory is the engineering documentation.
 
 ## What torii guarantees
 
@@ -29,10 +33,10 @@ needs, and the docs that follow each:
 | [`setup.md`](setup.md) | someone installing torii | From nothing to one service, then each pattern; every command and file key |
 | [`tailscale.md`](tailscale.md) | the tailnet's admin | Tags, grants, HTTPS, sign-in, exit nodes, Headscale |
 | [`salt.md`](salt.md) | someone running many machines | The states and pillar that apply a file per machine |
-| [`architecture.md`](architecture.md) | a contributor or reviewer | The parts, what runs where, what crosses each boundary |
-| [`walkthrough-connection.md`](walkthrough-connection.md) | a contributor | One connection, from the name to the last byte |
-| [`walkthrough-apply.md`](walkthrough-apply.md) | a contributor or reviewer | A plan and an apply, from the file to the proxy running it |
-| [`walkthrough-egress.md`](walkthrough-egress.md) | a contributor | Traffic through exit nodes, failover, failing closed |
+| [`architecture.md`](architecture.md) | a contributor or reviewer | Trust model and TCB, components, units, sockets, policy, trust boundaries |
+| [`walkthrough-connection.md`](walkthrough-connection.md) | a contributor or reviewer | Interception and qrexec ingress, source attribution, DNS, authorization, SNI-checked relay, UDP, inbound |
+| [`walkthrough-apply.md`](walkthrough-apply.md) | a contributor or reviewer | Parsing, snapshot, the pure planner, apply's steps, chunked config delivery, readiness, show and check |
+| [`walkthrough-egress.md`](walkthrough-egress.md) | a contributor or reviewer | The egress identity, exit-path DNS and dials, health, selection, switching, the two fail-closed layers |
 | [`design.md`](design.md) | anyone asking why | The problem, the choices and the alternatives, what a compromise reaches, the limits |
 | [`testing.md`](testing.md) | a contributor | What each level of tests shows, and what only a real machine does |
 | [`performance.md`](performance.md) | anyone sizing a machine | What was measured, and why the numbers are what they are |
@@ -41,9 +45,14 @@ needs, and the docs that follow each:
 
 - **To use it:** the [README](../README.md), [`setup.md`](setup.md), then
   [`tailscale.md`](tailscale.md) at the steps that point there.
-- **To review it:** [`design.md`](design.md), [`architecture.md`](architecture.md),
-  then [`walkthrough-apply.md`](walkthrough-apply.md) for what dom0 does
-  and the needs above.
+- **To review its security:** the needs above and their adversary
+  ([`claims/needs.md`](../claims/needs.md)), [`architecture.md`](architecture.md)
+  (trust model, TCB, boundaries), [`design.md`](design.md) (what a
+  compromise reaches, limits), then the walkthroughs for the code paths:
+  [`walkthrough-connection.md`](walkthrough-connection.md) for attribution
+  and authorization, [`walkthrough-egress.md`](walkthrough-egress.md) for
+  fail-closed routing, [`walkthrough-apply.md`](walkthrough-apply.md) for
+  dom0.
 - **To change it:** [`architecture.md`](architecture.md), the three
   walkthroughs, [`testing.md`](testing.md), then
   [`../HACKING.md`](../HACKING.md) for the dev setup. A change to what
