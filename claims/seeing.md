@@ -53,7 +53,6 @@ Changes:
   `ask` for no reach; it now reads every file, the wildcard service,
   redirects by the target asked for and `ask` as reach on a prompt, and
   the text names the tokens and includes it does not evaluate.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-SMYC torii check MUST name each difference it looks for between the live machine and the file, and MUST fail on any
 
@@ -104,7 +103,6 @@ Changes:
   hand-written one passed silently; now only this mesh's file and the deny
   file are, `ask`, the wildcard service, tokens and includes are named,
   and the text says what check does not read.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-R4CD The proxy MUST log every connection it decides, with the verdict and the rule that made it
 
@@ -142,7 +140,6 @@ Changes:
 - 2026-11-27: names what is not one event each: the flow cap's once-a-
   second line and malformed requests answered before any decision; fill is
   anchored.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-B8BM The status service MUST be read-only: it MUST report and MUST NOT change anything in the proxy
 
@@ -166,9 +163,6 @@ Scenarios:
 1. `api-only-reads` (agent, provisional): given the local API, when it
    receives a request other than GET, or a GET of any other path, then
    it refuses the request.
-
-Changes:
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-Z5ST explain MUST give the decision the proxy would make now, without sending anything
 
@@ -202,4 +196,3 @@ Changes:
 - 2026-11-27: explain took SOCKS for every qube with no netvm, refusing an
   HTTP-only one; it now takes the way a real connection arrives, and the
   text says it does not resolve names.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.

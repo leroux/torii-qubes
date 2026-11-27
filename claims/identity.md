@@ -39,7 +39,6 @@ Changes:
 - 2026-11-27: a qube named egress-<egress>, or <qube>.<service>, shared
   another identity's state and key; both sides now refuse it, and the text
   says how each kind is named and that torii never reads state back.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-P8H7 torii MUST give a tagged identity exactly the file's tags, prefixed by the machine, and torii check MUST name any other
 
@@ -72,7 +71,6 @@ Scenarios:
 Changes:
 - 2026-11-27: check read a field the proxy never sent, so it named no tag
   mismatch on a real machine; the proxy now reports it in that field.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-3TPX An identity MUST sign in by a link a person approves, or by a one-time key that only the proxy qube keeps
 
@@ -105,7 +103,6 @@ Scenarios:
 Changes:
 - 2026-11-27: an existing key file kept its mode; the file is now removed
   and written new.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-DH6R torii MUST only propose grants for the tailnet, and MUST NOT change the tailnet's policy
 
@@ -144,7 +141,6 @@ Changes:
   elsewhere; grants no longer name the machine's tag, which every egress
   carries, as a destination; the scenario checks dynamic imports and
   download tools too.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-WSWG An egress's identity MUST carry only internet traffic, and torii grants MUST propose it nothing else
 
@@ -174,7 +170,6 @@ Scenarios:
 Changes:
 - 2026-11-27: grants named the machine's tag, which the egress identities
   carry, as every inbound grant's destination; it no longer does.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-8PTP The proxy MUST NOT send Tailscale client logs unless the file asks, and MUST NOT map ports
 
@@ -200,6 +195,3 @@ Scenarios:
    `tailscale-logs: yes`, when the config is built and later changed,
    then the setting reaches the proxy's config and turning logs on asks
    for a restart.
-
-Changes:
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.

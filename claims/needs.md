@@ -79,11 +79,6 @@ Scenarios:
    the proxy but absent from the file, when it opens any connection, then
    the connection is refused.
 
-Changes:
-- 2026-11-27: reworded in the owner's claim form (BCP 14 title and
-  bullets, explanatory Why, given/when/then scenarios); the ruling is
-  unchanged.
-
 ## STK-261126-B4CP torii apply MUST change only what torii owns, and MUST make exactly the steps torii plan showed
 
 Status: planned
@@ -126,9 +121,6 @@ Scenarios:
    no netvm.
 
 Changes:
-- 2026-11-27: reworded in the owner's claim form (BCP 14 title and
-  bullets, explanatory Why, given/when/then scenarios); the ruling is
-  unchanged.
 - 2026-11-27: torii also owns a named mesh's policy file and the shared
   deny file, as SW-261127-G26T rules and apply writes; the need named
   `50-torii.policy` alone.
@@ -168,11 +160,6 @@ Scenarios:
    when the qube's log is read, then it holds the connection with the
    rule that refused it.
 
-Changes:
-- 2026-11-27: reworded in the owner's claim form (BCP 14 title and
-  bullets, explanatory Why, given/when/then scenarios); the ruling is
-  unchanged.
-
 ## STK-261126-346B torii MUST send an egress qube's internet traffic only through that egress's exit nodes, and MUST refuse it when none is healthy
 
 Status: planned
@@ -204,11 +191,6 @@ Scenarios:
    packet leaves for its destination.
 3. `no-exit-dns-fails` (agent, provisional): given every exit node down,
    when the qube sends a DNS query, then it is answered with a failure.
-
-Changes:
-- 2026-11-27: reworded in the owner's claim form (BCP 14 title and
-  bullets, explanatory Why, given/when/then scenarios); the ruling is
-  unchanged.
 
 ## STK-261126-KHZB torii MUST give each tailnet identity to one qube, join it only with a person's approval, and keep no tailnet credential in dom0
 
@@ -245,11 +227,6 @@ Scenarios:
 4. `grants-printed` (agent, provisional): given a machine file, when
    `torii grants` runs, then it prints a policy and makes no call to the
    tailnet.
-
-Changes:
-- 2026-11-27: reworded in the owner's claim form (BCP 14 title and
-  bullets, explanatory Why, given/when/then scenarios); the ruling is
-  unchanged.
 
 ## STK-261126-SM33 torii MUST NOT add a qrexec call, network path or dom0 exposure beyond those the file declares
 
@@ -295,8 +272,3 @@ Scenarios:
 5. `bad-config-kept-out` (agent, provisional): given a config whose hash
    does not match, when the proxy reads it, then the proxy stays on its
    running config.
-
-Changes:
-- 2026-11-27: reworded in the owner's claim form (BCP 14 title and
-  bullets, explanatory Why, given/when/then scenarios); the ruling is
-  unchanged.

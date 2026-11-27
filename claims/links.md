@@ -59,7 +59,6 @@ Changes:
   `qubes.ConnectTCP` where `local-inbound` names it, and the deny file
   covers torii's own services only, `qubes.ConnectTCP` resting on Qubes'
   policy; the text claimed no call at all and a deny it does not write.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-7C3Y The proxy MUST take a qrexec caller's identity from what dom0 sets, never from what the caller sends
 
@@ -98,7 +97,6 @@ Changes:
 - 2026-11-27: a bad name is refused before the handler, in the program on
   the socket path, not before the program; the scenario says what its test
   shows.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-BHHX The proxy MUST identify a routed qube by its Qubes source address, which Qubes keeps it from forging
 
@@ -128,9 +126,6 @@ Scenarios:
 2. `unknown-address-unlisted` (agent, provisional): given a proxy with no
    `unlisted` policy, when a connection arrives from an address no entry
    has, then it is refused.
-
-Changes:
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-B6Z6 The proxy qube MUST hand every routed qube's traffic to the program and MUST NOT forward any of it
 
@@ -170,7 +165,6 @@ Changes:
 - 2026-11-27: TCP to another port of the proxy qube is redirected and
   refused by the program, not dropped, which the rules say themselves;
   input-closed names the exact rules its test checks.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-JWK2 The proxy template MUST load a guard at boot that keeps the proxy qube forwarding nothing, whatever the program does
 
@@ -213,7 +207,6 @@ Changes:
 - 2026-11-27: without the guard, Qubes' network service and the program do
   not start, but the uplink may, which the text overstated; the tripwire's
   IPv6 link-local and multicast exception is stated.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-N3N8 torii-client MUST listen on loopback only and MUST make one qrexec call per connection
 
@@ -251,4 +244,3 @@ Changes:
 - 2026-11-27: the client listens on loopback with no option to listen
   elsewhere; restarting on a changed feature is a convenience, not this
   decision, and is dropped from the text.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.

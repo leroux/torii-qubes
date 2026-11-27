@@ -58,7 +58,6 @@ Changes:
   255.255.255.255, as the code does; `internet-name-to-lan` says the LAN
   allowlist does not name it, as its test has it (review of the first
   implementation).
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-2R9T The proxy MUST count a name entry only for a name the qube asked for, or resolved through the proxy to the address dialled
 
@@ -99,7 +98,6 @@ Changes:
 - 2026-11-27: a resolved name counts for five minutes from the last answer
   whatever its TTL, which the proxy does, not for the TTL with a minute's
   floor (review of the first implementation).
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-M7G9 The proxy MUST resolve a name, for the qube and for itself, only to addresses the qube may reach under that name
 
@@ -130,9 +128,6 @@ Scenarios:
 3. `proxy-resolution-filtered` (agent, provisional): given a qube whose
    LAN is `none`, when it opens a SOCKS connection by a name that
    resolves only to a LAN address, then nothing is dialled.
-
-Changes:
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-2XS6 The proxy MUST match an allow entry by exact name or subdomain, port and protocol, treating an entry without a protocol as TCP only
 
@@ -165,9 +160,6 @@ Scenarios:
 4. `udp-explicit` (agent, provisional): given the entry
    `example.com:443`, when the qube sends UDP to 443, then it is refused;
    given `example.com:443/udp`, then it is allowed.
-
-Changes:
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-6S2F The proxy MUST check an allowlisted connection's TLS server name before relaying any of the client's bytes
 
@@ -214,7 +206,6 @@ Changes:
 - 2026-11-27: a connection an address entry allows is not checked by
   server name, and the tailnet device is checked when known, as the proxy
   does (review of the first implementation).
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-H3W9 The proxy's HTTP proxy MUST carry only one host and port per connection
 
@@ -241,9 +232,6 @@ Scenarios:
 2. `disallowed-host-forbidden` (agent, provisional): given a host the
    entry does not allow, when the qube requests it, then the answer is
    403 and nothing is sent upstream.
-
-Changes:
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-PXX9 The proxy MUST decide a connection against the entry of the qube it came from, and only by a way that entry offers
 
@@ -280,9 +268,6 @@ Scenarios:
    whose proxy allows it the internet, when it connects to a tailnet
    address, then it is refused.
 
-Changes:
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
-
 ## SW-261127-T7GG The proxy MUST relay an inbound connection to a qube only on a port its entry or a service lists
 
 Status: active
@@ -313,7 +298,6 @@ Scenarios:
 Changes:
 - 2026-11-27: an identity listens only on its declared ports, which is how
   the proxy refuses the rest (review of the first implementation).
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-QQYS The proxy MUST decide UDP once per flow and MUST cap each qube's open flows
 
@@ -342,6 +326,3 @@ Scenarios:
 3. `cap-refuses` (agent, provisional): given a qube at its flow cap, when
    it sends to a new destination, then no flow opens and one event says
    so.
-
-Changes:
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.

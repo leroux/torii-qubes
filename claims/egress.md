@@ -40,7 +40,6 @@ Scenarios:
 Changes:
 - 2026-11-27: the resolver reads the proxy qube's hosts file and search
   domains, which the text did not say; DialUDP is anchored.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-HJNX The proxy MUST refuse an egress's connections at once, and fail its DNS, while the egress has no healthy exit node
 
@@ -68,9 +67,6 @@ Scenarios:
 2. `dns-servfail` (agent, provisional): given no exit node offering,
    when the qube sends a DNS query, then it gets SERVFAIL.
 
-Changes:
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
-
 ## SW-261127-6YGC The egress selector MUST NOT clear an exit node, and MUST switch in one change from the old node to the new
 
 Status: active
@@ -91,9 +87,6 @@ Scenarios:
 1. `last-kept-when-none-healthy` (agent, provisional): given every exit
    node down, when the selector runs, then the active node stays set and
    the egress is not usable.
-
-Changes:
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-BNFC The egress selector MUST use exit nodes in the file's order, failing over at once and back only after a hold-down
 
@@ -129,7 +122,6 @@ Scenarios:
 Changes:
 - 2026-11-27: a scenario holds the two-minute default to its number on
   both sides.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-8DFY The egress selector MUST judge an exit node healthy only while it is listed, answers pings, and is not failing every real connection
 
@@ -174,7 +166,6 @@ Scenarios:
 Changes:
 - 2026-11-27: a scenario holds the cadence to its numbers; Run and the
   probe's wiring in Engine.Start are anchored.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-KYZW The proxy MUST send a qube's LAN traffic directly, never through its egress, and torii plan MUST say so
 
@@ -203,4 +194,3 @@ Scenarios:
 Changes:
 - 2026-11-27: lan-noted also holds that a qube without an egress, or
   without LAN access, is not noted.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.

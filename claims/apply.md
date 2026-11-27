@@ -43,7 +43,6 @@ Changes:
 - 2026-11-27: names the commands that read the file; log and install-
   client never read it, and show and snapshot go on without one, which the
   text did not say.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-2JH3 torii plan MUST refuse, before any step, a file that names what this machine cannot be given
 
@@ -95,7 +94,6 @@ Changes:
 - 2026-11-27: the list is the one plan makes, with the refusals it left
   out, and says which two are refused on their own rather than with the
   rest.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-G26T torii apply MUST change only what torii owns: its template, its proxy qubes, its policy files, and named settings of listed qubes
 
@@ -134,7 +132,6 @@ Changes:
 - 2026-11-27: names what else it touches: the base template it downloads,
   the earlier tag it removes, and the qubes a proxy's restart detaches and
   attaches again, listed or not.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-63CS torii apply MUST make plan's steps in order, stop at the first failure, and continue on the next run
 
@@ -162,9 +159,6 @@ Scenarios:
    make.
 3. `second-apply-empty` (agent, provisional): given a machine apply has
    just made match the file, when plan runs, then it holds no step.
-
-Changes:
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-VPGK torii MUST record an adopted qube's netvm once, and MUST leave a qube that leaves the file with no netvm
 
@@ -201,7 +195,6 @@ Changes:
 - 2026-11-27: a qube with the earlier kept tag keeps its netvm, and the
   restore command is named only when the record holds one to name, which
   the text left out.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-XGDY A proxy MUST take its config whole or not at all, and a config that fails a check MUST NOT replace the running one
 
@@ -246,7 +239,6 @@ Changes:
   process rather than keeping the old one, which the text did not say; the
   scenario for half-written parts now includes the case only the hash
   catches.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-QMVP torii apply MUST NOT go past a proxy's config until the proxy reports running it
 
@@ -277,7 +269,6 @@ Scenarios:
 Changes:
 - 2026-11-27: the Why says that a package restart reattaches clients
   before the wait, on the config the proxy had.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-3Q23 torii plan MUST turn IPv6 off on every proxy qube, for itself and every qube behind it
 
@@ -297,9 +288,6 @@ Scenarios:
 1. `ipv6-off` (agent, provisional): given a proxy qube without the
    feature, or with it on, when plan runs, then it gets a step setting it
    off.
-
-Changes:
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-HSHY torii MUST install the proxy package from the dom0 package's bundle, with no repository for torii
 
@@ -336,7 +324,6 @@ Changes:
 - 2026-11-27: the dependencies come from the template distribution's
   repositories; only torii's own package needs none, which the title
   overstated.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
 
 ## SW-261127-KWT2 A mesh's file MUST change only its own qubes and its own policy file
 
@@ -367,4 +354,3 @@ Scenarios:
 Changes:
 - 2026-11-27: meshes share the template and its package, which the text
   did not say; a scenario holds a template in use from removal.
-- 2026-11-27: reworded in the owner's claim form; the ruling is unchanged.
