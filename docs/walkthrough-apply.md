@@ -181,9 +181,10 @@ Mechanics worth knowing when reviewing `apply.py`:
   are created with `add_new_vm` and cloned with `clone_vm`, and tagged
   `torii-owned` at creation, which is what later scope checks key on.
 - `template-package` starts the template, runs as root over
-  `qubes.VMRootShell`: the distro's dependencies (from the template's own
-  repositories, through the updates proxy), then the package bytes from
-  the dom0 bundle piped to `/tmp`, `dnf`/`apt` install, and `systemctl
+  `qubes.VMRootShell`: the dependencies (`qubes-core-agent-networking`,
+  `nftables`, `kmod`, `procps`) from the template's own repositories
+  through the updates proxy, then the package bytes from the dom0 bundle
+  piped to `/tmp`, `rpm -U --replacepkgs` or `dpkg -i`, and `systemctl
   enable` of the guard and the proxy; then shuts it down and records
   `torii-version`.
 - `restart` detaches every running qube using the proxy as netvm, restarts
@@ -239,8 +240,8 @@ this cycle and stays loaded throughout.
 
 [`Applier.do_proxy_ready`](../dom0/torii/apply.py#L181) starts the proxy qube
 if needed and polls `torii.Status` every 2 s
-([`status.read`](../dom0/torii/status.py#L13), `qvm-run`-style
-`run_service` as root, 15 s per call) until `config_version` equals the
+([`status.read`](../dom0/torii/status.py#L13):
+`run_service("torii.Status", user="root")`, 15 s timeout per call) until `config_version` equals the
 planned version, printing each new sign-in link it sees
 ([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-signs-in-by-a-link-a-person-approves-or-a-one-time-key-that-only-the-proxy-qube-keeps)), for up to 180 s:
 
