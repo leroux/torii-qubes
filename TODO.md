@@ -1,5 +1,36 @@
 # TODO
 
+## Next (charter onboarding, 2026-11-27)
+
+In order: CI, then the real-machine run (which unblocks the needs), then
+the owner's rulings.
+
+- **CI.** A workflow that runs `make test` (the charter gate is its first
+  step). charter is a private module for now, so the job needs a token
+  for github.com/leroux/charter until it is public.
+- **Confirm the two Qubes observations** in `claims/observations.md`,
+  both `unsure`: QubesAntispoof (a qube cannot send as another's
+  address; SW-261127-BHHX rests on it) and QubesConnectTCPDenied (Qubes'
+  default policy denies `qubes.ConnectTCP`; SW-261127-M36P). Write a probe
+  for each in `proxy/internal/probe`, or cite a source, then mark them
+  observed or documented.
+- **Real-tailnet tests cite nothing.** `TestRealTailnet`, the Headscale
+  lab and the Tailscale egress test are not cited by any scenario;
+  "exit node carries internet" timed out in a container. Run them on a
+  real setup and cite the subtests that show K5TK, KHZB and 346B.
+- **Activate the six needs** in `claims/needs.md` (still planned): set
+  charter's `stakeholder-tests` to tests that drive torii from outside,
+  as a person would (plan, apply, show, check against a real or
+  recorded machine), and cite each need's scenarios from them.
+- **The owner's rulings.** Every scenario is `(agent, provisional)`; once
+  read, record them as the owner's, with a Changes line per entry.
+- **Charter, in its own repository:** charter lint counts subtests as one
+  test (a namespace-test citation had to be dropped for it); the bench
+  seeds broken by the rewrite (backlog 002); the plugin shipping the
+  claims skills (CH-261126-5JMD); two open questions (X96S, YSKC);
+  `claims/questions.md` still names the old `claimsgen` command. When
+  charter is public, drop `GOPRIVATE` from this Makefile.
+
 ## Later
 
 - **A proxy's restart keeps each client's netvm as it was.** Restarting a
