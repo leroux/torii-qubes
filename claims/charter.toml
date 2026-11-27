@@ -4,6 +4,9 @@
 name = "torii"
 env-patterns = ["^TORII_[A-Z0-9_]+$"]
 ignore = ["build", "tools", "dev", "contrib", "docs"]
+# The docs, read for their references to entries and code; their own scope,
+# which ignore does not narrow.
+docs = ["docs/*.md", "docs/**/*.md"]
 # Probes check observations against the real systems; none is written yet.
 probes = ["proxy/internal/probe"]
 

@@ -24,12 +24,7 @@ the owner's rulings.
   recorded machine), and cite each need's scenarios from them.
 - **The owner's rulings.** Every scenario is `(agent, provisional)`; once
   read, record them as the owner's, with a Changes line per entry.
-- **Charter, in its own repository:** charter lint counts subtests as one
-  test (a namespace-test citation had to be dropped for it); the bench
-  seeds broken by the rewrite (backlog 002); the plugin shipping the
-  claims skills (CH-261126-5JMD); two open questions (X96S, YSKC);
-  `claims/questions.md` still names the old `claimsgen` command. When
-  charter is public, drop `GOPRIVATE` from this Makefile.
+- **When charter is public,** drop `GOPRIVATE` from this Makefile.
 
 ## Later
 

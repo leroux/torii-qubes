@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "charter": {
+      "source": {
+        "source": "github",
+        "repo": "leroux/charter"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "charter@charter": true
+  }
+}
