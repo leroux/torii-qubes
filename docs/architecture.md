@@ -120,17 +120,22 @@ forwarding setup `Requires=` the guard, so a guard that fails to load
 leaves the qube without forwarding rather than unguarded.
 
 <!-- charter:embed SW-261127-JWK2 -->
-> **[SW-261127-JWK2](../claims/links.md#sw-261127-jwk2-a-guard-loaded-at-boot-keeps-the-proxy-qube-forwarding-nothing-whatever-the-program-does) A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does**
+> **[SW-261127-JWK2](../claims/links.md#sw-261127-jwk2-the-proxy-template-must-load-a-guard-at-boot-that-keeps-the-proxy-qube-forwarding-nothing-whatever-the-program-does) The proxy template MUST load a guard at boot that keeps the proxy qube forwarding nothing, whatever the program does**
 >
-> Every qube of the proxy template loads a guard ruleset at boot, before
-> Qubes sets up its network; if the guard fails to load, neither Qubes'
-> network service, which turns forwarding on, nor the program starts. The
-> program's rules are a table of their own and never touch the guard. In
-> base chains at priority -400 the guard drops every forwarded packet,
-> and any packet about to leave with an input interface other than IPv6
-> link-local and multicast control traffic (counted and logged as a
-> tripwire); drops IPv6 arriving from `vif` interfaces; and drops the
-> proxy qube's own connections to other qubes' Qubes addresses.
+> - Every qube of the proxy template MUST load a guard ruleset at boot,
+>   before Qubes sets up its network. If the guard fails to load, Qubes'
+>   network service, which turns forwarding on, and the program MUST NOT
+>   start.
+> - The program's rules MUST be a table of their own and MUST NOT touch the
+>   guard.
+> - In base chains at priority -400, the guard MUST:
+>   - drop every forwarded packet;
+>   - drop any packet about to leave with an input interface, other than
+>     IPv6 link-local and multicast control traffic, counting and logging
+>     it as a tripwire;
+>   - drop IPv6 arriving from `vif` interfaces;
+>   - drop the proxy qube's own connections to other qubes' Qubes
+>     addresses.
 <!-- /charter:embed -->
 
 Known gap, recorded in TODO.md: `qubes-network-uplink.service` is only
@@ -179,7 +184,7 @@ also writes 0 to the IPv4 and IPv6 forwarding sysctls and adds its accepts
 to Qubes' `ip qubes custom-input` chain
 ([`QubesInputRules`](../proxy/internal/intercept/intercept.go#L353)), since
 Qubes' own input chain would otherwise reject traffic from downstream to
-the netvm: [SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-a-routed-qubes-traffic-reaches-the-program-and-nothing-else-interception-with-forwarding-off).
+the netvm: [SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-the-proxy-qube-must-hand-every-routed-qubes-traffic-to-the-program-and-must-not-forward-any-of-it).
 
 **Decision engine.** One [`Engine`](../proxy/internal/engine/engine.go#L87),
 entered by the transport that delivered the connection:
@@ -214,7 +219,7 @@ decision is an event in [`Log.Emit`](../proxy/internal/events/events.go#L61)
   [`qrexec.ExecService`](../proxy/internal/qrexec/qrexec.go#L131): it writes the
   header `torii.Connect+<arg> <caller>\0` to the connect socket, the
   caller taken from `QREXEC_REMOTE_DOMAIN`, which dom0 sets; nothing the
-  calling qube sends in-band names it ([SW-261127-7C3Y](../claims/links.md#sw-261127-7c3y-a-qrexec-caller-is-the-qube-dom0-names-never-one-the-caller-states)).
+  calling qube sends in-band names it ([SW-261127-7C3Y](../claims/links.md#sw-261127-7c3y-the-proxy-must-take-a-qrexec-callers-identity-from-what-dom0-sets-never-from-what-the-caller-sends)).
 - [`torii.Status`](../packaging/proxy/torii.Status) execs `torii-proxy
   status-service`, [`statusService`](../proxy/cmd/torii-proxy/main.go),
   which issues two GETs on the admin socket and prints one JSON object;
@@ -230,12 +235,12 @@ The link a workload uses is fixed by its `network:` ([`claims/links.md`](../clai
   and writes `vm-config.torii-client` ([`derive.client_config`](../dom0/torii/derive.py#L169));
   the client listens on loopback only and makes one `torii.Connect` call
   per connection ([`listenAll`](../proxy/cmd/torii-client/main.go#L118),
-  [SW-261127-N3N8](../claims/links.md#sw-261127-n3n8-in-a-qube-with-no-netvm-the-client-listens-on-loopback-only-one-qrexec-call-per-connection)). With none declared, it can make no qrexec call at
+  [SW-261127-N3N8](../claims/links.md#sw-261127-n3n8-torii-client-must-listen-on-loopback-only-and-must-make-one-qrexec-call-per-connection)). With none declared, it can make no qrexec call at
   all.
 - **`network: proxy`, link `routed`.** netvm is the proxy qube. Its
   packets arrive on `vif*` and are attributed by source address,
   [`Config.ByAddress`](../proxy/internal/config/config.go#L523):
-  [SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-a-routed-qube-is-named-by-its-qubes-source-address-which-qubes-keeps-it-from-forging), resting on the observation
+  [SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-the-proxy-must-identify-a-routed-qube-by-its-qubes-source-address-which-qubes-keeps-it-from-forging), resting on the observation
   [QubesAntispoof](../claims/observations.md#qubesantispoof). Only qubes
   with a fixed address can be routed workloads; a disposable cannot be
   listed.
@@ -269,21 +274,25 @@ torii.Status      *        dom0      <proxy>     allow user=root
 allows (first match wins).
 
 <!-- charter:embed SW-261127-M36P -->
-> **[SW-261127-M36P](../claims/links.md#sw-261127-m36p-every-qrexec-call-runs-in-the-direction-of-the-connection-it-carries-and-only-the-declared-ones-are-allowed) Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed**
+> **[SW-261127-M36P](../claims/links.md#sw-261127-m36p-toriis-qrexec-policy-must-allow-only-calls-that-run-in-the-direction-of-the-connection-they-carry-and-only-those-the-file-declares) torii's qrexec policy MUST allow only calls that run in the direction of the connection they carry, and only those the file declares**
 >
-> Outbound, a carried qube with no netvm calls `torii.Connect` in its own
-> proxy, with `+socks`, `+http` or `+f.<forward>`, and only those its entry
-> declares. Inbound, the proxy calls `qubes.ConnectTCP` into a carried qube,
-> routed or not, only on the target ports its entry or a service lists.
-> Between qubes on this machine, `qubes.ConnectTCP` is allowed only from the
-> qubes `local-inbound` names, on its port. A qube that declares no
-> outbound access is allowed no `torii.Connect` call, and calls
-> `qubes.ConnectTCP` only where another qube's `local-inbound` names it.
-> torii's deny file, read after every mesh's own, denies `torii.Connect`
-> and `torii.Status` to every caller the allows do not name;
-> `qubes.ConnectTCP` beyond them is left to Qubes' own policy (observation
-> QubesConnectTCPDenied). A hand-written policy file read before torii's
-> can widen any of these, and check names it (STK-261126-4Q75).
+> - Outbound: a carried qube with no netvm MUST be allowed to call
+>   `torii.Connect` only in its own proxy, with `+socks`, `+http` or
+>   `+f.<forward>`, and only for those its entry declares.
+> - Inbound: the proxy MUST be allowed to call `qubes.ConnectTCP` into a
+>   carried qube, routed or not, only on the target ports its entry or a
+>   service lists.
+> - Between qubes on this machine, `qubes.ConnectTCP` MUST be allowed only
+>   from the qubes a `local-inbound` names, on its port.
+> - A qube that declares no outbound access MUST NOT be allowed any
+>   `torii.Connect` call, and MUST NOT be allowed `qubes.ConnectTCP`
+>   except where another qube's `local-inbound` names it.
+> - torii's deny file, read after every mesh's own file, MUST deny
+>   `torii.Connect` and `torii.Status` to every caller the allows do not
+>   name. `qubes.ConnectTCP` beyond the allows is left to Qubes' own
+>   policy (observation QubesConnectTCPDenied).
+> - A hand-written policy file read before torii's can widen any of these,
+>   and `torii check` names it (STK-261126-4Q75).
 <!-- /charter:embed -->
 
 The deny file does not mention `qubes.ConnectTCP`. That no qube can call
@@ -297,10 +306,10 @@ that grants `qubes.ConnectTCP` to or from a managed qube.
 
 | Boundary | What crosses | Authenticated by | Entry |
 |---|---|---|---|
-| workload → proxy, qrexec | a TCP stream and the service argument | dom0 names the caller; policy names the target | [SW-261127-7C3Y](../claims/links.md#sw-261127-7c3y-a-qrexec-caller-is-the-qube-dom0-names-never-one-the-caller-states) |
-| workload → proxy, `vif*` | IPv4 packets | Qubes anti-spoofing on the source address | [SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-a-routed-qube-is-named-by-its-qubes-source-address-which-qubes-keeps-it-from-forging) |
+| workload → proxy, qrexec | a TCP stream and the service argument | dom0 names the caller; policy names the target | [SW-261127-7C3Y](../claims/links.md#sw-261127-7c3y-the-proxy-must-take-a-qrexec-callers-identity-from-what-dom0-sets-never-from-what-the-caller-sends) |
+| workload → proxy, `vif*` | IPv4 packets | Qubes anti-spoofing on the source address | [SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-the-proxy-must-identify-a-routed-qube-by-its-qubes-source-address-which-qubes-keeps-it-from-forging) |
 | proxy → workload | `qubes.ConnectTCP` to a declared port | dom0 policy, per port | [SW-261127-T7GG](../claims/connections.md#sw-261127-t7gg-the-proxy-must-relay-an-inbound-connection-to-a-qube-only-on-a-port-its-entry-or-a-service-lists) |
 | dom0 → proxy | config as features | dom0-only write path; SHA-256 over the parts | [SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-takes-its-config-whole-or-not-at-all-and-a-failed-check-never-replaces-the-running-one) |
 | proxy → dom0 | status and log JSON | qrexec, as root, read-only service | [SW-261127-B8BM](../claims/seeing.md#sw-261127-b8bm-the-status-service-is-read-only-it-reports-and-changes-nothing-in-the-proxy) |
-| proxy → netvm | connections the program opens | kernel forwarding off, guard at −400 | [SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-a-routed-qubes-traffic-reaches-the-program-and-nothing-else-interception-with-forwarding-off) |
+| proxy → netvm | connections the program opens | kernel forwarding off, guard at −400 | [SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-the-proxy-qube-must-hand-every-routed-qubes-traffic-to-the-program-and-must-not-forward-any-of-it) |
 | proxy ↔ tailnet | each identity's WireGuard traffic | node keys; the grants decide reach | [SW-261127-DH6R](../claims/identity.md#sw-261127-dh6r-torii-proposes-grants-for-the-tailnet-and-never-changes-its-policy) |

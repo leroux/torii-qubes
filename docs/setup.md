@@ -238,7 +238,7 @@ honour `HTTPS_PROXY` (pip, curl, git, most others) just work for the
 allowlisted names. `ALL_PROXY` points at SOCKS for the rest, and
 `curl -x http://127.0.0.1:3128 https://wikipedia.org` is refused. How an
 entry matches is [SW-261127-2XS6](../claims/connections.md#sw-261127-2xs6-the-proxy-must-match-an-allow-entry-by-exact-name-or-subdomain-port-and-protocol-treating-an-entry-without-a-protocol-as-tcp-only); the client listens on loopback only
-([SW-261127-N3N8](../claims/links.md#sw-261127-n3n8-in-a-qube-with-no-netvm-the-client-listens-on-loopback-only-one-qrexec-call-per-connection)).
+([SW-261127-N3N8](../claims/links.md#sw-261127-n3n8-torii-client-must-listen-on-loopback-only-and-must-make-one-qrexec-call-per-connection)).
 
 The client package does nothing in qubes where dom0 hasn't enabled it, so
 installing it in a shared template is harmless.

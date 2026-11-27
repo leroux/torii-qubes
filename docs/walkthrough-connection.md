@@ -29,7 +29,7 @@ to. Against it the proxy must:
 - never reach another qube's Qubes address, the proxy qube's own sockets,
   loopback, link-local, multicast or the tailnet's ranges off-tailnet;
 - fail closed: no packet is forwarded by the kernel, whatever state the
-  program is in ([SW-261127-JWK2](../claims/links.md#sw-261127-jwk2-a-guard-loaded-at-boot-keeps-the-proxy-qube-forwarding-nothing-whatever-the-program-does)).
+  program is in ([SW-261127-JWK2](../claims/links.md#sw-261127-jwk2-the-proxy-template-must-load-a-guard-at-boot-that-keeps-the-proxy-qube-forwarding-nothing-whatever-the-program-does)).
 
 Stated non-goals: raw TCP or QUIC to another site behind an address an
 allowed name shares; a connection that sends no TLS server name; DNS
@@ -88,8 +88,8 @@ netvm itself, and an accept in another table does not override it, so
 `comment "torii"` and replaced on each start. The boot-time guard
 (`table inet torii-guard`, priority −400) is separate and independent of
 this table: it drops all forwarding and all IPv6 from `vif*` before the
-program has started and after it has died ([SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-a-routed-qubes-traffic-reaches-the-program-and-nothing-else-interception-with-forwarding-off),
-[SW-261127-JWK2](../claims/links.md#sw-261127-jwk2-a-guard-loaded-at-boot-keeps-the-proxy-qube-forwarding-nothing-whatever-the-program-does)).
+program has started and after it has died ([SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-the-proxy-qube-must-hand-every-routed-qubes-traffic-to-the-program-and-must-not-forward-any-of-it),
+[SW-261127-JWK2](../claims/links.md#sw-261127-jwk2-the-proxy-template-must-load-a-guard-at-boot-that-keeps-the-proxy-qube-forwarding-nothing-whatever-the-program-does)).
 
 [`intercept.ServeTCP`](../proxy/internal/intercept/intercept.go#L158) recovers
 the pre-NAT destination with `SO_ORIGINAL_DST`
@@ -100,7 +100,7 @@ itself is handed on like any other, so the engine refuses and logs it.
 
 **Source attribution.** [`Config.ByAddress`](../proxy/internal/config/config.go#L523)
 maps the source IPv4 address to the workload whose Qubes address it is
-([SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-a-routed-qube-is-named-by-its-qubes-source-address-which-qubes-keeps-it-from-forging)). Its soundness rests on Qubes' `antispoof` chain on
+([SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-the-proxy-must-identify-a-routed-qube-by-its-qubes-source-address-which-qubes-keeps-it-from-forging)). Its soundness rests on Qubes' `antispoof` chain on
 `vif*` dropping any source address but the qube's own, recorded as the
 observation [QubesAntispoof](../claims/observations.md#qubesantispoof), not
 yet confirmed by a probe. An address no entry has is the proxy's unlisted
@@ -113,9 +113,9 @@ In a workload with no netvm, `torii-client` listens on 127.0.0.1 only
 and turns each accepted connection into one
 `qrexec-client-vm @default torii.Connect+<arg>` with the TCP stream as
 its stdio, `<arg>` being `socks`, `http` or `f.<name>`
-([`serve`](../proxy/cmd/torii-client/main.go#L139), [SW-261127-N3N8](../claims/links.md#sw-261127-n3n8-in-a-qube-with-no-netvm-the-client-listens-on-loopback-only-one-qrexec-call-per-connection)).
+([`serve`](../proxy/cmd/torii-client/main.go#L139), [SW-261127-N3N8](../claims/links.md#sw-261127-n3n8-torii-client-must-listen-on-loopback-only-and-must-make-one-qrexec-call-per-connection)).
 dom0's policy routes `@default` to the workload's own proxy with
-`target=` and allows nothing else ([SW-261127-M36P](../claims/links.md#sw-261127-m36p-every-qrexec-call-runs-in-the-direction-of-the-connection-it-carries-and-only-the-declared-ones-are-allowed)).
+`target=` and allows nothing else ([SW-261127-M36P](../claims/links.md#sw-261127-m36p-toriis-qrexec-policy-must-allow-only-calls-that-run-in-the-direction-of-the-connection-they-carry-and-only-those-the-file-declares)).
 
 In the proxy qube the service runs `torii-proxy connect-service`,
 [`qrexec.ExecService`](../proxy/internal/qrexec/qrexec.go#L131): it takes the
@@ -125,7 +125,7 @@ writes the header `torii.Connect+<arg> <caller>\0` to
 `/run/torii/connect.sock` before splicing the stream.
 [`Engine.HandleQrexec`](../proxy/internal/engine/engine.go#L534) looks the
 caller up and refuses `wrong-entry` unless its link is `qrexec`:
-[SW-261127-7C3Y](../claims/links.md#sw-261127-7c3y-a-qrexec-caller-is-the-qube-dom0-names-never-one-the-caller-states). No identifier the workload sends in-band is used for
+[SW-261127-7C3Y](../claims/links.md#sw-261127-7c3y-the-proxy-must-take-a-qrexec-callers-identity-from-what-dom0-sets-never-from-what-the-caller-sends). No identifier the workload sends in-band is used for
 attribution.
 
 The same request from a qrexec workload:

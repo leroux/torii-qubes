@@ -152,8 +152,8 @@ SW_261127_6S2F = Spec("SW-261127-6S2F", "The proxy MUST check an allowlisted con
 #: SW_261127_6YGC is SW-261127-6YGC: An egress's exit node is never cleared: a switch is one change from the old node to the new
 SW_261127_6YGC = Spec("SW-261127-6YGC", "An egress's exit node is never cleared: a switch is one change from the old node to the new", "active", "invariant")
 
-#: SW_261127_7C3Y is SW-261127-7C3Y: A qrexec caller is the qube dom0 names, never one the caller states
-SW_261127_7C3Y = Spec("SW-261127-7C3Y", "A qrexec caller is the qube dom0 names, never one the caller states", "active", "invariant")
+#: SW_261127_7C3Y is SW-261127-7C3Y: The proxy MUST take a qrexec caller's identity from what dom0 sets, never from what the caller sends
+SW_261127_7C3Y = Spec("SW-261127-7C3Y", "The proxy MUST take a qrexec caller's identity from what dom0 sets, never from what the caller sends", "active", "invariant")
 
 #: SW_261127_8DFY is SW-261127-8DFY: An exit node is healthy while listed, answering pings, and not failing every real connection through it
 SW_261127_8DFY = Spec("SW-261127-8DFY", "An exit node is healthy while listed, answering pings, and not failing every real connection through it", "active", "bound")
@@ -164,14 +164,14 @@ SW_261127_8PTP = Spec("SW-261127-8PTP", "An identity sends Tailscale no client l
 #: SW_261127_9BNW is SW-261127-9BNW: The machine file is read whole and refused whole when a key, a network or a value is wrong
 SW_261127_9BNW = Spec("SW-261127-9BNW", "The machine file is read whole and refused whole when a key, a network or a value is wrong", "active", "invariant")
 
-#: SW_261127_B6Z6 is SW-261127-B6Z6: A routed qube's traffic reaches the program and nothing else: interception, with forwarding off
-SW_261127_B6Z6 = Spec("SW-261127-B6Z6", "A routed qube's traffic reaches the program and nothing else: interception, with forwarding off", "active", "invariant")
+#: SW_261127_B6Z6 is SW-261127-B6Z6: The proxy qube MUST hand every routed qube's traffic to the program and MUST NOT forward any of it
+SW_261127_B6Z6 = Spec("SW-261127-B6Z6", "The proxy qube MUST hand every routed qube's traffic to the program and MUST NOT forward any of it", "active", "invariant")
 
 #: SW_261127_B8BM is SW-261127-B8BM: The status service is read-only: it reports, and changes nothing in the proxy
 SW_261127_B8BM = Spec("SW-261127-B8BM", "The status service is read-only: it reports, and changes nothing in the proxy", "active", "invariant")
 
-#: SW_261127_BHHX is SW-261127-BHHX: A routed qube is named by its Qubes source address, which Qubes keeps it from forging
-SW_261127_BHHX = Spec("SW-261127-BHHX", "A routed qube is named by its Qubes source address, which Qubes keeps it from forging", "active", "invariant")
+#: SW_261127_BHHX is SW-261127-BHHX: The proxy MUST identify a routed qube by its Qubes source address, which Qubes keeps it from forging
+SW_261127_BHHX = Spec("SW-261127-BHHX", "The proxy MUST identify a routed qube by its Qubes source address, which Qubes keeps it from forging", "active", "invariant")
 
 #: SW_261127_BNFC is SW-261127-BNFC: Exit nodes are used in the file's order, failing over at once and back only after a hold-down
 SW_261127_BNFC = Spec("SW-261127-BNFC", "Exit nodes are used in the file's order, failing over at once and back only after a hold-down", "active", "invariant")
@@ -191,8 +191,8 @@ SW_261127_HJNX = Spec("SW-261127-HJNX", "While an egress has no healthy exit nod
 #: SW_261127_HSHY is SW-261127-HSHY: The proxy package comes from the dom0 package's bundle, with no repository for torii
 SW_261127_HSHY = Spec("SW-261127-HSHY", "The proxy package comes from the dom0 package's bundle, with no repository for torii", "active", "invariant")
 
-#: SW_261127_JWK2 is SW-261127-JWK2: A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does
-SW_261127_JWK2 = Spec("SW-261127-JWK2", "A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does", "active", "invariant")
+#: SW_261127_JWK2 is SW-261127-JWK2: The proxy template MUST load a guard at boot that keeps the proxy qube forwarding nothing, whatever the program does
+SW_261127_JWK2 = Spec("SW-261127-JWK2", "The proxy template MUST load a guard at boot that keeps the proxy qube forwarding nothing, whatever the program does", "active", "invariant")
 
 #: SW_261127_K5TK is SW-261127-K5TK: An egress's traffic is dialled only into its identity's own network stack, never the system network
 SW_261127_K5TK = Spec("SW-261127-K5TK", "An egress's traffic is dialled only into its identity's own network stack, never the system network", "active", "invariant")
@@ -203,14 +203,14 @@ SW_261127_KWT2 = Spec("SW-261127-KWT2", "Each mesh's file changes only its own q
 #: SW_261127_KYZW is SW-261127-KYZW: A qube's LAN traffic never goes through its egress, and plan says so
 SW_261127_KYZW = Spec("SW-261127-KYZW", "A qube's LAN traffic never goes through its egress, and plan says so", "active", "invariant")
 
-#: SW_261127_M36P is SW-261127-M36P: Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed
-SW_261127_M36P = Spec("SW-261127-M36P", "Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed", "active", "invariant")
+#: SW_261127_M36P is SW-261127-M36P: torii's qrexec policy MUST allow only calls that run in the direction of the connection they carry, and only those the file declares
+SW_261127_M36P = Spec("SW-261127-M36P", "torii's qrexec policy MUST allow only calls that run in the direction of the connection they carry, and only those the file declares", "active", "invariant")
 
 #: SW_261127_M7G9 is SW-261127-M7G9: The proxy MUST resolve a name, for the qube and for itself, only to addresses the qube may reach under that name
 SW_261127_M7G9 = Spec("SW-261127-M7G9", "The proxy MUST resolve a name, for the qube and for itself, only to addresses the qube may reach under that name", "active", "invariant")
 
-#: SW_261127_N3N8 is SW-261127-N3N8: In a qube with no netvm, the client listens on loopback only, one qrexec call per connection
-SW_261127_N3N8 = Spec("SW-261127-N3N8", "In a qube with no netvm, the client listens on loopback only, one qrexec call per connection", "active", "invariant")
+#: SW_261127_N3N8 is SW-261127-N3N8: torii-client MUST listen on loopback only and MUST make one qrexec call per connection
+SW_261127_N3N8 = Spec("SW-261127-N3N8", "torii-client MUST listen on loopback only and MUST make one qrexec call per connection", "active", "invariant")
 
 #: SW_261127_P8H7 is SW-261127-P8H7: A tagged identity carries exactly the file's tags, prefixed by the machine, and check names any other
 SW_261127_P8H7 = Spec("SW-261127-P8H7", "A tagged identity carries exactly the file's tags, prefixed by the machine, and check names any other", "active", "invariant")

@@ -100,8 +100,8 @@ proxy qube:
 
 The program is the simpler system to run, and the only one where routed
 workloads can share a proxy cleanly. Blocking is structural because
-forwarding is off and a guard keeps it off ([SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-a-routed-qubes-traffic-reaches-the-program-and-nothing-else-interception-with-forwarding-off),
-[SW-261127-JWK2](../claims/links.md#sw-261127-jwk2-a-guard-loaded-at-boot-keeps-the-proxy-qube-forwarding-nothing-whatever-the-program-does)). Throughput is in
+forwarding is off and a guard keeps it off ([SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-the-proxy-qube-must-hand-every-routed-qubes-traffic-to-the-program-and-must-not-forward-any-of-it),
+[SW-261127-JWK2](../claims/links.md#sw-261127-jwk2-the-proxy-template-must-load-a-guard-at-boot-that-keeps-the-proxy-qube-forwarding-nothing-whatever-the-program-does)). Throughput is in
 [`performance.md`](performance.md). Anyone may still run `tailscaled` in a
 qube of their own. Leave that qube out of the file, or give it
 `network: default` or a netvm of its own, and the proxy doesn't carry it.
@@ -112,24 +112,28 @@ Every qrexec call goes the same way as the connection it carries. For
 inbound, the proxy qube calls `qubes.ConnectTCP` into the workload, on listed
 ports only. For outbound, the workload calls `torii.Connect` in the proxy
 qube. dom0's policy allows each call by name and port, and names the caller,
-so the proxy knows which workload is asking ([SW-261127-7C3Y](../claims/links.md#sw-261127-7c3y-a-qrexec-caller-is-the-qube-dom0-names-never-one-the-caller-states)).
+so the proxy knows which workload is asking ([SW-261127-7C3Y](../claims/links.md#sw-261127-7c3y-the-proxy-must-take-a-qrexec-callers-identity-from-what-dom0-sets-never-from-what-the-caller-sends)).
 
 <!-- charter:embed SW-261127-M36P -->
-> **[SW-261127-M36P](../claims/links.md#sw-261127-m36p-every-qrexec-call-runs-in-the-direction-of-the-connection-it-carries-and-only-the-declared-ones-are-allowed) Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed**
+> **[SW-261127-M36P](../claims/links.md#sw-261127-m36p-toriis-qrexec-policy-must-allow-only-calls-that-run-in-the-direction-of-the-connection-they-carry-and-only-those-the-file-declares) torii's qrexec policy MUST allow only calls that run in the direction of the connection they carry, and only those the file declares**
 >
-> Outbound, a carried qube with no netvm calls `torii.Connect` in its own
-> proxy, with `+socks`, `+http` or `+f.<forward>`, and only those its entry
-> declares. Inbound, the proxy calls `qubes.ConnectTCP` into a carried qube,
-> routed or not, only on the target ports its entry or a service lists.
-> Between qubes on this machine, `qubes.ConnectTCP` is allowed only from the
-> qubes `local-inbound` names, on its port. A qube that declares no
-> outbound access is allowed no `torii.Connect` call, and calls
-> `qubes.ConnectTCP` only where another qube's `local-inbound` names it.
-> torii's deny file, read after every mesh's own, denies `torii.Connect`
-> and `torii.Status` to every caller the allows do not name;
-> `qubes.ConnectTCP` beyond them is left to Qubes' own policy (observation
-> QubesConnectTCPDenied). A hand-written policy file read before torii's
-> can widen any of these, and check names it (STK-261126-4Q75).
+> - Outbound: a carried qube with no netvm MUST be allowed to call
+>   `torii.Connect` only in its own proxy, with `+socks`, `+http` or
+>   `+f.<forward>`, and only for those its entry declares.
+> - Inbound: the proxy MUST be allowed to call `qubes.ConnectTCP` into a
+>   carried qube, routed or not, only on the target ports its entry or a
+>   service lists.
+> - Between qubes on this machine, `qubes.ConnectTCP` MUST be allowed only
+>   from the qubes a `local-inbound` names, on its port.
+> - A qube that declares no outbound access MUST NOT be allowed any
+>   `torii.Connect` call, and MUST NOT be allowed `qubes.ConnectTCP`
+>   except where another qube's `local-inbound` names it.
+> - torii's deny file, read after every mesh's own file, MUST deny
+>   `torii.Connect` and `torii.Status` to every caller the allows do not
+>   name. `qubes.ConnectTCP` beyond the allows is left to Qubes' own
+>   policy (observation QubesConnectTCPDenied).
+> - A hand-written policy file read before torii's can widen any of these,
+>   and `torii check` names it (STK-261126-4Q75).
 <!-- /charter:embed -->
 
 A workload that declares no outbound access makes no qrexec calls at all.
@@ -145,10 +149,10 @@ keeps it off whatever happens to `torii-proxy`: stopped, crashed or
 reloading. nftables hands every TCP connection, all DNS and other UDP from
 the workloads' interfaces to `torii-proxy`. The source address names the
 workload, and `torii-proxy` can trust it because Qubes' anti-spoofing rules on
-`vif*` drop forged sources ([SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-a-routed-qube-is-named-by-its-qubes-source-address-which-qubes-keeps-it-from-forging), resting on the
+`vif*` drop forged sources ([SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-the-proxy-must-identify-a-routed-qube-by-its-qubes-source-address-which-qubes-keeps-it-from-forging), resting on the
 observation [QubesAntispoof](../claims/observations.md#qubesantispoof)).
 IPv6 is turned off behind the proxy ([SW-261127-3Q23](../claims/apply.md#sw-261127-3q23-every-proxy-qube-has-ipv6-off-for-itself-and-every-qube-behind-it)). The guard is
-[SW-261127-JWK2](../claims/links.md#sw-261127-jwk2-a-guard-loaded-at-boot-keeps-the-proxy-qube-forwarding-nothing-whatever-the-program-does), the interception [SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-a-routed-qubes-traffic-reaches-the-program-and-nothing-else-interception-with-forwarding-off).
+[SW-261127-JWK2](../claims/links.md#sw-261127-jwk2-the-proxy-template-must-load-a-guard-at-boot-that-keeps-the-proxy-qube-forwarding-nothing-whatever-the-program-does), the interception [SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-the-proxy-qube-must-hand-every-routed-qubes-traffic-to-the-program-and-must-not-forward-any-of-it).
 
 ### Allowlists by name, not address
 
@@ -217,7 +221,7 @@ Tailscale client clearing it is exactly the switch back to direct
 A qube attached to a proxy but not in the file is decided by that proxy's
 `unlisted:`, `refuse` by default: attaching a qube by mistake gets it
 nothing, and never a tailnet identity ([SW-261127-PXX9](../claims/connections.md#sw-261127-pxx9-the-proxy-must-decide-a-connection-against-the-entry-of-the-qube-it-came-from-and-only-by-a-way-that-entry-offers),
-[SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-a-routed-qube-is-named-by-its-qubes-source-address-which-qubes-keeps-it-from-forging)). A disposable can't be listed (its address changes per start), so
+[SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-the-proxy-must-identify-a-routed-qube-by-its-qubes-source-address-which-qubes-keeps-it-from-forging)). A disposable can't be listed (its address changes per start), so
 its disposable template's proxy's `unlisted:` is its policy; the documented
 way is a proxy of their own, so the main proxy can stay `refuse`.
 

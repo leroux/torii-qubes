@@ -149,8 +149,8 @@ var SW_261127_6S2F = &Spec{ID: "SW-261127-6S2F", Title: "The proxy MUST check an
 // SW_261127_6YGC is SW-261127-6YGC: An egress's exit node is never cleared: a switch is one change from the old node to the new
 var SW_261127_6YGC = &Spec{ID: "SW-261127-6YGC", Title: "An egress's exit node is never cleared: a switch is one change from the old node to the new", Status: Active, Kind: "invariant"}
 
-// SW_261127_7C3Y is SW-261127-7C3Y: A qrexec caller is the qube dom0 names, never one the caller states
-var SW_261127_7C3Y = &Spec{ID: "SW-261127-7C3Y", Title: "A qrexec caller is the qube dom0 names, never one the caller states", Status: Active, Kind: "invariant"}
+// SW_261127_7C3Y is SW-261127-7C3Y: The proxy MUST take a qrexec caller's identity from what dom0 sets, never from what the caller sends
+var SW_261127_7C3Y = &Spec{ID: "SW-261127-7C3Y", Title: "The proxy MUST take a qrexec caller's identity from what dom0 sets, never from what the caller sends", Status: Active, Kind: "invariant"}
 
 // SW_261127_8DFY is SW-261127-8DFY: An exit node is healthy while listed, answering pings, and not failing every real connection through it
 var SW_261127_8DFY = &Spec{ID: "SW-261127-8DFY", Title: "An exit node is healthy while listed, answering pings, and not failing every real connection through it", Status: Active, Kind: "bound"}
@@ -161,14 +161,14 @@ var SW_261127_8PTP = &Spec{ID: "SW-261127-8PTP", Title: "An identity sends Tails
 // SW_261127_9BNW is SW-261127-9BNW: The machine file is read whole and refused whole when a key, a network or a value is wrong
 var SW_261127_9BNW = &Spec{ID: "SW-261127-9BNW", Title: "The machine file is read whole and refused whole when a key, a network or a value is wrong", Status: Active, Kind: "invariant"}
 
-// SW_261127_B6Z6 is SW-261127-B6Z6: A routed qube's traffic reaches the program and nothing else: interception, with forwarding off
-var SW_261127_B6Z6 = &Spec{ID: "SW-261127-B6Z6", Title: "A routed qube's traffic reaches the program and nothing else: interception, with forwarding off", Status: Active, Kind: "invariant"}
+// SW_261127_B6Z6 is SW-261127-B6Z6: The proxy qube MUST hand every routed qube's traffic to the program and MUST NOT forward any of it
+var SW_261127_B6Z6 = &Spec{ID: "SW-261127-B6Z6", Title: "The proxy qube MUST hand every routed qube's traffic to the program and MUST NOT forward any of it", Status: Active, Kind: "invariant"}
 
 // SW_261127_B8BM is SW-261127-B8BM: The status service is read-only: it reports, and changes nothing in the proxy
 var SW_261127_B8BM = &Spec{ID: "SW-261127-B8BM", Title: "The status service is read-only: it reports, and changes nothing in the proxy", Status: Active, Kind: "invariant"}
 
-// SW_261127_BHHX is SW-261127-BHHX: A routed qube is named by its Qubes source address, which Qubes keeps it from forging
-var SW_261127_BHHX = &Spec{ID: "SW-261127-BHHX", Title: "A routed qube is named by its Qubes source address, which Qubes keeps it from forging", Status: Active, Kind: "invariant"}
+// SW_261127_BHHX is SW-261127-BHHX: The proxy MUST identify a routed qube by its Qubes source address, which Qubes keeps it from forging
+var SW_261127_BHHX = &Spec{ID: "SW-261127-BHHX", Title: "The proxy MUST identify a routed qube by its Qubes source address, which Qubes keeps it from forging", Status: Active, Kind: "invariant"}
 
 // SW_261127_BNFC is SW-261127-BNFC: Exit nodes are used in the file's order, failing over at once and back only after a hold-down
 var SW_261127_BNFC = &Spec{ID: "SW-261127-BNFC", Title: "Exit nodes are used in the file's order, failing over at once and back only after a hold-down", Status: Active, Kind: "invariant"}
@@ -188,8 +188,8 @@ var SW_261127_HJNX = &Spec{ID: "SW-261127-HJNX", Title: "While an egress has no 
 // SW_261127_HSHY is SW-261127-HSHY: The proxy package comes from the dom0 package's bundle, with no repository for torii
 var SW_261127_HSHY = &Spec{ID: "SW-261127-HSHY", Title: "The proxy package comes from the dom0 package's bundle, with no repository for torii", Status: Active, Kind: "invariant"}
 
-// SW_261127_JWK2 is SW-261127-JWK2: A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does
-var SW_261127_JWK2 = &Spec{ID: "SW-261127-JWK2", Title: "A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does", Status: Active, Kind: "invariant"}
+// SW_261127_JWK2 is SW-261127-JWK2: The proxy template MUST load a guard at boot that keeps the proxy qube forwarding nothing, whatever the program does
+var SW_261127_JWK2 = &Spec{ID: "SW-261127-JWK2", Title: "The proxy template MUST load a guard at boot that keeps the proxy qube forwarding nothing, whatever the program does", Status: Active, Kind: "invariant"}
 
 // SW_261127_K5TK is SW-261127-K5TK: An egress's traffic is dialled only into its identity's own network stack, never the system network
 var SW_261127_K5TK = &Spec{ID: "SW-261127-K5TK", Title: "An egress's traffic is dialled only into its identity's own network stack, never the system network", Status: Active, Kind: "invariant"}
@@ -200,14 +200,14 @@ var SW_261127_KWT2 = &Spec{ID: "SW-261127-KWT2", Title: "Each mesh's file change
 // SW_261127_KYZW is SW-261127-KYZW: A qube's LAN traffic never goes through its egress, and plan says so
 var SW_261127_KYZW = &Spec{ID: "SW-261127-KYZW", Title: "A qube's LAN traffic never goes through its egress, and plan says so", Status: Active, Kind: "invariant"}
 
-// SW_261127_M36P is SW-261127-M36P: Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed
-var SW_261127_M36P = &Spec{ID: "SW-261127-M36P", Title: "Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed", Status: Active, Kind: "invariant"}
+// SW_261127_M36P is SW-261127-M36P: torii's qrexec policy MUST allow only calls that run in the direction of the connection they carry, and only those the file declares
+var SW_261127_M36P = &Spec{ID: "SW-261127-M36P", Title: "torii's qrexec policy MUST allow only calls that run in the direction of the connection they carry, and only those the file declares", Status: Active, Kind: "invariant"}
 
 // SW_261127_M7G9 is SW-261127-M7G9: The proxy MUST resolve a name, for the qube and for itself, only to addresses the qube may reach under that name
 var SW_261127_M7G9 = &Spec{ID: "SW-261127-M7G9", Title: "The proxy MUST resolve a name, for the qube and for itself, only to addresses the qube may reach under that name", Status: Active, Kind: "invariant"}
 
-// SW_261127_N3N8 is SW-261127-N3N8: In a qube with no netvm, the client listens on loopback only, one qrexec call per connection
-var SW_261127_N3N8 = &Spec{ID: "SW-261127-N3N8", Title: "In a qube with no netvm, the client listens on loopback only, one qrexec call per connection", Status: Active, Kind: "invariant"}
+// SW_261127_N3N8 is SW-261127-N3N8: torii-client MUST listen on loopback only and MUST make one qrexec call per connection
+var SW_261127_N3N8 = &Spec{ID: "SW-261127-N3N8", Title: "torii-client MUST listen on loopback only and MUST make one qrexec call per connection", Status: Active, Kind: "invariant"}
 
 // SW_261127_P8H7 is SW-261127-P8H7: A tagged identity carries exactly the file's tags, prefixed by the machine, and check names any other
 var SW_261127_P8H7 = &Spec{ID: "SW-261127-P8H7", Title: "A tagged identity carries exactly the file's tags, prefixed by the machine, and check names any other", Status: Active, Kind: "invariant"}

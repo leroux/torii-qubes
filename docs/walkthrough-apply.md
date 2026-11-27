@@ -125,7 +125,7 @@ It then emits typed `Step`s in a fixed order:
 3. **Policy.** `50-torii` (or `50-torii-<mesh>`) from
    [`derive.policy`](../dom0/torii/derive.py#L216), and the shared
    `59-torii-deny` from [`derive.deny_policy`](../dom0/torii/derive.py#L317)
-   ([SW-261127-M36P](../claims/links.md#sw-261127-m36p-every-qrexec-call-runs-in-the-direction-of-the-connection-it-carries-and-only-the-declared-ones-are-allowed), [SW-261127-KWT2](../claims/apply.md#sw-261127-kwt2-each-meshs-file-changes-only-its-own-qubes-and-its-own-policy-file)).
+   ([SW-261127-M36P](../claims/links.md#sw-261127-m36p-toriis-qrexec-policy-must-allow-only-calls-that-run-in-the-direction-of-the-connection-they-carry-and-only-those-the-file-declares), [SW-261127-KWT2](../claims/apply.md#sw-261127-kwt2-each-meshs-file-changes-only-its-own-qubes-and-its-own-policy-file)).
 4. **Workloads.** netvm, the `torii-managed` tag, on first adoption
    `torii-prior-netvm` and `torii-adopted`, and the `torii-client` service
    and `vm-config.torii-client` feature from

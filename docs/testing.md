@@ -41,9 +41,9 @@ qubes, and the packages in real templates. Most bugs found so far were
 there. Two decisions rest on facts about Qubes that only such a machine
 confirms, kept as observations in
 [`claims/observations.md`](../claims/observations.md): that a qube cannot
-send as another ([SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-a-routed-qube-is-named-by-its-qubes-source-address-which-qubes-keeps-it-from-forging)) and that Qubes denies
-`qubes.ConnectTCP` without an allow line ([SW-261127-M36P](../claims/links.md#sw-261127-m36p-every-qrexec-call-runs-in-the-direction-of-the-connection-it-carries-and-only-the-declared-ones-are-allowed)). The guard's
-boot order is [SW-261127-JWK2](../claims/links.md#sw-261127-jwk2-a-guard-loaded-at-boot-keeps-the-proxy-qube-forwarding-nothing-whatever-the-program-does). They were checked live on a Qubes 4.3 machine against Tailscale in
+send as another ([SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-the-proxy-must-identify-a-routed-qube-by-its-qubes-source-address-which-qubes-keeps-it-from-forging)) and that Qubes denies
+`qubes.ConnectTCP` without an allow line ([SW-261127-M36P](../claims/links.md#sw-261127-m36p-toriis-qrexec-policy-must-allow-only-calls-that-run-in-the-direction-of-the-connection-they-carry-and-only-those-the-file-declares)). The guard's
+boot order is [SW-261127-JWK2](../claims/links.md#sw-261127-jwk2-the-proxy-template-must-load-a-guard-at-boot-that-keeps-the-proxy-qube-forwarding-nothing-whatever-the-program-does). They were checked live on a Qubes 4.3 machine against Tailscale in
 November 2026 (291 cells of a seven-qube machine file). The scripts that produced them were
 removed in favour of the simulation; a change in those areas needs a check
 on a real machine by hand.
