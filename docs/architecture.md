@@ -153,7 +153,12 @@ has turned the `torii-proxy` service on.
   the nftables rules that send their traffic there
   ([`intercept.Install`](../proxy/internal/intercept/intercept.go#L74)), each
   identity's inbound ports ([`Engine.Start`](../proxy/internal/engine/engine.go#L286)),
-  and the admin socket.
+  and the admin socket. A trap there: in a Qubes netvm, Qubes' own `ip
+  qubes` input chain rejects what arrives from downstream for the netvm
+  itself, and an accept in the program's own table does not override it;
+  so `Install` also adds its accepts to `ip qubes custom-input`, marked
+  `torii`, replacing its earlier ones
+  ([`QubesInputRules`](../proxy/internal/intercept/intercept.go#L353)).
 - **Its decisions** are made in one place, the
   [`Engine`](../proxy/internal/engine/engine.go#L87), whose entry points are
   the ways a connection arrives:

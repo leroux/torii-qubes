@@ -11,83 +11,11 @@ the program's status. This directory also holds `torii-client`, the small
 program in workloads without a network card. The packages are built from
 `../packaging`.
 
-## What it does
-
-| Workload | Inbound | Outbound |
-|---|---|---|
-| qrexec (no network card) | Identity listens on declared ports; each connection is one `qrexec-client-vm <qube> qubes.ConnectTCP+<port>` from proxy to workload. With `tls`, the identity terminates HTTPS with its own certificate first. | Workload calls `torii.Connect+http` (HTTP proxy: CONNECT, and absolute-form plain HTTP checked per request), `torii.Connect+socks` (SOCKS5, names passed through) or `torii.Connect+f.<name>` (fixed forward). dom0 names the caller. `torii-client` in the workload turns loopback ports into these calls. |
-| routed (proxy qube is netvm) | Identity listens; each connection is a `qubes.ConnectTCP` call into the workload, as for qrexec workloads (a Qubes app qube's own firewall drops new connections from its netvm). | nftables redirects every TCP connection and all DNS from `vif*` to the program, and hands other IPv4 UDP to it by TPROXY; forwarding is off. The source address names the workload. |
-| none (the proxy qube itself) | Identity listens; proxy dials localhost. | A SOCKS port (`listen.local_socks`, loopback) and fixed forwards on loopback ports, decided like a qrexec workload's. |
-
-UDP from routed workloads is decided once per flow (workload address,
-destination) and relayed until idle (`UDPIdle`, 60 s). It goes over the
-identity for tailnet and exit-node destinations, and over the proxy
-qube's netvm otherwise. Replies leave from a transparent socket bound to
-the destination the workload sent to, so the workload sees the real
-peer. On an allowlist, UDP is decided by the name the workload resolved;
-QUIC server names are not read. A workload may hold at most
-`MaxUDPFlows` flows (512), refused ones included.
-
-Every decision (`internal/policy`, pure) is one of these:
-
-- **Tailnet**: allowed if `tailnet_outbound`; where it may go is left to
-  grants. It is dialled straight into the identity's netstack, never the
-  system network.
-- **Internet** `none | full | allowlist`: dialled through the proxy qube's
-  netvm, or through an **egress** (`egress`): exit nodes tried in order, on
-  the egress's own internet-only identity, failing closed.
-- **Allowlist**: decided by name. The name is either the one the workload
-  asked for (SOCKS or forward) or the one it resolved through the program's
-  DNS, remembered per workload. A TLS server name, when sent, must be
-  allowlisted too, so domain fronting on a shared address is refused. The
-  ClientHello is read with `crypto/tls`, so splitting it across records
-  does not hide the name; a connection that opens like TLS but has no
-  readable ClientHello is refused (`server-name-unreadable`). One that closes before sending
-  anything is logged as `closed` (`closed-before-data`): nothing was relayed. A raw
-  IP that nobody resolved is refused.
-- **Forbidden on the internet path** regardless of config: loopback,
-  link-local, multicast, the Qubes virtual DNS addresses, the tailnet
-  ranges (`100.64/10`, `fd7a:115c:a1e0::/48`), and, on the direct path,
-  the proxy qube's own addresses, so a workload cannot reach the proxy's
-  own sockets. The same check applies to DNS answers, so a public name
-  cannot rebind to them.
-- **qrexec calls** are accepted only from workloads with `link: qrexec`,
-  whatever caller name arrives.
-
-Hooks:
-
-- **Decision log**: one event per decision (source, destination, server
-  name, verdict, reason, path, identity), kept in memory and optionally as
-  JSONL per workload.
-- **Explain**: asks whether a connection would be allowed, without sending
-  traffic.
-- **Status**: identities, state, sign-in link, assigned tags, exit node,
-  active connections.
-
-All three are served on a unix socket. dom0 reads them through
-`torii.Status`.
-
-One qube can have several identities: each is a workload of its own
-(`"infra.chat"`) with `qube` naming the qube its inbound connections
-go to. Such workloads have inbound only.
-
-### Config
-
-`run -config qubesdb:torii` reads the per-qube features dom0 sets,
-`vm-config.torii*`. QubesDB refuses a value of 3072 bytes or more (and a
-larger one set while the qube is halted makes its start fail), so dom0
-stores the JSON gzipped, base64'd and split: `vm-config.torii` holds
-`<parts> <sha256>`, `vm-config.torii.0` .. the parts (`internal/qubesdb`).
-The program waits for a valid config at start, watches `/vm-config/` with
-`qubesdb-watch`, and restarts itself in-process on a config with a new
-version. A config that is half-written, or invalid, never replaces the
-running one. Identities keep their state in `state_dir` across restarts.
-
-In a Qubes netvm, Qubes' own `ip qubes` input chain rejects what arrives
-from downstream for the netvm itself, and an accept in the program's own
-table does not override it; `-install-rules` therefore also adds its accepts
-to `ip qubes custom-input`, marked `comment "torii"`, replacing its earlier
-ones and leaving everyone else's.
+What it is made of, what runs where and what crosses each boundary is in
+[`../docs/architecture.md`](../docs/architecture.md); how one connection is
+decided, step by step, in
+[`../docs/walkthrough-connection.md`](../docs/walkthrough-connection.md).
+The rules themselves are in [`../claims/`](../claims/needs.md).
 
 ## Layout
 
