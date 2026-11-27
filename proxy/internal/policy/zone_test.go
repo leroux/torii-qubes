@@ -1,6 +1,7 @@
 package policy
 
 import (
+	"github.com/leroux/torii-qubes/claims"
 	"net/netip"
 	"testing"
 
@@ -8,6 +9,7 @@ import (
 )
 
 func TestZoneOf(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_WNYB, "zones-partition")
 	for addr, want := range map[string]Zone{
 		"93.184.215.14":      ZoneInternet,
 		"2606:4700::1111":    ZoneInternet,
@@ -25,6 +27,8 @@ func TestZoneOf(t *testing.T) {
 		"fd7a:115c:a1e0::1":  ZoneTailnet, // inside fc00::/7, but the tailnet's
 		"::ffff:192.168.1.1": ZoneLAN,     // v4-mapped
 		"::ffff:10.137.0.5":  ZoneForbidden,
+		"0.1.2.3":            ZoneForbidden, // 0.0.0.0/8
+		"255.255.255.255":    ZoneForbidden, // broadcast
 	} {
 		if got := ZoneOf(netip.MustParseAddr(addr)); got != want {
 			t.Errorf("%s: %s, want %s", addr, got, want)
@@ -37,6 +41,7 @@ func wl(internet config.Internet, ia []string, lan config.Internet, la []string)
 }
 
 func TestPermit(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_WNYB, "other-qube-forbidden", "internet-name-to-lan")
 	a := netip.MustParseAddr
 	full := wl(config.InternetFull, nil, config.InternetNone, nil)
 	list := wl(config.InternetAllowlist, []string{"pypi.org", "*.hf.co:443", "93.184.215.0/24:80"},
@@ -100,6 +105,7 @@ func TestParseAllow(t *testing.T) {
 }
 
 func TestTailnetPermit(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_6S2F, "tailnet-sni-names-device")
 	a := netip.MustParseAddr
 	list := []string{"notes", "chat:443", "100.100.0.0/16:22"}
 	cp := []string{"notes", "notes.tail1.ts.net"}
@@ -135,8 +141,9 @@ func TestTailnetPermit(t *testing.T) {
 }
 
 func TestProtocols(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_2XS6, "udp-explicit", "port-narrows")
 	a := netip.MustParseAddr
-	w := wl(config.InternetAllowlist, []string{"pypi.org", "example.com:443/udp", "8.8.8.8:53/udp", "9.9.9.9"}, "", nil)
+	w := wl(config.InternetAllowlist, []string{"pypi.org", "example.com:443/udp", "8.8.8.8:53/udp", "9.9.9.9", "files.org:443"}, "", nil)
 	for _, c := range []struct {
 		names []string
 		addr  string
@@ -150,6 +157,8 @@ func TestProtocols(t *testing.T) {
 		{[]string{"example.com"}, "93.184.215.14", 443, "udp", ReasonAllowlisted, "/udp: UDP"},
 		{[]string{"example.com"}, "93.184.215.14", 443, "tcp", ReasonNotAllowlisted, "/udp: not TCP"},
 		{nil, "8.8.8.8", 53, "udp", ReasonAllowlisted, "address /udp: UDP"},
+		{[]string{"files.org"}, "5.5.5.5", 443, "tcp", ReasonAllowlisted, "port: that port"},
+		{[]string{"files.org"}, "5.5.5.5", 80, "tcp", ReasonNotAllowlisted, "port: not another"},
 		{nil, "8.8.8.8", 53, "tcp", ReasonUnresolvedIP, "address /udp: not TCP"},
 		{nil, "9.9.9.9", 853, "tcp", ReasonAllowlisted, "address, no protocol: TCP"},
 		{nil, "9.9.9.9", 53, "udp", ReasonUnresolvedIP, "address, no protocol: not UDP"},

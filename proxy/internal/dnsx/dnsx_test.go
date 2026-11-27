@@ -1,6 +1,7 @@
 package dnsx
 
 import (
+	"github.com/leroux/torii-qubes/claims"
 	"net/netip"
 	"testing"
 	"time"
@@ -55,6 +56,7 @@ type fakeClock struct{ t time.Time }
 func (f *fakeClock) Now() time.Time { return f.t }
 
 func TestCacheExpires(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_2R9T, "other-qubes-resolution-not-shared", "mapping-expires")
 	clk := &fakeClock{t: time.Unix(1000, 0)}
 	c := &Cache{Clock: clk, MinTTL: 30 * time.Second}
 	a := netip.MustParseAddr("1.2.3.4")

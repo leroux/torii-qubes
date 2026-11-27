@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/leroux/torii-qubes/claims"
 	"io"
 	"net"
 	"net/http"
@@ -35,6 +36,7 @@ func connect(t *testing.T, w *world, caller, target string) (net.Conn, *bufio.Re
 }
 
 func TestHTTPConnectAllowlistAndTailnet(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_H3W9, "disallowed-host-forbidden")
 	w := newWorld(t)
 	w.start(t)
 	w.internet.serve(t, "151.101.0.223:443", "pypi")
@@ -108,6 +110,7 @@ func readBody(t *testing.T, br *bufio.Reader) (int, string) {
 }
 
 func TestHTTPPlainRequestsStayOnTheirHost(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_H3W9, "host-change-refused")
 	w := newWorld(t)
 	w.start(t)
 	w.internet.name("pypi.org", "151.101.0.223")

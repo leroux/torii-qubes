@@ -39,6 +39,8 @@ var (
 
 // ZoneOf places an address. The tailnet's ULA is inside fc00::/7 and is
 // tested first.
+//
+//charter:realizes SW-261127-WNYB
 func ZoneOf(a netip.Addr) Zone {
 	a = a.Unmap()
 	if cgnat.Contains(a) || tsULA.Contains(a) {
@@ -73,6 +75,8 @@ func zoneRule(w *config.Workload, z Zone) (config.Internet, []string) {
 // program's DNS), and the TLS server name if one was sent. A name entry
 // matches by name (and the server name must match a name entry too); an
 // address entry matches by address, whatever the names.
+//
+//charter:realizes SW-261127-2R9T
 func Permit(w *config.Workload, names []string, a netip.Addr, p uint16, proto, sni string) (Reason, string) {
 	z := ZoneOf(a)
 	switch z {
@@ -258,6 +262,8 @@ func TailnetPermit(list []string, names, peer []string, a netip.Addr, p uint16, 
 
 // entryOK: the entry's port and protocol admit this connection. Port 0
 // and protocol "" are "any" (a DNS question, which names no port).
+//
+//charter:realizes SW-261127-2XS6
 func entryOK(e config.AllowEntry, p uint16, proto string) bool {
 	return (e.Port == 0 || p == 0 || e.Port == p) && (proto == "" || e.Proto == proto)
 }

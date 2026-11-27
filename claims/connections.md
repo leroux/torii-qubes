@@ -11,7 +11,7 @@ proxy, and how the proxy knows the qube, is the links area's.
 
 ## SW-261127-WNYB Every address is in exactly one zone, and a forbidden address is never dialled
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-KZK8, STK-261126-SM33
 
@@ -41,7 +41,7 @@ Scenarios:
 
 ## SW-261127-2R9T A name entry counts only for a name the qube asked for, or resolved through the proxy to that address
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-KZK8
 
@@ -70,7 +70,7 @@ Scenarios:
 
 ## SW-261127-M7G9 A name resolves, for the qube and for the proxy, only to addresses the qube may reach under it
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-KZK8
 
@@ -96,7 +96,7 @@ Scenarios:
 
 ## SW-261127-2XS6 Allow entries match by exact name or subdomain, port and protocol, TCP unless they say UDP
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-KZK8
 
@@ -121,7 +121,7 @@ Scenarios:
 
 ## SW-261127-6S2F Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-KZK8
 
@@ -153,7 +153,7 @@ Scenarios:
 
 ## SW-261127-H3W9 The HTTP proxy carries one host per connection
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-KZK8
 
@@ -174,7 +174,7 @@ Scenarios:
 
 ## SW-261127-PXX9 A connection is decided against the entry of the qube it came from, by the way it arrived
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-KZK8
 
@@ -203,7 +203,7 @@ Scenarios:
 
 ## SW-261127-T7GG An inbound connection reaches a qube only on a port its entry or a service lists
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-KZK8
 
@@ -224,7 +224,7 @@ Scenarios:
 
 ## SW-261127-QQYS UDP is decided per flow, and each qube has a cap on open flows
 
-Status: planned
+Status: active
 Kind: bound
 Serves: STK-261126-KZK8
 

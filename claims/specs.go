@@ -123,28 +123,28 @@ var STK_261126_KZK8 = &Spec{ID: "STK-261126-KZK8", Title: "A carried qube's conn
 var STK_261126_SM33 = &Spec{ID: "STK-261126-SM33", Title: "torii adds no qrexec call, network path or dom0 exposure beyond those the file declares", Status: Planned}
 
 // SW_261127_2R9T is SW-261127-2R9T: A name entry counts only for a name the qube asked for, or resolved through the proxy to that address
-var SW_261127_2R9T = &Spec{ID: "SW-261127-2R9T", Title: "A name entry counts only for a name the qube asked for, or resolved through the proxy to that address", Status: Planned, Kind: "invariant"}
+var SW_261127_2R9T = &Spec{ID: "SW-261127-2R9T", Title: "A name entry counts only for a name the qube asked for, or resolved through the proxy to that address", Status: Active, Kind: "invariant"}
 
 // SW_261127_2XS6 is SW-261127-2XS6: Allow entries match by exact name or subdomain, port and protocol, TCP unless they say UDP
-var SW_261127_2XS6 = &Spec{ID: "SW-261127-2XS6", Title: "Allow entries match by exact name or subdomain, port and protocol, TCP unless they say UDP", Status: Planned, Kind: "invariant"}
+var SW_261127_2XS6 = &Spec{ID: "SW-261127-2XS6", Title: "Allow entries match by exact name or subdomain, port and protocol, TCP unless they say UDP", Status: Active, Kind: "invariant"}
 
 // SW_261127_6S2F is SW-261127-6S2F: Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read
-var SW_261127_6S2F = &Spec{ID: "SW-261127-6S2F", Title: "Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read", Status: Planned, Kind: "invariant"}
+var SW_261127_6S2F = &Spec{ID: "SW-261127-6S2F", Title: "Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read", Status: Active, Kind: "invariant"}
 
 // SW_261127_H3W9 is SW-261127-H3W9: The HTTP proxy carries one host per connection
-var SW_261127_H3W9 = &Spec{ID: "SW-261127-H3W9", Title: "The HTTP proxy carries one host per connection", Status: Planned, Kind: "invariant"}
+var SW_261127_H3W9 = &Spec{ID: "SW-261127-H3W9", Title: "The HTTP proxy carries one host per connection", Status: Active, Kind: "invariant"}
 
 // SW_261127_M7G9 is SW-261127-M7G9: A name resolves, for the qube and for the proxy, only to addresses the qube may reach under it
-var SW_261127_M7G9 = &Spec{ID: "SW-261127-M7G9", Title: "A name resolves, for the qube and for the proxy, only to addresses the qube may reach under it", Status: Planned, Kind: "invariant"}
+var SW_261127_M7G9 = &Spec{ID: "SW-261127-M7G9", Title: "A name resolves, for the qube and for the proxy, only to addresses the qube may reach under it", Status: Active, Kind: "invariant"}
 
 // SW_261127_PXX9 is SW-261127-PXX9: A connection is decided against the entry of the qube it came from, by the way it arrived
-var SW_261127_PXX9 = &Spec{ID: "SW-261127-PXX9", Title: "A connection is decided against the entry of the qube it came from, by the way it arrived", Status: Planned, Kind: "invariant"}
+var SW_261127_PXX9 = &Spec{ID: "SW-261127-PXX9", Title: "A connection is decided against the entry of the qube it came from, by the way it arrived", Status: Active, Kind: "invariant"}
 
 // SW_261127_QQYS is SW-261127-QQYS: UDP is decided per flow, and each qube has a cap on open flows
-var SW_261127_QQYS = &Spec{ID: "SW-261127-QQYS", Title: "UDP is decided per flow, and each qube has a cap on open flows", Status: Planned, Kind: "bound"}
+var SW_261127_QQYS = &Spec{ID: "SW-261127-QQYS", Title: "UDP is decided per flow, and each qube has a cap on open flows", Status: Active, Kind: "bound"}
 
 // SW_261127_T7GG is SW-261127-T7GG: An inbound connection reaches a qube only on a port its entry or a service lists
-var SW_261127_T7GG = &Spec{ID: "SW-261127-T7GG", Title: "An inbound connection reaches a qube only on a port its entry or a service lists", Status: Planned, Kind: "invariant"}
+var SW_261127_T7GG = &Spec{ID: "SW-261127-T7GG", Title: "An inbound connection reaches a qube only on a port its entry or a service lists", Status: Active, Kind: "invariant"}
 
 // SW_261127_WNYB is SW-261127-WNYB: Every address is in exactly one zone, and a forbidden address is never dialled
-var SW_261127_WNYB = &Spec{ID: "SW-261127-WNYB", Title: "Every address is in exactly one zone, and a forbidden address is never dialled", Status: Planned, Kind: "invariant"}
+var SW_261127_WNYB = &Spec{ID: "SW-261127-WNYB", Title: "Every address is in exactly one zone, and a forbidden address is never dialled", Status: Active, Kind: "invariant"}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/leroux/torii-qubes/claims"
 	"io"
 	"net"
 	"net/netip"
@@ -135,6 +136,7 @@ func countEvents(l *events.Log, f func(events.Event) bool) int {
 }
 
 func TestUDPRoutedFlows(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_QQYS, "flow-follows-first", "idle-flow-redecided")
 	w, ui := udpWorld(t)
 	w.start(t)
 	ui.udp["93.184.216.34:443"] = udpEcho(t, "quic")
@@ -220,6 +222,32 @@ func TestUDPRoutedFlows(t *testing.T) {
 			t.Errorf("events %d -> %d", before, after)
 		}
 	})
+}
+
+// A refused first datagram settles its flow: later datagrams of the flow
+// are dropped without a new decision, even once the name is resolved,
+// until the flow goes idle.
+func TestUDPRefusedFlowStaysRefused(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_QQYS, "flow-follows-first")
+	w, ui := udpWorld(t)
+	w.eng.d.UDPIdle = time.Minute
+	w.start(t)
+	w.internet.name("pypi.org", "151.101.0.223")
+	ui.udp["151.101.0.223:443"] = udpEcho(t, "pypi")
+	r := newCapture()
+	w.udp("10.137.0.20:41000", "151.101.0.223:443", "x", r)
+	r.expectNone(t) // not resolved yet: refused
+	w.eng.AnswerDNS(context.Background(), netip.MustParseAddr("10.137.0.20"), dnsQuery(t, "pypi.org", dnsmessage.TypeA))
+	before := countEvents(w.eng.Log(), func(e events.Event) bool { return e.Network == "udp" && e.Source == "browser" })
+	r2 := newCapture()
+	w.udp("10.137.0.20:41000", "151.101.0.223:443", "y", r2)
+	r2.expectNone(t) // same flow: still refused
+	if after := countEvents(w.eng.Log(), func(e events.Event) bool { return e.Network == "udp" && e.Source == "browser" }); after != before {
+		t.Errorf("a refused flow was decided again: events %d -> %d", before, after)
+	}
+	r3 := newCapture()
+	w.udp("10.137.0.20:41001", "151.101.0.223:443", "z", r3)
+	r3.expect(t, "pypi:z") // a new flow is decided, and now allowed
 }
 
 func TestUDPExitNodeFailsClosed(t *testing.T) {
@@ -313,6 +341,7 @@ func freePort(t *testing.T) int {
 }
 
 func TestProxyQubeOwnAddressesForbidden(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_WNYB, "proxy-self-forbidden")
 	w, ui := udpWorld(t)
 	w.eng.d.SelfAddrs = func() []netip.Addr { return []netip.Addr{netip.MustParseAddr("192.168.100.2")} }
 	w.start(t)
@@ -355,6 +384,7 @@ func TestProxyQubeOwnAddressesForbidden(t *testing.T) {
 }
 
 func TestUDPFlowLimit(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_QQYS, "cap-refuses")
 	w, ui := udpWorld(t)
 	w.eng.d.MaxUDPFlows = 3
 	w.start(t)

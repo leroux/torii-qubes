@@ -86,6 +86,10 @@ func hostPort(req *http.Request) (string, uint16, bool) {
 	return strings.ToLower(host), port, true
 }
 
+// httpForward carries plain HTTP requests, one host and port per
+// connection: a later request naming another is refused and ends it.
+//
+//charter:realizes SW-261127-H3W9
 func (e *Engine) httpForward(ctx context.Context, workload string, c net.Conn, br *bufio.Reader, req *http.Request) {
 	host, port, ok := hostPort(req)
 	if !ok {

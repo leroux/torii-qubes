@@ -90,6 +90,8 @@ type RealClock struct{}
 func (RealClock) Now() time.Time { return time.Now() }
 
 // Cache remembers address-to-name mappings per workload until they expire.
+//
+//charter:realizes SW-261127-2R9T
 type Cache struct {
 	Clock Clock
 	// MinTTL keeps a mapping at least this long, so a connection opened

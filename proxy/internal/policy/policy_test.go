@@ -1,6 +1,7 @@
 package policy
 
 import (
+	"github.com/leroux/torii-qubes/claims"
 	"net/netip"
 	"testing"
 
@@ -31,6 +32,7 @@ func testConfig(t *testing.T) *config.Config {
 }
 
 func TestDecideOutbound(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_PXX9, "unknown-source-refused", "wrong-entry-refused", "undeclared-socks-refused")
 	c := testConfig(t)
 	ip := netip.MustParseAddr
 	cases := []struct {
@@ -49,6 +51,7 @@ func TestDecideOutbound(t *testing.T) {
 		{"allowlisted name", Outbound{Workload: "job", Entry: EntrySOCKS, Host: "PyPI.org.", Port: 443}, Allow, ReasonAllowlisted, PathInternet},
 		{"wildcard subdomain", Outbound{Workload: "job", Entry: EntrySOCKS, Host: "api.github.com"}, Allow, ReasonAllowlisted, PathInternet},
 		{"wildcard is not the apex", Outbound{Workload: "job", Entry: EntrySOCKS, Host: "github.com"}, Refuse, ReasonNotAllowlisted, ""},
+		{"exact name is not its subdomains", Outbound{Workload: "job", Entry: EntrySOCKS, Host: "www.pypi.org"}, Refuse, ReasonNotAllowlisted, ""},
 		{"lookalike suffix", Outbound{Workload: "job", Entry: EntrySOCKS, Host: "evilpypi.org"}, Refuse, ReasonNotAllowlisted, ""},
 		{"raw ip on allowlist", Outbound{Workload: "job", Entry: EntrySOCKS, Host: "151.101.0.223"}, Refuse, ReasonUnresolvedIP, ""},
 		{"sni must match too", Outbound{Workload: "job", Entry: EntrySOCKS, Host: "pypi.org", SNI: "evil.com"}, Refuse, ReasonSNINotAllowed, ""},
@@ -84,6 +87,7 @@ func TestDecideOutbound(t *testing.T) {
 }
 
 func TestAllowlistByResolvedName(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_2R9T, "resolved-name-allows", "unresolved-address-refused")
 	c, err := config.Parse([]byte(`{"proxy_qube":"p","state_dir":"/s","workloads":{
 	  "r": {"link":"routed","address":"10.137.0.9","internet":"allowlist","internet_allow":["pypi.org"]}}}`))
 	if err != nil {
@@ -109,6 +113,7 @@ func TestAllowlistByResolvedName(t *testing.T) {
 }
 
 func TestDecideNameAndInbound(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_T7GG, "listed-port-mapped", "unlisted-inbound-refused")
 	c := testConfig(t)
 	if d := DecideName(c, "browser", "store.tail.ts.net", true); d.Verdict != Allow || d.Path != PathTailnet {
 		t.Errorf("%+v", d)
@@ -139,6 +144,7 @@ func TestDecideNameAndInbound(t *testing.T) {
 // An egress identity is internet-only: a workload without an identity of
 // its own never reaches the tailnet through its egress, whatever it dials.
 func TestEgressNeverCarriesTheTailnet(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_PXX9, "unlisted-no-tailnet")
 	c := testConfig(t)
 	for _, wl := range []string{"shop", "unlisted:10.137.0.99"} {
 		for _, a := range []string{"100.64.0.5", "100.100.100.100", "fd7a:115c:a1e0::1"} {
@@ -171,5 +177,28 @@ func TestUnlistedSources(t *testing.T) {
 	c.Unlisted = nil
 	if d := DecideOutbound(c, Outbound{Workload: u, Entry: EntryIntercept, Addr: ip("93.184.216.34")}); d.Reason != ReasonUnknownWorkload {
 		t.Errorf("no unlisted: %+v", d)
+	}
+}
+
+// Match is exact for a name and strict about a wildcard: neither widens
+// what the entry says.
+func TestMatch(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_2XS6, "exact-name-only", "wildcard-not-parent")
+	for _, c := range []struct {
+		allow, host string
+		want        bool
+	}{
+		{"example.com", "example.com", true},
+		{"example.com", "EXAMPLE.com.", true},
+		{"example.com", "www.example.com", false},
+		{"example.com", "badexample.com", false},
+		{"*.example.com", "a.example.com", true},
+		{"*.example.com", "a.b.example.com", true},
+		{"*.example.com", "example.com", false},
+		{"*.example.com", "aexample.com", false},
+	} {
+		if got := Match([]string{c.allow}, c.host); got != c.want {
+			t.Errorf("Match(%s, %s) = %v", c.allow, c.host, got)
+		}
 	}
 }

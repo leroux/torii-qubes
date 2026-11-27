@@ -39,7 +39,8 @@ listed, a disposable included, gets that proxy's `unlisted` policy, which
 by default refuses everything, and never a tailnet identity.
 
 Not covered, and documented as limits: raw TCP or QUIC to another site at
-an address an allowed name shares; data sent out over DNS by a qube
+an address an allowed name shares, including any connection that sends
+no TLS server name; data sent out over DNS by a qube
 allowed `internet: all`. A qube with `network: default` or its own netvm
 is not carried: torii sets only its netvm.
 

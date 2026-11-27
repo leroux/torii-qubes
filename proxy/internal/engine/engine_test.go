@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/leroux/torii-qubes/claims"
 	"io"
 	"net"
 	"net/netip"
@@ -104,6 +105,7 @@ func waitEvent(t *testing.T, l *events.Log, f func(events.Event) bool) events.Ev
 }
 
 func TestInboundToAirgappedQube(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_T7GG, "listed-port-mapped", "unlisted-inbound-refused")
 	w := newWorld(t)
 	w.qubes.serve(t, "airgap", 8443, "airgap-service")
 	w.start(t)
@@ -209,6 +211,7 @@ func TestSOCKSTailnetAndAllowlist(t *testing.T) {
 }
 
 func TestSOCKSServerNameMustBeAllowed(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_6S2F, "sni-mismatch-refused")
 	w := newWorld(t)
 	w.start(t)
 	w.internet.name("pypi.org", "151.101.0.223")
@@ -234,6 +237,7 @@ func TestSOCKSServerNameMustBeAllowed(t *testing.T) {
 // the first bytes. Waiting must not turn the check off; the server name is
 // read whenever the client first speaks. The upstream server sees nothing.
 func TestSOCKSServerNameAfterPause(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_6S2F, "sni-mismatch-refused", "pause-does-not-skip")
 	w := newWorld(t)
 	w.start(t)
 	w.internet.name("pypi.org", "151.101.0.223")
@@ -310,6 +314,7 @@ func TestSOCKSServerNameSplitAcrossRecords(t *testing.T) {
 // A connection that opens like TLS but has no readable ClientHello is
 // refused, not relayed as if it had sent no name.
 func TestSOCKSUnreadableClientHello(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_6S2F, "unreadable-hello-refused")
 	w := newWorld(t)
 	w.start(t)
 	w.internet.name("pypi.org", "151.101.0.223")
@@ -410,6 +415,7 @@ func dnsAnswer(t *testing.T, b []byte) (dnsmessage.RCode, []netip.Addr) {
 }
 
 func TestRoutedDNSThenConnect(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_2R9T, "resolved-name-allows", "unresolved-address-refused")
 	w := newWorld(t)
 	w.start(t)
 	browser := netip.MustParseAddr("10.137.0.20")

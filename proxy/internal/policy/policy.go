@@ -125,6 +125,8 @@ func (o Outbound) proto() string {
 }
 
 // DecideOutbound decides an outbound connection.
+//
+//charter:realizes SW-261127-PXX9
 func DecideOutbound(c *config.Config, o Outbound) Decision {
 	w, ok := c.Lookup(o.Workload)
 	if !ok {
@@ -213,6 +215,8 @@ func DecideOutbound(c *config.Config, o Outbound) Decision {
 // Match reports whether host matches an allowlist. "example.com" matches
 // only itself; "*.example.com" matches every name under example.com but
 // not example.com itself.
+//
+//charter:realizes SW-261127-2XS6
 func Match(allow []string, host string) bool {
 	host = strings.TrimSuffix(strings.ToLower(host), ".")
 	if host == "" {
@@ -278,6 +282,8 @@ func pathIdentity(c *config.Config, w *config.Workload, path Path, own string) s
 }
 
 // DecideInbound decides a connection arriving at a workload's identity.
+//
+//charter:realizes SW-261127-T7GG
 func DecideInbound(c *config.Config, workload string, port uint16) (Decision, uint16) {
 	w, ok := c.Workloads[workload]
 	if !ok || w.Identity == nil {

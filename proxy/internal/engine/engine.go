@@ -165,6 +165,8 @@ func interfaceAddrs() []netip.Addr {
 // proxy qube's own addresses: a workload must not reach the proxy's own
 // sockets by dialling them. Through an exit node they are the exit
 // node's network, not this qube.
+//
+//charter:realizes SW-261127-WNYB
 func (e *Engine) forbidden(a netip.Addr, path policy.Path) bool {
 	if policy.Forbidden(a) {
 		return true
@@ -632,7 +634,10 @@ func (e *Engine) decideAndDial(ctx context.Context, o *policy.Outbound, dest str
 	return up, d, ev
 }
 
-// dial carries an allowed decision.
+// dial carries an allowed decision. A name it resolves itself is dialled
+// only at the addresses the workload may reach under it.
+//
+//charter:realizes SW-261127-M7G9
 func (e *Engine) dial(ctx context.Context, o *policy.Outbound, d policy.Decision) (net.Conn, error) {
 	id := e.d.Identities[o.Workload]
 	var addrs []netip.Addr
@@ -713,6 +718,8 @@ func (e *Engine) dial(ctx context.Context, o *policy.Outbound, d policy.Decision
 // read: a ClientHello's name is decided before anything of the client's
 // goes upstream, however long the client waits to send it. The server's
 // side flows from the start, so a server that speaks first can.
+//
+//charter:realizes SW-261127-6S2F
 func (e *Engine) carry(ctx context.Context, o policy.Outbound, ev events.Event, c, up net.Conn, checkSNI bool) {
 	w, _ := e.d.Config.Lookup(o.Workload)
 	check := func() ([]byte, bool) {
@@ -775,6 +782,8 @@ func (e *Engine) HandleIntercepted(ctx context.Context, c net.Conn, src, dst net
 
 // AnswerDNS answers one query from a routed workload at src. A refused
 // name gets NXDOMAIN; an unknown source gets REFUSED.
+//
+//charter:realizes SW-261127-M7G9
 func (e *Engine) AnswerDNS(ctx context.Context, src netip.Addr, b []byte) []byte {
 	q, err := dnsx.Parse(b)
 	if err != nil {

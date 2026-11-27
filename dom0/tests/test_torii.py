@@ -147,7 +147,9 @@ class MachineFile(unittest.TestCase):
     def test_every_machine_file_in_the_docs_parses(self):
         """Every ```yaml block in the README and docs/ parses with the tool's
         own parser. An indented block is a fragment of qubes: and is parsed
-        under it, unless it starts with machine: (a whole file in a list). Blocks that are not machine files (none yet) would be
+        under it, unless it starts with machine: (a whole file in a list); so is
+        a block whose first key is not a top-level key (qube entries, as the
+        README shows them). Blocks that are not machine files (none yet) would be
         marked with a first line `# not a machine file`."""
         import glob
         import re
@@ -164,7 +166,13 @@ class MachineFile(unittest.TestCase):
                 if first.lstrip().startswith("machine:"):
                     doc = textwrap.dedent(block)  # a whole file, indented inside a list item
                 else:
-                    doc = ("qubes:\n" + block) if first.startswith(" ") else block
+                    key = first.strip().split(":", 1)[0]
+                    if first.startswith(" "):
+                        doc = "qubes:\n" + block
+                    elif key not in machine.TOP_KEYS:  # qube entries, as the README shows them
+                        doc = "qubes:\n" + textwrap.indent(block, "  ")
+                    else:
+                        doc = block
                 with self.subTest(file=os.path.basename(path), block=i):
                     try:
                         mparse("defaults: {network: none, tailnet: {tags: [t]}}\n" + doc if "defaults:" not in doc else doc)

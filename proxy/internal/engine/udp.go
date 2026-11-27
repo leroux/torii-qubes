@@ -64,6 +64,8 @@ func (f *udpFlow) close() {
 // dst. The first datagram of a flow is decided and logged; the rest
 // follow the decision until the flow is idle. open makes the reply path,
 // once, for an allowed flow.
+//
+//charter:realizes SW-261127-QQYS
 func (e *Engine) HandleUDP(ctx context.Context, src, dst netip.AddrPort, b []byte, open func() (UDPReply, error)) {
 	key := src.String() + ">" + dst.String()
 	now := e.d.Clock.Now()

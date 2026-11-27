@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"github.com/leroux/torii-qubes/claims"
 	"net/netip"
 	"testing"
 
@@ -14,6 +15,7 @@ import (
 // A public name that resolves to the LAN is not dialled there: job's
 // allowlist names pypi.org, and its LAN is none.
 func TestSOCKSNameRebindingToTheLAN(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_M7G9, "proxy-resolution-filtered")
 	w := newWorld(t)
 	w.start(t)
 	w.internet.name("pypi.org", "192.168.1.1")
@@ -31,6 +33,7 @@ func TestSOCKSNameRebindingToTheLAN(t *testing.T) {
 // DNS for a routed workload answers only addresses it may reach: an
 // allowlisted name pointing at the LAN or at another qube gets no answer.
 func TestDNSAnswersOnlyReachableAddresses(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_M7G9, "answer-filtered", "disallowed-name-nxdomain")
 	w := newWorld(t)
 	w.start(t)
 	w.internet.name("pypi.org", "192.168.1.1", "10.137.0.5", "151.101.0.223")
@@ -38,6 +41,11 @@ func TestDNSAnswersOnlyReachableAddresses(t *testing.T) {
 	_, addrs := dnsAnswer(t, w.eng.AnswerDNS(context.Background(), netip.MustParseAddr("10.137.0.20"), b))
 	if len(addrs) != 1 || addrs[0] != netip.MustParseAddr("151.101.0.223") {
 		t.Errorf("answers %v, want only the public address", addrs)
+	}
+	// A name the entry allows in no zone has no such name.
+	if rc, _ := dnsAnswer(t, w.eng.AnswerDNS(context.Background(), netip.MustParseAddr("10.137.0.20"),
+		dnsQuery(t, "example.com", dnsmessage.TypeA))); rc != dnsmessage.RCodeNameError {
+		t.Errorf("example.com: %v, want no such name", rc)
 	}
 	// And the router address it never got cannot be dialled either.
 	d := w.eng.decide(policy.Outbound{Workload: "browser", Entry: policy.EntryIntercept,

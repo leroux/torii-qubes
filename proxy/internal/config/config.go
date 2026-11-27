@@ -530,6 +530,8 @@ func (c *Config) ByAddress(a netip.Addr) (string, *Workload, bool) {
 // Lookup returns the workload of a name: a listed one, or, with Unlisted
 // set, an unlisted source ("unlisted:<address>"), routed, with the
 // unlisted access and nothing else.
+//
+//charter:realizes SW-261127-PXX9
 func (c *Config) Lookup(name string) (*Workload, bool) {
 	if w, ok := c.Workloads[name]; ok {
 		return w, true

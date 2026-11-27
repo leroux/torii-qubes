@@ -35,6 +35,8 @@ var errGotHello = errors.New("sni: got ClientHello")
 // ClientHello can be read in time; the read error when the client closes
 // or fails before sending anything. prefix is every byte read from c, to
 // be sent upstream before the rest of c.
+//
+//charter:concerns SW-261127-6S2F
 func Peek(c net.Conn, wait time.Duration) (name string, prefix []byte, err error) {
 	_ = c.SetReadDeadline(time.Time{})
 	rec := &recorder{r: c}
