@@ -176,8 +176,8 @@ SW_261127_BHHX = Spec("SW-261127-BHHX", "A routed qube is named by its Qubes sou
 #: SW_261127_BNFC is SW-261127-BNFC: Exit nodes are used in the file's order, failing over at once and back only after a hold-down
 SW_261127_BNFC = Spec("SW-261127-BNFC", "Exit nodes are used in the file's order, failing over at once and back only after a hold-down", "active", "invariant")
 
-#: SW_261127_DH6R is SW-261127-DH6R: torii proposes grants for the tailnet and never changes the tailnet itself
-SW_261127_DH6R = Spec("SW-261127-DH6R", "torii proposes grants for the tailnet and never changes the tailnet itself", "active", "invariant")
+#: SW_261127_DH6R is SW-261127-DH6R: torii proposes grants for the tailnet and never changes its policy
+SW_261127_DH6R = Spec("SW-261127-DH6R", "torii proposes grants for the tailnet and never changes its policy", "active", "invariant")
 
 #: SW_261127_G26T is SW-261127-G26T: apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings
 SW_261127_G26T = Spec("SW-261127-G26T", "apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings", "active", "invariant")

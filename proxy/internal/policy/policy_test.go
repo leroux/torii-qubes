@@ -148,9 +148,11 @@ func TestEgressNeverCarriesTheTailnet(t *testing.T) {
 	c := testConfig(t)
 	for _, wl := range []string{"shop", "unlisted:10.137.0.99"} {
 		for _, a := range []string{"100.64.0.5", "100.100.100.100", "fd7a:115c:a1e0::1"} {
-			d := DecideOutbound(c, Outbound{Workload: wl, Entry: EntryIntercept, Addr: netip.MustParseAddr(a), Port: 443})
-			if d.Verdict != Refuse {
-				t.Errorf("%s -> %s: %+v", wl, a, d)
+			for _, tn := range []bool{false, true} { // whether the engine knew it for a tailnet address
+				d := DecideOutbound(c, Outbound{Workload: wl, Entry: EntryIntercept, Addr: netip.MustParseAddr(a), Port: 443, Tailnet: tn})
+				if d.Verdict != Refuse || d.Identity == "m1-egress-vpn" {
+					t.Errorf("%s -> %s (tailnet %v): %+v", wl, a, tn, d)
+				}
 			}
 		}
 	}

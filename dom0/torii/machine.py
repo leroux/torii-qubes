@@ -547,7 +547,7 @@ def _service(name: str, spec: Any, defaults: dict, default_proxy: str, proxies: 
     return Service(str(name), qube, proxy, str(spec.get("hostname", name)), tags, tuple(ports))
 
 
-# charter:realizes SW-261127-9BNW
+# charter:realizes SW-261127-9BNW, SW-261127-WNGN
 def parse(text: str) -> Machine:
     try:
         doc = yaml.safe_load(text) or {}
@@ -624,6 +624,15 @@ def parse(text: str) -> Machine:
         if h in hostnames:
             raise FileError(f"{where}: tailnet name {h} also used by {hostnames[h]}")
         hostnames[h] = where
+    # Each identity keeps its state and key under a name of its own in its
+    # proxy qube: a qube's name, <qube>.<service>, or egress-<egress>.
+    states: dict[str, str] = {}
+    for where, st in [(f"qubes.{q.name}", q.name) for q in qubes.values()] + \
+                     [(f"services.{x.name}", f"{x.qube}.{x.name}") for x in services.values()] + \
+                     [(f"egress.{g}", f"egress-{g}") for g in egresses]:
+        if st in states:
+            raise FileError(f"{where}: its identity's state would be kept as {st}, as {states[st]}'s is")
+        states[st] = where
     for q in qubes.values():
         for li in q.local_inbound:
             for s in li.sources:

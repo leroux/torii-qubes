@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/leroux/torii-qubes/claims"
@@ -41,5 +42,17 @@ func TestOneNodePerIdentity(t *testing.T) {
 		if ts.Hostname() != w[0] || filepath.ToSlash(ts.StateDir()) != w[1] {
 			t.Errorf("%s: %s in %s, want %s in %s", k, ts.Hostname(), ts.StateDir(), w[0], w[1])
 		}
+	}
+}
+
+// A workload named like an egress's state is refused before any node is
+// built, so no two identities share a state directory or a key.
+func TestAWorkloadCannotTakeAnEgresssState(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_WNGN, "one-node-each")
+	_, err := config.Parse([]byte(`{"proxy_qube":"p","state_dir":"/s","workloads":{
+	  "egress-vpn": {"link":"qrexec","identity":{"hostname":"other","tags":["tag:m1-x"]}}},
+	  "egresses":{"vpn":{"hostname":"m1-egress-vpn","tags":["tag:m1-egress"],"exits":["x"]}}}`))
+	if err == nil || !strings.Contains(err.Error(), "share a state directory") {
+		t.Errorf("err = %v", err)
 	}
 }

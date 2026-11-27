@@ -433,8 +433,8 @@ func (t *TSNet) Status(ctx context.Context) Status {
 				got = st.Self.Tags.AsSlice()
 			}
 			s.Tags = got
-			if !sameSet(got, t.opt.Tags) {
-				s.Err = fmt.Sprintf("identity has tags %v, config says %v", got, t.opt.Tags)
+			if m := TagMismatch(got, t.opt.Tags); m != "" {
+				s.TagMismatch, s.Err = m, m
 			}
 		}
 		if s.AuthURL == "" && st.AuthURL != "" && st.BackendState != ipn.Running.String() {

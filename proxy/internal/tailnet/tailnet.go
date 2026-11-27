@@ -6,6 +6,7 @@ package tailnet
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/netip"
 )
@@ -70,6 +71,20 @@ type Status struct {
 	ExitNode string   `json:"exit_node,omitempty"`
 	Peers    int      `json:"peers"`
 	Err      string   `json:"error,omitempty"`
+	// TagMismatch says how the tags the tailnet gave differ from the
+	// config's; dom0's check reads it.
+	TagMismatch string `json:"tag_mismatch,omitempty"`
+}
+
+// TagMismatch is "" when got and want hold the same tags, and otherwise
+// says how they differ.
+//
+//charter:realizes SW-261127-P8H7
+func TagMismatch(got, want []string) string {
+	if sameSet(got, want) {
+		return ""
+	}
+	return fmt.Sprintf("identity has tags %v, config says %v", got, want)
 }
 
 // Peer is an exit node as the tailnet map has it.

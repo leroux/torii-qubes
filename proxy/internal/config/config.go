@@ -257,6 +257,8 @@ var (
 
 // Normalize fills defaults and checks the config is coherent. It is
 // called by Parse; tests that build a Config literal call it themselves.
+//
+//charter:realizes SW-261127-WNGN
 func (c *Config) Normalize() error {
 	if c.ProxyQube == "" {
 		return fmt.Errorf("config: proxy_qube is required")
@@ -319,6 +321,11 @@ func (c *Config) Normalize() error {
 			return fmt.Errorf("config: %s and egress %s share hostname %s", other, name, h)
 		}
 		hostnames[h] = "egress " + name
+		// An egress's state and key are kept as egress-<name>: no
+		// workload may have that name.
+		if _, ok := c.Workloads["egress-"+name]; ok {
+			return fmt.Errorf("config: workload egress-%s and egress %s would share a state directory", name, name)
+		}
 	}
 	if u := c.Unlisted; u != nil {
 		w := &Workload{Link: LinkRouted, Address: "0.0.0.0", Internet: u.Internet, InternetAllow: u.InternetAllow, Egress: u.Egress}

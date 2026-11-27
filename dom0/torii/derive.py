@@ -262,19 +262,22 @@ def grants(m: Machine) -> dict[str, Any]:
     """Proposed tag owners and grants, for a person to review and paste.
 
     Who may reach an inbound port is not in the machine file, so the
-    proposal names autogroup:member; narrow it before pasting.
+    proposal names autogroup:member; narrow it before pasting. The
+    machine's own tag, which every identity here carries, egresses
+    included, is never a destination.
     """
     tags: set[str] = set()
     out: list[dict[str, Any]] = []
     for q in sorted(m.qubes.values(), key=lambda q: q.name):
         tags.update(q.tags)
         if q.inbound and q.identity == "tagged":
-            out.append({"src": ["autogroup:member"], "dst": list(q.tags),
+            out.append({"src": ["autogroup:member"], "dst": [t for t in q.tags if t != m.machine_tag],
                         "ip": [f"tcp:{i.port}" for i in q.inbound]})
 
     for x in sorted(m.services.values(), key=lambda x: x.name):
         tags.update(x.tags)
-        out.append({"src": ["autogroup:member"], "dst": list(x.tags), "ip": [f"tcp:{i.port}" for i in x.ports]})
+        out.append({"src": ["autogroup:member"], "dst": [t for t in x.tags if t != m.machine_tag],
+                    "ip": [f"tcp:{i.port}" for i in x.ports]})
     # An egress's identities may use exit nodes, and nothing else.
     for g in sorted({g for g, _ in m.egress_instances()}):
         e = m.egresses[g]

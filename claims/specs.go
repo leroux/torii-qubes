@@ -173,8 +173,8 @@ var SW_261127_BHHX = &Spec{ID: "SW-261127-BHHX", Title: "A routed qube is named 
 // SW_261127_BNFC is SW-261127-BNFC: Exit nodes are used in the file's order, failing over at once and back only after a hold-down
 var SW_261127_BNFC = &Spec{ID: "SW-261127-BNFC", Title: "Exit nodes are used in the file's order, failing over at once and back only after a hold-down", Status: Active, Kind: "invariant"}
 
-// SW_261127_DH6R is SW-261127-DH6R: torii proposes grants for the tailnet and never changes the tailnet itself
-var SW_261127_DH6R = &Spec{ID: "SW-261127-DH6R", Title: "torii proposes grants for the tailnet and never changes the tailnet itself", Status: Active, Kind: "invariant"}
+// SW_261127_DH6R is SW-261127-DH6R: torii proposes grants for the tailnet and never changes its policy
+var SW_261127_DH6R = &Spec{ID: "SW-261127-DH6R", Title: "torii proposes grants for the tailnet and never changes its policy", Status: Active, Kind: "invariant"}
 
 // SW_261127_G26T is SW-261127-G26T: apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings
 var SW_261127_G26T = &Spec{ID: "SW-261127-G26T", Title: "apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings", Status: Active, Kind: "invariant"}

@@ -13,20 +13,30 @@ Kind: invariant
 Serves: STK-261126-KHZB
 
 Every qube with a tailnet identity, every service, and every egress on
-each proxy that carries it is its own tailnet node in its proxy qube:
-its own hostname, by default its name prefixed by the machine's, and
-its own state directory in the proxy qube's private volume. No two share a node, and
-an identity's state never leaves its proxy qube; a rebuilt proxy gets
-new identities and new sign-ins.
+each proxy that carries it is its own tailnet node in its proxy qube,
+with its own hostname and its own state directory and key file in the
+proxy qube's private volume, kept under the qube's name, `<qube>.<service>`
+or `egress-<egress>`. The file is refused when two identities would
+share a hostname or one of those names, and so is a proxy config that
+would. A qube's hostname is by default its name prefixed by the
+machine's; a service's is its bare name; an egress on a proxy other
+than the main one has the proxy's name added. torii never reads an
+identity's state back; a rebuilt proxy gets new identities and new
+sign-ins.
 
 Why: the tailnet's access rules apply per device; one device for
 several qubes would grant each the access of all, the compartment
 merging torii exists to prevent.
 
 Scenarios:
-1. `one-node-each` (agent, provisional): the program builds one node per
-   identity in its config, each with its own hostname and state
-   directory.
+1. `one-node-each` (agent, provisional): each identity gets a node with
+   its own hostname and state directory, and two that would share a
+   state are refused.
+
+Changes:
+- 2026-11-27: a qube named egress-<egress>, or <qube>.<service>, shared
+  another identity's state and key; both sides now refuse it, and the text
+  says how each kind is named and that torii never reads state back.
 
 ## SW-261127-P8H7 A tagged identity carries exactly the file's tags, prefixed by the machine, and check names any other
 
@@ -39,7 +49,7 @@ prefixed by the machine's name (`server` on `m1` is `tag:m1-server`),
 and `tag:<machine>`; a service's tags may also be written in full, to be
 shared across machines; a person's identity has none. The file refuses a full
 tag on a qube. check names an identity whose tags on the tailnet differ
-from the file's.
+from the file's, as the proxy reports it.
 
 Why: tags are what the tailnet's grants select on; a qube carrying a
 tag the file did not give it reaches what that tag reaches, so tags come
@@ -51,6 +61,10 @@ Scenarios:
 2. `mismatch-named` (agent, provisional): check names an identity the
    proxy reports with other tags than the file's.
 
+Changes:
+- 2026-11-27: check read a field the proxy never sent, so it named no tag
+  mismatch on a real machine; the proxy now reports it in that field.
+
 ## SW-261127-3TPX An identity signs in by a link a person approves, or a one-time key that only the proxy qube keeps
 
 Status: active
@@ -60,7 +74,8 @@ Serves: STK-261126-KHZB
 A new identity asks the tailnet for a sign-in link, which apply, show
 and check print for a person to approve. `torii sign-in-key` takes a
 one-time key on dom0's standard input and writes it straight into the
-proxy qube, under a directory only root can read, then restarts the
+proxy qube, as a new file under a directory only root can read, then
+restarts the
 proxy with that identity's old state removed so it signs in with the
 key; dom0 writes the key to no file. After the first sign-in the
 identity's own state keeps it signed in.
@@ -77,17 +92,26 @@ Scenarios:
 2. `links-printed` (agent, provisional): an identity waiting for sign-in
    is listed with its link.
 
-## SW-261127-DH6R torii proposes grants for the tailnet and never changes the tailnet itself
+Changes:
+- 2026-11-27: an existing key file kept its mode; the file is now removed
+  and written new.
+
+## SW-261127-DH6R torii proposes grants for the tailnet and never changes its policy
 
 Status: active
 Kind: invariant
 Serves: STK-261126-KHZB
 
 `torii grants` prints the tag owners and grants the file implies, for a
-person to review and paste into the tailnet's policy; each source is
-`autogroup:member`, to be narrowed. The dom0 tool makes no network
-connection at all, so it has no way to change the tailnet's policy,
-devices or keys.
+person to review and paste into the tailnet's policy: an inbound
+identity's or a service's source is `autogroup:member`, to be narrowed,
+and an egress's its own tags; the machine's own tag is never a
+destination. The dom0 tool's own process makes no network connection,
+so it cannot change the tailnet's policy or grants; it changes the
+tailnet only by an identity signing in, with a link a person approves
+or a key the person gives. What it runs elsewhere does reach a network:
+`qvm-template` downloads the base template, and package installs run in
+torii's template.
 
 Why: the tailnet's policy is the second half of every qube's access; a
 tool that wrote it would be a second, unreviewed source of the same
@@ -99,6 +123,13 @@ Scenarios:
 2. `dom0-no-network` (agent, provisional): no module of the dom0 tool
    imports a networking library.
 
+Changes:
+- 2026-11-27: the text said dom0 could not change the tailnet's devices or
+  keys, though sign-in-key signs a device in, and did not say what it runs
+  elsewhere; grants no longer name the machine's tag, which every egress
+  carries, as a destination; the scenario checks dynamic imports and
+  download tools too.
+
 ## SW-261127-WSWG An egress's identity carries only the internet, and grants propose it nothing else
 
 Status: active
@@ -108,7 +139,8 @@ Serves: STK-261126-KHZB, STK-261126-346B
 An egress has one identity per proxy that carries it, shared by every
 qube on that egress; the proxy never dials a tailnet destination on it,
 since tailnet destinations are dialled only on a qube's own identity.
-`torii grants` proposes for its tags only `autogroup:internet`.
+`torii grants` proposes for its tags only `autogroup:internet`, and
+names its tags in no other grant.
 
 Why: sharing a path out is harmless, since every qube behind one exit
 node shares its address anyway; sharing tailnet authorisation is how
@@ -119,6 +151,10 @@ Scenarios:
    of its own, on an egress, is refused every tailnet address.
 2. `grants-internet-only` (agent, provisional): grants proposes the
    egress's tags `autogroup:internet` and nothing else.
+
+Changes:
+- 2026-11-27: grants named the machine's tag, which the egress identities
+  carry, as every inbound grant's destination; it no longer does.
 
 ## SW-261127-8PTP An identity sends Tailscale no client logs unless the file asks, and never maps ports
 

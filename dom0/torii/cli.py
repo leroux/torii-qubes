@@ -239,7 +239,7 @@ def cmd_sign_in_key(a) -> int:
     s = Step("sign-in-key", proxy, f"key for {a.qube}")
     path = f"{derive.KEY_DIR}/{workload}"
     try:
-        ap._root(vm, f"install -d -m 0700 {derive.KEY_DIR} && umask 077 && cat > {path}", s, "writing the key",
+        ap._root(vm, f"install -d -m 0700 {derive.KEY_DIR} && rm -f {path} && umask 077 && cat > {path}", s, "writing the key",
                  input=(key + "\n").encode())
         ap._root(vm, f"rm -rf {derive.STATE_DIR}/{workload} && systemctl restart torii-proxy", s,
                  "restarting the proxy")

@@ -269,6 +269,8 @@ func DecideName(c *config.Config, workload, name string, tailnet bool) Decision 
 // pathIdentity is the identity an internet-zone path uses: the egress's
 // on the exit path, none direct. The workload's own identity (own) is for
 // the tailnet only.
+//
+//charter:realizes SW-261127-WSWG
 func pathIdentity(c *config.Config, w *config.Workload, path Path, own string) string {
 	switch path {
 	case PathExit:

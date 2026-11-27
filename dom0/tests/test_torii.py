@@ -1190,12 +1190,34 @@ class Identity(unittest.TestCase):
         with open(f, "w") as fh:
             fh.write("machine: m1\ndefaults: {network: none}\nqubes: {torii-probe2: {tailnet: {identity: tagged, tags: [t]}}}\n")
         before = set(os.listdir(d))
+        import builtins
+        import tempfile as tf
+        writes = []
+        real_open, real_os_open, real_mkstemp = builtins.open, os.open, tf.mkstemp
+
+        def watch_open(file, mode="r", *a, **k):
+            if any(c in mode for c in "wax+"):
+                writes.append(file)
+            return real_open(file, mode, *a, **k)
+
+        def watch_os_open(path, flags, *a, **k):
+            if flags & (os.O_WRONLY | os.O_RDWR | os.O_CREAT):
+                writes.append(path)
+            return real_os_open(path, flags, *a, **k)
+
+        def no_temp(*a, **k):
+            writes.append("mkstemp")
+            return real_mkstemp(*a, **k)
+
         real_app, real_stdin = cli._app, sys.stdin
         cli._app, sys.stdin = (lambda: App()), io.StringIO("tskey-auth-secret\n")
+        builtins.open, os.open, tf.mkstemp = watch_open, watch_os_open, no_temp
         try:
             rc = cli.cmd_sign_in_key(type("A", (), {"file": f, "qube": "torii-probe2"})())
         finally:
+            builtins.open, os.open, tf.mkstemp = real_open, real_os_open, real_mkstemp
             cli._app, sys.stdin = real_app, real_stdin
+        self.assertEqual(writes, [], "dom0 wrote a file")
         self.assertEqual(rc, 0)
         self.assertEqual(set(os.listdir(d)), before, "a file was written in dom0")
         self.assertEqual(sent[0], ("qubes.VMRootShell", "root"))
@@ -1203,6 +1225,7 @@ class Identity(unittest.TestCase):
         self.assertTrue(payload.endswith(b"tskey-auth-secret\n"), payload)
         self.assertIn(b"install -d -m 0700 /rw/torii/keys", payload)
         self.assertIn(b"umask 077", payload)
+        self.assertIn(b"rm -f /rw/torii/keys/torii-probe2 &&", payload, "an old key file's mode is kept")
         self.assertIn(b"/rw/torii/keys/torii-probe2", payload)
         self.assertNotIn(b"tskey", b"".join(x for x in sent[3:] if isinstance(x, bytes)), "the key went to a second call")
 
@@ -1211,8 +1234,11 @@ class Grants(unittest.TestCase):
     def test_grants_are_printed_for_review(self):
         claims.verifies(self, claims.SW_261127_DH6R, "grants-printed")
         g = derive.grants(mparse(SERVICES.replace("qubes: {}", "qubes: {w: {tailnet: {identity: tagged, tags: [web], inbound: [443]}}}")))
-        self.assertIn({"src": ["autogroup:member"], "dst": ["tag:m1-web", "tag:m1"], "ip": ["tcp:443"]}, g["grants"])
-        self.assertIn({"src": ["autogroup:member"], "dst": ["tag:chat", "tag:m1"], "ip": ["tcp:443"]}, g["grants"])
+        self.assertIn({"src": ["autogroup:member"], "dst": ["tag:m1-web"], "ip": ["tcp:443"]}, g["grants"])
+        self.assertIn({"src": ["autogroup:member"], "dst": ["tag:chat"], "ip": ["tcp:443"]}, g["grants"])
+        # The machine's tag, which every identity here carries, egresses
+        # included, is never a destination.
+        self.assertFalse([x for x in g["grants"] if "tag:m1" in x["dst"]], g["grants"])
         for t in ("tag:m1-web", "tag:chat", "tag:notes", "tag:m1"):
             self.assertIn(t, g["tagOwners"])
 
@@ -1234,6 +1260,26 @@ class Grants(unittest.TestCase):
                     names = [node.module]
                 for n in names:
                     self.assertNotIn(n.split(".")[0], net, f"{os.path.basename(path)} imports {n}")
+                if isinstance(node, ast.Name) and node.id == "__import__" or \
+                        isinstance(node, ast.Attribute) and node.attr == "import_module":
+                    self.fail(f"{os.path.basename(path)} imports dynamically")
+                if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                    for tool in ("curl ", "wget ", "nc ", "ssh "):
+                        self.assertNotIn(tool, node.value, f"{os.path.basename(path)} runs {tool.strip()}")
+
+
+class StateNames(unittest.TestCase):
+    def test_no_two_identities_share_a_state(self):
+        claims.verifies(self, claims.SW_261127_WNGN, "one-node-each")
+        for text, msg in [
+            ("egress: {vpn: {exits: [x]}}\nqubes: {egress-vpn: {tailnet: {identity: tagged, tags: [t], hostname: other}}}",
+             "would be kept as egress-vpn"),
+            ("qubes: {g.chat: {tailnet: {identity: tagged, tags: [t], hostname: gc}}}\n"
+             "services: {chat: {qube: g, tags: [chat], ports: [443], hostname: chat2}}", "would be kept as g.chat"),
+        ]:
+            with self.assertRaises(machine.FileError) as e:
+                mparse(text)
+            self.assertIn(msg, str(e.exception))
 
 
 if __name__ == "__main__":
