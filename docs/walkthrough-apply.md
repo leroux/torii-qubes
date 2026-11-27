@@ -16,11 +16,13 @@ in [`architecture.md`](architecture.md); the rules are in
 > - `torii apply` MUST make those changes and no others, MUST stop at the
 >   first change that fails, and, run again, MUST make only the changes
 >   left.
-> - torii owns its template, the proxy qubes it created, the policy file
->   `/etc/qubes/policy.d/50-torii.policy`, and, on each managed qube, only
->   its netvm, the `torii-client` service and feature, its torii tags and
->   the adoption features it writes once. torii MUST NOT create or delete
->   any other qube, and MUST NOT write any other policy file.
+> - torii owns its template, the proxy qubes it created, its policy file
+>   `/etc/qubes/policy.d/50-torii.policy` (`50-torii-<mesh>.policy` for a
+>   named mesh), the shared deny file `59-torii-deny.policy`, and, on each
+>   managed qube, only its netvm, the `torii-client` service and feature,
+>   its torii tags and the adoption features it writes once. torii MUST NOT
+>   create or delete any other qube, and MUST NOT write any other policy
+>   file.
 > - A qube removed from the file MUST be left with no netvm, never its old
 >   one.
 <!-- /charter:embed -->

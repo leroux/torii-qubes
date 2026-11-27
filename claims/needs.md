@@ -94,11 +94,13 @@ Status: planned
 - `torii apply` MUST make those changes and no others, MUST stop at the
   first change that fails, and, run again, MUST make only the changes
   left.
-- torii owns its template, the proxy qubes it created, the policy file
-  `/etc/qubes/policy.d/50-torii.policy`, and, on each managed qube, only
-  its netvm, the `torii-client` service and feature, its torii tags and
-  the adoption features it writes once. torii MUST NOT create or delete
-  any other qube, and MUST NOT write any other policy file.
+- torii owns its template, the proxy qubes it created, its policy file
+  `/etc/qubes/policy.d/50-torii.policy` (`50-torii-<mesh>.policy` for a
+  named mesh), the shared deny file `59-torii-deny.policy`, and, on each
+  managed qube, only its netvm, the `torii-client` service and feature,
+  its torii tags and the adoption features it writes once. torii MUST NOT
+  create or delete any other qube, and MUST NOT write any other policy
+  file.
 - A qube removed from the file MUST be left with no netvm, never its old
   one.
 
@@ -127,6 +129,9 @@ Changes:
 - 2026-11-27: reworded in the owner's claim form (BCP 14 title and
   bullets, explanatory Why, given/when/then scenarios); the ruling is
   unchanged.
+- 2026-11-27: torii also owns a named mesh's policy file and the shared
+  deny file, as SW-261127-G26T rules and apply writes; the need named
+  `50-torii.policy` alone.
 
 ## STK-261126-4Q75 torii show MUST report each qube's reach from the live machine, and torii check MUST name every difference from the file
 
