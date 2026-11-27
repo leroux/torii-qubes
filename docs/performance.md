@@ -49,8 +49,8 @@ peer 56%): the ceiling is the path, TCP through two userspace network stacks
 and a relay, not one program. Devices on other machines usually get a direct
 WireGuard path instead.
 
-The proxy program's peak memory over all of these was 57 MB. The parts each
-path crosses are in [`architecture.md`](architecture.md).
+The proxy program's peak memory over all of these was 57 MB. The components on
+each path, and their listeners, are in [`architecture.md`](architecture.md).
 
 In isolation (`go test ./internal/engine -run TestStress -stress 5`): 10,000
 connections and 100 transfers of 4 MiB at once on every path pass every

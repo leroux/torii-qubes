@@ -94,7 +94,7 @@ proxy qube:
 | --- | --- | --- |
 | Identities | One daemon per workload, each with its own state, socket and unit | One process, one `tsnet` node per workload |
 | Routed workloads sharing a proxy | Needs a kernel-mode instance per workload, routing by source, and Tailscale's and Qubes' firewall rules mixed in one qube | Connections are intercepted; the source address picks the identity |
-| Blocking the internet | Firewall rules that must stay correct | Structural: forwarding is off, so nothing leaves that the program doesn't relay |
+| Blocking the internet | Firewall rules that must stay correct | Structural: forwarding is off, so nothing leaves that `torii-proxy` doesn't relay |
 | A connection log for `show` | Pieced together from several daemons | One log per workload |
 | Cost | Kernel-speed WireGuard; config generation only | Userspace WireGuard; a program on the security path |
 
@@ -141,10 +141,10 @@ tunnel protocol inside the offline qube.
 ### Routed workloads: interception, with forwarding off
 
 In the proxy qube, kernel forwarding is off, and a boot-time nftables guard
-keeps it off whatever happens to the program: stopped, crashed or
+keeps it off whatever happens to `torii-proxy`: stopped, crashed or
 reloading. nftables hands every TCP connection, all DNS and other UDP from
-the workloads' interfaces to the program. The source address names the
-workload, and the program can trust it because Qubes' anti-spoofing rules on
+the workloads' interfaces to `torii-proxy`. The source address names the
+workload, and `torii-proxy` can trust it because Qubes' anti-spoofing rules on
 `vif*` drop forged sources ([SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-a-routed-qube-is-named-by-its-qubes-source-address-which-qubes-keeps-it-from-forging), resting on the
 observation [QubesAntispoof](../claims/observations.md#qubesantispoof)).
 IPv6 is turned off behind the proxy ([SW-261127-3Q23](../claims/apply.md#sw-261127-3q23-every-proxy-qube-has-ipv6-off-for-itself-and-every-qube-behind-it)). The guard is
@@ -153,7 +153,7 @@ IPv6 is turned off behind the proxy ([SW-261127-3Q23](../claims/apply.md#sw-2611
 ### Allowlists by name, not address
 
 IP rules can't follow names whose addresses change or are shared by a CDN.
-So the program answers the workload's DNS, remembers which names each
+So `torii-proxy` answers the workload's DNS, remembers which names each
 workload resolved, and decides each connection by name: the name asked for
 (SOCKS, HTTP proxy, forward) or resolved ([SW-261127-2R9T](../claims/connections.md#sw-261127-2r9t-a-name-entry-counts-only-for-a-name-the-qube-asked-for-or-resolved-through-the-proxy-to-that-address),
 [SW-261127-M7G9](../claims/connections.md#sw-261127-m7g9-a-name-resolves-for-the-qube-and-for-the-proxy-only-to-addresses-the-qube-may-reach-under-it)), plus the TLS server name when one is sent, read from
@@ -200,7 +200,7 @@ trips it: one dead site doesn't). No third-party probe runs by default; it
 would send a recognisable connection out of every exit node. `probe:` adds
 one for those who want it ([SW-261127-8DFY](../claims/egress.md#sw-261127-8dfy-an-exit-node-is-healthy-while-listed-answering-pings-and-not-failing-every-real-connection-through-it)).
 
-Failing closed holds in two independent places. The program dials straight
+Failing closed holds in two independent places. `torii-proxy` dials straight
 into the egress identity's userspace network stack and never uses
 `tsnet.Server.Dial`, which falls back to the system network for addresses
 without a tailnet route, so without an exit node nothing has a route out

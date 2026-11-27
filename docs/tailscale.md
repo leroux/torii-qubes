@@ -210,7 +210,8 @@ coordination server you'll use. Headscale is tested at the program's level 4
 ## When something can't connect
 
 Each line of `torii log` is one decision with the rule that made it
-([SW-261127-R4CD](../claims/seeing.md#sw-261127-r4cd-every-connection-the-proxy-decides-is-logged-with-its-verdict-and-the-rule-that-made-it)); the reasons below are its words.
+([SW-261127-R4CD](../claims/seeing.md#sw-261127-r4cd-every-connection-the-proxy-decides-is-logged-with-its-verdict-and-the-rule-that-made-it)); the `reason` values below are
+the `Reason` constants in [policy.go](../proxy/internal/policy/policy.go).
 
 | Symptom | Look at |
 |---|---|
