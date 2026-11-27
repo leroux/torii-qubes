@@ -95,7 +95,7 @@ On the qubes in a machine's file, torii owns `netvm`, the `ipv6` feature and
 the `torii-*` tags and features; on its own qubes (the proxy qubes and its
 template), everything. Another state that sets these
 would undo `apply`, and `apply` would undo it. `torii check` lists such
-drift ([SW-261127-SMYC](../claims/seeing.md#sw-261127-smyc-check-names-each-difference-it-looks-for-between-the-live-machine-and-the-file-and-fails-on-one)). Exactly what torii touches is
+drift ([SW-261127-SMYC](../claims/seeing.md#sw-261127-smyc-torii-check-must-name-each-difference-it-looks-for-between-the-live-machine-and-the-file-and-must-fail-on-any)). Exactly what torii touches is
 [SW-261127-G26T](../claims/apply.md#sw-261127-g26t-torii-apply-must-change-only-what-torii-owns-its-template-its-proxy-qubes-its-policy-files-and-named-settings-of-listed-qubes).
 
 ## Not there yet

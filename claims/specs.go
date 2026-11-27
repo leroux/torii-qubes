@@ -137,8 +137,8 @@ var SW_261127_3Q23 = &Spec{ID: "SW-261127-3Q23", Title: "torii plan MUST turn IP
 // SW_261127_3TPX is SW-261127-3TPX: An identity MUST sign in by a link a person approves, or by a one-time key that only the proxy qube keeps
 var SW_261127_3TPX = &Spec{ID: "SW-261127-3TPX", Title: "An identity MUST sign in by a link a person approves, or by a one-time key that only the proxy qube keeps", Status: Active, Kind: "invariant"}
 
-// SW_261127_62WV is SW-261127-62WV: show reports each qube's reach from the live machine, never from the file
-var SW_261127_62WV = &Spec{ID: "SW-261127-62WV", Title: "show reports each qube's reach from the live machine, never from the file", Status: Active, Kind: "invariant"}
+// SW_261127_62WV is SW-261127-62WV: torii show MUST report each qube's reach from the live machine, never from the file
+var SW_261127_62WV = &Spec{ID: "SW-261127-62WV", Title: "torii show MUST report each qube's reach from the live machine, never from the file", Status: Active, Kind: "invariant"}
 
 // SW_261127_63CS is SW-261127-63CS: torii apply MUST make plan's steps in order, stop at the first failure, and continue on the next run
 var SW_261127_63CS = &Spec{ID: "SW-261127-63CS", Title: "torii apply MUST make plan's steps in order, stop at the first failure, and continue on the next run", Status: Active, Kind: "invariant"}
@@ -164,8 +164,8 @@ var SW_261127_9BNW = &Spec{ID: "SW-261127-9BNW", Title: "torii MUST read the mac
 // SW_261127_B6Z6 is SW-261127-B6Z6: The proxy qube MUST hand every routed qube's traffic to the program and MUST NOT forward any of it
 var SW_261127_B6Z6 = &Spec{ID: "SW-261127-B6Z6", Title: "The proxy qube MUST hand every routed qube's traffic to the program and MUST NOT forward any of it", Status: Active, Kind: "invariant"}
 
-// SW_261127_B8BM is SW-261127-B8BM: The status service is read-only: it reports, and changes nothing in the proxy
-var SW_261127_B8BM = &Spec{ID: "SW-261127-B8BM", Title: "The status service is read-only: it reports, and changes nothing in the proxy", Status: Active, Kind: "invariant"}
+// SW_261127_B8BM is SW-261127-B8BM: The status service MUST be read-only: it MUST report and MUST NOT change anything in the proxy
+var SW_261127_B8BM = &Spec{ID: "SW-261127-B8BM", Title: "The status service MUST be read-only: it MUST report and MUST NOT change anything in the proxy", Status: Active, Kind: "invariant"}
 
 // SW_261127_BHHX is SW-261127-BHHX: The proxy MUST identify a routed qube by its Qubes source address, which Qubes keeps it from forging
 var SW_261127_BHHX = &Spec{ID: "SW-261127-BHHX", Title: "The proxy MUST identify a routed qube by its Qubes source address, which Qubes keeps it from forging", Status: Active, Kind: "invariant"}
@@ -221,11 +221,11 @@ var SW_261127_QMVP = &Spec{ID: "SW-261127-QMVP", Title: "torii apply MUST NOT go
 // SW_261127_QQYS is SW-261127-QQYS: The proxy MUST decide UDP once per flow and MUST cap each qube's open flows
 var SW_261127_QQYS = &Spec{ID: "SW-261127-QQYS", Title: "The proxy MUST decide UDP once per flow and MUST cap each qube's open flows", Status: Active, Kind: "bound"}
 
-// SW_261127_R4CD is SW-261127-R4CD: Every connection the proxy decides is logged with its verdict and the rule that made it
-var SW_261127_R4CD = &Spec{ID: "SW-261127-R4CD", Title: "Every connection the proxy decides is logged with its verdict and the rule that made it", Status: Active, Kind: "invariant"}
+// SW_261127_R4CD is SW-261127-R4CD: The proxy MUST log every connection it decides, with the verdict and the rule that made it
+var SW_261127_R4CD = &Spec{ID: "SW-261127-R4CD", Title: "The proxy MUST log every connection it decides, with the verdict and the rule that made it", Status: Active, Kind: "invariant"}
 
-// SW_261127_SMYC is SW-261127-SMYC: check names each difference it looks for between the live machine and the file, and fails on one
-var SW_261127_SMYC = &Spec{ID: "SW-261127-SMYC", Title: "check names each difference it looks for between the live machine and the file, and fails on one", Status: Active, Kind: "invariant"}
+// SW_261127_SMYC is SW-261127-SMYC: torii check MUST name each difference it looks for between the live machine and the file, and MUST fail on any
+var SW_261127_SMYC = &Spec{ID: "SW-261127-SMYC", Title: "torii check MUST name each difference it looks for between the live machine and the file, and MUST fail on any", Status: Active, Kind: "invariant"}
 
 // SW_261127_T7GG is SW-261127-T7GG: The proxy MUST relay an inbound connection to a qube only on a port its entry or a service lists
 var SW_261127_T7GG = &Spec{ID: "SW-261127-T7GG", Title: "The proxy MUST relay an inbound connection to a qube only on a port its entry or a service lists", Status: Active, Kind: "invariant"}
@@ -245,8 +245,8 @@ var SW_261127_WSWG = &Spec{ID: "SW-261127-WSWG", Title: "An egress's identity MU
 // SW_261127_XGDY is SW-261127-XGDY: A proxy MUST take its config whole or not at all, and a config that fails a check MUST NOT replace the running one
 var SW_261127_XGDY = &Spec{ID: "SW-261127-XGDY", Title: "A proxy MUST take its config whole or not at all, and a config that fails a check MUST NOT replace the running one", Status: Active, Kind: "invariant"}
 
-// SW_261127_Z5ST is SW-261127-Z5ST: explain gives the decision the proxy would make, without sending anything
-var SW_261127_Z5ST = &Spec{ID: "SW-261127-Z5ST", Title: "explain gives the decision the proxy would make, without sending anything", Status: Active, Kind: "invariant"}
+// SW_261127_Z5ST is SW-261127-Z5ST: explain MUST give the decision the proxy would make now, without sending anything
+var SW_261127_Z5ST = &Spec{ID: "SW-261127-Z5ST", Title: "explain MUST give the decision the proxy would make now, without sending anything", Status: Active, Kind: "invariant"}
 
 // QubesAntispoof is an observation of qubes: A Qubes netvm drops packets arriving on a qube's `vif` interface whose source address is not that qube's own; a qube cannot send as another.
 var QubesAntispoof = &Observation{Name: "QubesAntispoof", Subject: "qubes", Status: "unsure"}

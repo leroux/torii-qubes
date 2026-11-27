@@ -199,7 +199,7 @@ The authorization rules are pure functions in `internal/policy`
 [`ZoneOf`](../proxy/internal/policy/zone.go#L44)), unit-tested without I/O.
 Each egress has a [`Selector`](../proxy/internal/egress/egress.go#L92). Every
 decision is an event in [`Log.Emit`](../proxy/internal/events/events.go#L61)
-([SW-261127-R4CD](../claims/seeing.md#sw-261127-r4cd-every-connection-the-proxy-decides-is-logged-with-its-verdict-and-the-rule-that-made-it)), served with status and explain by
+([SW-261127-R4CD](../claims/seeing.md#sw-261127-r4cd-the-proxy-must-log-every-connection-it-decides-with-the-verdict-and-the-rule-that-made-it)), served with status and explain by
 [`admin.Handler`](../proxy/internal/admin/admin.go#L23).
 
 | Package | Responsibility | Area |
@@ -224,7 +224,7 @@ decision is an event in [`Log.Emit`](../proxy/internal/events/events.go#L61)
   status-service`, [`statusService`](../proxy/cmd/torii-proxy/main.go),
   which issues two GETs on the admin socket and prints one JSON object;
   it reads no input and has no mutating endpoint behind it
-  ([SW-261127-B8BM](../claims/seeing.md#sw-261127-b8bm-the-status-service-is-read-only-it-reports-and-changes-nothing-in-the-proxy)).
+  ([SW-261127-B8BM](../claims/seeing.md#sw-261127-b8bm-the-status-service-must-be-read-only-it-must-report-and-must-not-change-anything-in-the-proxy)).
 
 ## Workloads
 
@@ -310,6 +310,6 @@ that grants `qubes.ConnectTCP` to or from a managed qube.
 | workload → proxy, `vif*` | IPv4 packets | Qubes anti-spoofing on the source address | [SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-the-proxy-must-identify-a-routed-qube-by-its-qubes-source-address-which-qubes-keeps-it-from-forging) |
 | proxy → workload | `qubes.ConnectTCP` to a declared port | dom0 policy, per port | [SW-261127-T7GG](../claims/connections.md#sw-261127-t7gg-the-proxy-must-relay-an-inbound-connection-to-a-qube-only-on-a-port-its-entry-or-a-service-lists) |
 | dom0 → proxy | config as features | dom0-only write path; SHA-256 over the parts | [SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-must-take-its-config-whole-or-not-at-all-and-a-config-that-fails-a-check-must-not-replace-the-running-one) |
-| proxy → dom0 | status and log JSON | qrexec, as root, read-only service | [SW-261127-B8BM](../claims/seeing.md#sw-261127-b8bm-the-status-service-is-read-only-it-reports-and-changes-nothing-in-the-proxy) |
+| proxy → dom0 | status and log JSON | qrexec, as root, read-only service | [SW-261127-B8BM](../claims/seeing.md#sw-261127-b8bm-the-status-service-must-be-read-only-it-must-report-and-must-not-change-anything-in-the-proxy) |
 | proxy → netvm | connections the program opens | kernel forwarding off, guard at −400 | [SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-the-proxy-qube-must-hand-every-routed-qubes-traffic-to-the-program-and-must-not-forward-any-of-it) |
 | proxy ↔ tailnet | each identity's WireGuard traffic | node keys; the grants decide reach | [SW-261127-DH6R](../claims/identity.md#sw-261127-dh6r-torii-must-only-propose-grants-for-the-tailnet-and-must-not-change-the-tailnets-policy) |

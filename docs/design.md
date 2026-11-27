@@ -233,7 +233,7 @@ under 3 KB, so the JSON is compressed and split, with a hash to detect
 partial writes. A half-written or invalid config never replaces the running
 one ([SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-must-take-its-config-whole-or-not-at-all-and-a-config-that-fails-a-check-must-not-replace-the-running-one)). Status and the decision log come back to dom0
 through one qrexec service, `torii.Status`, which changes nothing
-([SW-261127-B8BM](../claims/seeing.md#sw-261127-b8bm-the-status-service-is-read-only-it-reports-and-changes-nothing-in-the-proxy)).
+([SW-261127-B8BM](../claims/seeing.md#sw-261127-b8bm-the-status-service-must-be-read-only-it-must-report-and-must-not-change-anything-in-the-proxy)).
 
 ### Packages travel inside the dom0 RPM
 

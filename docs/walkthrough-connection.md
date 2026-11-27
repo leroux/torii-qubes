@@ -416,7 +416,7 @@ rested on, and the dial error if an allowed connection failed. `fill`
 copies the decision into it and
 [`Log.Emit`](../proxy/internal/events/events.go#L61) keeps a per-workload
 ring and, with a log directory, a JSONL file per workload:
-[SW-261127-R4CD](../claims/seeing.md#sw-261127-r4cd-every-connection-the-proxy-decides-is-logged-with-its-verdict-and-the-rule-that-made-it). dom0's `torii log QUBE` reads the ring over
+[SW-261127-R4CD](../claims/seeing.md#sw-261127-r4cd-the-proxy-must-log-every-connection-it-decides-with-the-verdict-and-the-rule-that-made-it). dom0's `torii log QUBE` reads the ring over
 `torii.Status`.
 
 `torii-proxy explain -workload Q -dest host:port [-sni NAME] [-direction
@@ -425,5 +425,5 @@ in]`, run in the proxy qube against `/run/torii/admin.sock`, evaluates
 the workload's link would use, the egress's health and the proxy's own
 addresses, and dials nothing. It does not resolve names, so a name can
 explain as allowed whose every address the dial would refuse:
-[SW-261127-Z5ST](../claims/seeing.md#sw-261127-z5st-explain-gives-the-decision-the-proxy-would-make-without-sending-anything). dom0 has no command for it; `torii.Status` carries
+[SW-261127-Z5ST](../claims/seeing.md#sw-261127-z5st-explain-must-give-the-decision-the-proxy-would-make-now-without-sending-anything). dom0 has no command for it; `torii.Status` carries
 status and the log only.

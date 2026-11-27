@@ -140,8 +140,8 @@ SW_261127_3Q23 = Spec("SW-261127-3Q23", "torii plan MUST turn IPv6 off on every 
 #: SW_261127_3TPX is SW-261127-3TPX: An identity MUST sign in by a link a person approves, or by a one-time key that only the proxy qube keeps
 SW_261127_3TPX = Spec("SW-261127-3TPX", "An identity MUST sign in by a link a person approves, or by a one-time key that only the proxy qube keeps", "active", "invariant")
 
-#: SW_261127_62WV is SW-261127-62WV: show reports each qube's reach from the live machine, never from the file
-SW_261127_62WV = Spec("SW-261127-62WV", "show reports each qube's reach from the live machine, never from the file", "active", "invariant")
+#: SW_261127_62WV is SW-261127-62WV: torii show MUST report each qube's reach from the live machine, never from the file
+SW_261127_62WV = Spec("SW-261127-62WV", "torii show MUST report each qube's reach from the live machine, never from the file", "active", "invariant")
 
 #: SW_261127_63CS is SW-261127-63CS: torii apply MUST make plan's steps in order, stop at the first failure, and continue on the next run
 SW_261127_63CS = Spec("SW-261127-63CS", "torii apply MUST make plan's steps in order, stop at the first failure, and continue on the next run", "active", "invariant")
@@ -167,8 +167,8 @@ SW_261127_9BNW = Spec("SW-261127-9BNW", "torii MUST read the machine file whole,
 #: SW_261127_B6Z6 is SW-261127-B6Z6: The proxy qube MUST hand every routed qube's traffic to the program and MUST NOT forward any of it
 SW_261127_B6Z6 = Spec("SW-261127-B6Z6", "The proxy qube MUST hand every routed qube's traffic to the program and MUST NOT forward any of it", "active", "invariant")
 
-#: SW_261127_B8BM is SW-261127-B8BM: The status service is read-only: it reports, and changes nothing in the proxy
-SW_261127_B8BM = Spec("SW-261127-B8BM", "The status service is read-only: it reports, and changes nothing in the proxy", "active", "invariant")
+#: SW_261127_B8BM is SW-261127-B8BM: The status service MUST be read-only: it MUST report and MUST NOT change anything in the proxy
+SW_261127_B8BM = Spec("SW-261127-B8BM", "The status service MUST be read-only: it MUST report and MUST NOT change anything in the proxy", "active", "invariant")
 
 #: SW_261127_BHHX is SW-261127-BHHX: The proxy MUST identify a routed qube by its Qubes source address, which Qubes keeps it from forging
 SW_261127_BHHX = Spec("SW-261127-BHHX", "The proxy MUST identify a routed qube by its Qubes source address, which Qubes keeps it from forging", "active", "invariant")
@@ -224,11 +224,11 @@ SW_261127_QMVP = Spec("SW-261127-QMVP", "torii apply MUST NOT go past a proxy's 
 #: SW_261127_QQYS is SW-261127-QQYS: The proxy MUST decide UDP once per flow and MUST cap each qube's open flows
 SW_261127_QQYS = Spec("SW-261127-QQYS", "The proxy MUST decide UDP once per flow and MUST cap each qube's open flows", "active", "bound")
 
-#: SW_261127_R4CD is SW-261127-R4CD: Every connection the proxy decides is logged with its verdict and the rule that made it
-SW_261127_R4CD = Spec("SW-261127-R4CD", "Every connection the proxy decides is logged with its verdict and the rule that made it", "active", "invariant")
+#: SW_261127_R4CD is SW-261127-R4CD: The proxy MUST log every connection it decides, with the verdict and the rule that made it
+SW_261127_R4CD = Spec("SW-261127-R4CD", "The proxy MUST log every connection it decides, with the verdict and the rule that made it", "active", "invariant")
 
-#: SW_261127_SMYC is SW-261127-SMYC: check names each difference it looks for between the live machine and the file, and fails on one
-SW_261127_SMYC = Spec("SW-261127-SMYC", "check names each difference it looks for between the live machine and the file, and fails on one", "active", "invariant")
+#: SW_261127_SMYC is SW-261127-SMYC: torii check MUST name each difference it looks for between the live machine and the file, and MUST fail on any
+SW_261127_SMYC = Spec("SW-261127-SMYC", "torii check MUST name each difference it looks for between the live machine and the file, and MUST fail on any", "active", "invariant")
 
 #: SW_261127_T7GG is SW-261127-T7GG: The proxy MUST relay an inbound connection to a qube only on a port its entry or a service lists
 SW_261127_T7GG = Spec("SW-261127-T7GG", "The proxy MUST relay an inbound connection to a qube only on a port its entry or a service lists", "active", "invariant")
@@ -248,8 +248,8 @@ SW_261127_WSWG = Spec("SW-261127-WSWG", "An egress's identity MUST carry only in
 #: SW_261127_XGDY is SW-261127-XGDY: A proxy MUST take its config whole or not at all, and a config that fails a check MUST NOT replace the running one
 SW_261127_XGDY = Spec("SW-261127-XGDY", "A proxy MUST take its config whole or not at all, and a config that fails a check MUST NOT replace the running one", "active", "invariant")
 
-#: SW_261127_Z5ST is SW-261127-Z5ST: explain gives the decision the proxy would make, without sending anything
-SW_261127_Z5ST = Spec("SW-261127-Z5ST", "explain gives the decision the proxy would make, without sending anything", "active", "invariant")
+#: SW_261127_Z5ST is SW-261127-Z5ST: explain MUST give the decision the proxy would make now, without sending anything
+SW_261127_Z5ST = Spec("SW-261127-Z5ST", "explain MUST give the decision the proxy would make now, without sending anything", "active", "invariant")
 
 #: QubesAntispoof is an observation of qubes: A Qubes netvm drops packets arriving on a qube's `vif` interface whose source address is not that qube's own; a qube cannot send as another.
 QubesAntispoof = Observation("QubesAntispoof", "qubes", "unsure")

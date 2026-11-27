@@ -310,19 +310,24 @@ policy file, hand-written ones included, with qrexec's first-match
 semantics:
 
 <!-- charter:embed SW-261127-62WV -->
-> **[SW-261127-62WV](../claims/seeing.md#sw-261127-62wv-show-reports-each-qubes-reach-from-the-live-machine-never-from-the-file) show reports each qube's reach from the live machine, never from the file**
+> **[SW-261127-62WV](../claims/seeing.md#sw-261127-62wv-torii-show-must-report-each-qubes-reach-from-the-live-machine-never-from-the-file) torii show MUST report each qube's reach from the live machine, never from the file**
 >
-> show reads each qube's netvm and tags, every qrexec policy file in dom0,
-> hand-written ones included, each proxy's config as its features hold it,
-> and each proxy's status; the machine file only chooses which qubes are
-> listed. A call is read as allowed as qrexec reads policy, for exact qube
-> names and `@anyvm`: files in name order; the first rule for a source,
-> the target asked for and an argument deciding; a rule for every
-> service, `*`, counting for each; a redirect reaching only its new
-> target; `ask` shown as reach on a prompt; an allow for every argument
-> shown as `*`. Other tokens (`@tag:`, `@type:`, `@dispvm`) and included
-> files are not evaluated; check names the rules that use them. A qube
-> behind no proxy is shown as reaching what its netvm allows.
+> - `torii show` MUST read each qube's netvm and tags, every qrexec policy
+>   file in dom0 (hand-written ones included), each proxy's config as its
+>   features hold it, and each proxy's status. The machine file MUST only
+>   choose which qubes are listed.
+> - show MUST read a call as allowed the way qrexec reads policy, for exact
+>   qube names and `@anyvm`:
+>   - files in name order;
+>   - the first rule for a source, the target asked for and an argument
+>     decides;
+>   - a rule for every service, `*`, counts for each service;
+>   - a redirect reaches only its new target;
+>   - `ask` is shown as reach on a prompt;
+>   - an allow for every argument is shown as `*`.
+> - Other tokens (`@tag:`, `@type:`, `@dispvm`) and included files are not
+>   evaluated; `torii check` names the rules that use them.
+> - A qube behind no proxy MUST be shown as reaching what its netvm allows.
 <!-- /charter:embed -->
 
 The file is read only to choose which qubes to list, so `show` reports
@@ -336,21 +341,28 @@ step reported as `drift:` and every `PlanError` as `file:`, plus checks a
 plan cannot express:
 
 <!-- charter:embed SW-261127-SMYC -->
-> **[SW-261127-SMYC](../claims/seeing.md#sw-261127-smyc-check-names-each-difference-it-looks-for-between-the-live-machine-and-the-file-and-fails-on-one) check names each difference it looks for between the live machine and the file, and fails on one**
+> **[SW-261127-SMYC](../claims/seeing.md#sw-261127-smyc-torii-check-must-name-each-difference-it-looks-for-between-the-live-machine-and-the-file-and-must-fail-on-any) torii check MUST name each difference it looks for between the live machine and the file, and MUST fail on any**
 >
-> check names, one line each: every step plan would make (drift), and
-> every reason plan refuses the file; a proxy whose config features cannot
-> be read, that is not running, that gives no status, or that runs another
-> version than its features hold; an identity not running, with its
-> sign-in link, or whose tags differ from the file's; an egress with no
-> healthy exit node; a qube attached to a proxy but not listed that was
-> refused; a disposable that can leave by its template's netvm; and, in
-> any policy file but this mesh's own and the shared deny file, a line
-> allowing, or asking for, `torii.Connect`, `torii.Status`, every service,
-> or `qubes.ConnectTCP` from or to a listed qube, a proxy or a token,
-> marked when it uses a token check does not evaluate, and every
-> `!include`. It exits 0 only when it names nothing. It does not read the
-> qubes' firewall rules or the rules inside a proxy qube.
+> `torii check` MUST name, one line each:
+>
+> - every step plan would make (drift), and every reason plan refuses the
+>   file;
+> - a proxy whose config features cannot be read, that is not running,
+>   that gives no status, or that runs another version than its features
+>   hold;
+> - an identity that is not running, with its sign-in link, or whose tags
+>   differ from the file's;
+> - an egress with no healthy exit node;
+> - a qube attached to a proxy but not listed that was refused;
+> - a disposable that can leave by its template's netvm;
+> - in any policy file other than this mesh's own and the shared deny
+>   file: a line allowing, or asking for, `torii.Connect`, `torii.Status`,
+>   every service, or `qubes.ConnectTCP` from or to a listed qube, a proxy
+>   or a token, marked when it uses a token check does not evaluate; and
+>   every `!include`.
+>
+> check MUST exit 0 only when it names nothing. It does not read the qubes'
+> firewall rules or the rules inside a proxy qube.
 <!-- /charter:embed -->
 
 The policy check is the one a security reviewer will care about: any
@@ -360,5 +372,5 @@ hand-written line cannot widen reach invisibly. It does not read the
 qubes' firewall rules or the nftables state inside a proxy qube.
 
 `torii log QUBE` prints the proxy's decision events for that workload
-([SW-261127-R4CD](../claims/seeing.md#sw-261127-r4cd-every-connection-the-proxy-decides-is-logged-with-its-verdict-and-the-rule-that-made-it)), over the same read-only service
-([SW-261127-B8BM](../claims/seeing.md#sw-261127-b8bm-the-status-service-is-read-only-it-reports-and-changes-nothing-in-the-proxy)).
+([SW-261127-R4CD](../claims/seeing.md#sw-261127-r4cd-the-proxy-must-log-every-connection-it-decides-with-the-verdict-and-the-rule-that-made-it)), over the same read-only service
+([SW-261127-B8BM](../claims/seeing.md#sw-261127-b8bm-the-status-service-must-be-read-only-it-must-report-and-must-not-change-anything-in-the-proxy)).

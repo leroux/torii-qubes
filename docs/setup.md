@@ -203,8 +203,8 @@ torii log wiki  # one line per connection: who, allowed or refused, why
 torii plan      # No changes: the machine matches /home/user/torii.yaml
 ```
 
-What `check` looks for is [SW-261127-SMYC](../claims/seeing.md#sw-261127-smyc-check-names-each-difference-it-looks-for-between-the-live-machine-and-the-file-and-fails-on-one); what the log holds,
-[SW-261127-R4CD](../claims/seeing.md#sw-261127-r4cd-every-connection-the-proxy-decides-is-logged-with-its-verdict-and-the-rule-that-made-it).
+What `check` looks for is [SW-261127-SMYC](../claims/seeing.md#sw-261127-smyc-torii-check-must-name-each-difference-it-looks-for-between-the-live-machine-and-the-file-and-must-fail-on-any); what the log holds,
+[SW-261127-R4CD](../claims/seeing.md#sw-261127-r4cd-the-proxy-must-log-every-connection-it-decides-with-the-verdict-and-the-rule-that-made-it).
 
 If the laptop can't connect:
 

@@ -279,5 +279,5 @@ The selector emits egress events (`exit-switch`, `exit-unhealthy`,
 `torii log --egress home` prints them. `torii show` lists each egress's
 active node and every node's state with the reason it is down. `torii
 check` reports an egress with no healthy node, and one running on a
-fallback with how long ([SW-261127-SMYC](../claims/seeing.md#sw-261127-smyc-check-names-each-difference-it-looks-for-between-the-live-machine-and-the-file-and-fails-on-one)). Setting up the exit nodes
+fallback with how long ([SW-261127-SMYC](../claims/seeing.md#sw-261127-smyc-torii-check-must-name-each-difference-it-looks-for-between-the-live-machine-and-the-file-and-must-fail-on-any)). Setting up the exit nodes
 and the grant: [`tailscale.md`](tailscale.md#exit-nodes).
