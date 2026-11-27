@@ -4,6 +4,8 @@
 name = "torii"
 env-patterns = ["^TORII_[A-Z0-9_]+$"]
 ignore = ["build", "tools", "dev", "contrib", "docs"]
+# Probes check observations against the real systems; none is written yet.
+probes = ["proxy/internal/probe"]
 
 [go]
 module = "github.com/leroux/torii-qubes/claims"

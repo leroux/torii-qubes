@@ -134,11 +134,29 @@ SW_261127_2XS6 = Spec("SW-261127-2XS6", "Allow entries match by exact name or su
 #: SW_261127_6S2F is SW-261127-6S2F: Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read
 SW_261127_6S2F = Spec("SW-261127-6S2F", "Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read", "active", "invariant")
 
+#: SW_261127_7C3Y is SW-261127-7C3Y: A qrexec caller is the qube dom0 names, never one the caller states
+SW_261127_7C3Y = Spec("SW-261127-7C3Y", "A qrexec caller is the qube dom0 names, never one the caller states", "planned", "invariant")
+
+#: SW_261127_B6Z6 is SW-261127-B6Z6: A routed qube's traffic reaches the program and nothing else: interception, with forwarding off
+SW_261127_B6Z6 = Spec("SW-261127-B6Z6", "A routed qube's traffic reaches the program and nothing else: interception, with forwarding off", "planned", "invariant")
+
+#: SW_261127_BHHX is SW-261127-BHHX: A routed qube is named by its Qubes source address, which Qubes keeps it from forging
+SW_261127_BHHX = Spec("SW-261127-BHHX", "A routed qube is named by its Qubes source address, which Qubes keeps it from forging", "planned", "invariant")
+
 #: SW_261127_H3W9 is SW-261127-H3W9: The HTTP proxy carries one host per connection
 SW_261127_H3W9 = Spec("SW-261127-H3W9", "The HTTP proxy carries one host per connection", "active", "invariant")
 
+#: SW_261127_JWK2 is SW-261127-JWK2: A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does
+SW_261127_JWK2 = Spec("SW-261127-JWK2", "A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does", "planned", "invariant")
+
+#: SW_261127_M36P is SW-261127-M36P: Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed
+SW_261127_M36P = Spec("SW-261127-M36P", "Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed", "planned", "invariant")
+
 #: SW_261127_M7G9 is SW-261127-M7G9: A name resolves, for the qube and for the proxy, only to addresses the qube may reach under it
 SW_261127_M7G9 = Spec("SW-261127-M7G9", "A name resolves, for the qube and for the proxy, only to addresses the qube may reach under it", "active", "invariant")
+
+#: SW_261127_N3N8 is SW-261127-N3N8: In a qube with no netvm, the client listens on loopback only, one qrexec call per connection
+SW_261127_N3N8 = Spec("SW-261127-N3N8", "In a qube with no netvm, the client listens on loopback only, one qrexec call per connection", "planned", "invariant")
 
 #: SW_261127_PXX9 is SW-261127-PXX9: A connection is decided against the entry of the qube it came from, by the way it arrived
 SW_261127_PXX9 = Spec("SW-261127-PXX9", "A connection is decided against the entry of the qube it came from, by the way it arrived", "active", "invariant")
@@ -151,3 +169,6 @@ SW_261127_T7GG = Spec("SW-261127-T7GG", "An inbound connection reaches a qube on
 
 #: SW_261127_WNYB is SW-261127-WNYB: Every address is in exactly one zone, and a forbidden address is never dialled
 SW_261127_WNYB = Spec("SW-261127-WNYB", "Every address is in exactly one zone, and a forbidden address is never dialled", "active", "invariant")
+
+#: QubesAntispoof is an observation of qubes: A Qubes netvm drops packets arriving on a qube's `vif` interface whose source address is not that qube's own; a qube cannot send as another.
+QubesAntispoof = Observation("QubesAntispoof", "qubes", "unsure")
