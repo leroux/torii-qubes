@@ -144,7 +144,6 @@ func TestDecideNameAndInbound(t *testing.T) {
 // An egress identity is internet-only: a workload without an identity of
 // its own never reaches the tailnet through its egress, whatever it dials.
 func TestEgressNeverCarriesTheTailnet(t *testing.T) {
-	claims.Verifies(t, claims.SW_261127_PXX9, "unlisted-no-tailnet")
 	c := testConfig(t)
 	for _, wl := range []string{"shop", "unlisted:10.137.0.99"} {
 		for _, a := range []string{"100.64.0.5", "100.100.100.100", "fd7a:115c:a1e0::1"} {
@@ -200,5 +199,33 @@ func TestMatch(t *testing.T) {
 		if got := Match([]string{c.allow}, c.host); got != c.want {
 			t.Errorf("Match(%s, %s) = %v", c.allow, c.host, got)
 		}
+	}
+}
+
+// An unlisted source whose proxy allows it the whole internet still gets
+// no LAN, no tailnet and no identity: Lookup gives it the internet alone.
+func TestUnlistedGetsNoTailnet(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_PXX9, "unlisted-no-tailnet")
+	c, err := config.Parse([]byte(`{"proxy_qube":"p","state_dir":"/s","workloads":{},"unlisted":{"internet":"full"}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	u := "unlisted:10.137.0.99"
+	w, ok := c.Lookup(u)
+	if !ok || w.Identity != nil || w.TailnetOutbound || len(w.TailnetAllow) != 0 {
+		t.Fatalf("unlisted workload: %+v", w)
+	}
+	ip := netip.MustParseAddr
+	if d := DecideOutbound(c, Outbound{Workload: u, Entry: EntryIntercept, Addr: ip("93.184.216.34"), Port: 443}); d.Verdict != Allow {
+		t.Errorf("internet: %+v", d)
+	}
+	if d := DecideOutbound(c, Outbound{Workload: u, Entry: EntryIntercept, Addr: ip("100.64.0.5"), Port: 443, Tailnet: true}); d.Reason != ReasonNoTailnet {
+		t.Errorf("tailnet: %+v", d)
+	}
+	if d := DecideOutbound(c, Outbound{Workload: u, Entry: EntryIntercept, Addr: ip("192.168.1.1"), Port: 443}); d.Reason != ReasonLANNone {
+		t.Errorf("LAN: %+v", d)
+	}
+	if d := DecideName(c, u, "peer.tail.ts.net", true); d.Reason != ReasonNoTailnet {
+		t.Errorf("tailnet name: %+v", d)
 	}
 }

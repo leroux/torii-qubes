@@ -571,6 +571,8 @@ func sortedKeys[V any](m map[string]V) []string {
 
 // NormalizePattern lowercases an allowlist entry and checks its form:
 // "example.com" or "*.example.com".
+//
+//charter:realizes SW-261127-2XS6
 func NormalizePattern(p string) (string, error) {
 	p = strings.TrimSuffix(strings.ToLower(strings.TrimSpace(p)), ".")
 	rest := strings.TrimPrefix(p, "*.")

@@ -76,6 +76,13 @@ type Deps struct {
 	SelfAddrs func() []netip.Addr
 }
 
+// nameMemory is how long a name a workload resolved through the proxy
+// still counts for the addresses it got: every answer is kept this long,
+// whatever its TTL, so a connection opened soon after still finds it.
+//
+//charter:realizes SW-261127-2R9T
+const nameMemory = 5 * time.Minute
+
 // Engine is a running proxy.
 type Engine struct {
 	d     Deps
@@ -139,7 +146,7 @@ func New(d Deps) *Engine {
 	}
 	return &Engine{
 		d:        d,
-		cache:    &dnsx.Cache{Clock: d.Clock, MinTTL: 5 * time.Minute},
+		cache:    &dnsx.Cache{Clock: d.Clock, MinTTL: nameMemory},
 		active:   map[string]int{},
 		lnErrs:   map[string]string{},
 		local:    map[string]string{},
@@ -266,7 +273,10 @@ func ExitResolver(id tailnet.Identity, server string) Resolver {
 func (e *Engine) Log() *events.Log { return e.d.Log }
 
 // Start starts every identity, its inbound listeners, and each egress's
-// exit-node selection. It does not wait for sign-in.
+// exit-node selection. It does not wait for sign-in. An identity listens
+// only on the inbound ports its workload declares.
+//
+//charter:realizes SW-261127-T7GG
 func (e *Engine) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	e.cancel = cancel

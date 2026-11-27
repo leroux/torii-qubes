@@ -341,7 +341,6 @@ func freePort(t *testing.T) int {
 }
 
 func TestProxyQubeOwnAddressesForbidden(t *testing.T) {
-	claims.Verifies(t, claims.SW_261127_WNYB, "proxy-self-forbidden")
 	w, ui := udpWorld(t)
 	w.eng.d.SelfAddrs = func() []netip.Addr { return []netip.Addr{netip.MustParseAddr("192.168.100.2")} }
 	w.start(t)
@@ -381,6 +380,40 @@ func TestProxyQubeOwnAddressesForbidden(t *testing.T) {
 	if len(addrs) != 0 {
 		t.Errorf("dns answered %v", addrs)
 	}
+}
+
+// The proxy qube's own address is refused on the direct path even where
+// the zone allows everything: here it is a public address and the qube
+// may reach the whole internet.
+func TestProxyQubeOwnPublicAddressForbidden(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_WNYB, "proxy-self-forbidden")
+	w, ui := udpWorld(t)
+	w.eng.d.SelfAddrs = func() []netip.Addr { return []netip.Addr{netip.MustParseAddr("93.184.216.99")} }
+	w.start(t)
+	w.internet.serve(t, "93.184.216.99:41641", "proxy-own-socket")
+	ui.udp["93.184.216.99:41641"] = udpEcho(t, "proxy-own-socket")
+	w.internet.serve(t, "93.184.216.34:41641", "public")
+	w.cfg.Workloads["job"].Internet = config.InternetFull
+	w.cfg.Workloads["job"].InternetAllow = nil
+	if _, err := w.socksDial("job", "93.184.216.99:41641"); err == nil {
+		t.Error("reached the proxy's own address over SOCKS")
+	}
+	c, err := w.socksDial("job", "93.184.216.34:41641") // its neighbour is allowed
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectGreeting(t, c, "public")
+	c.Close()
+	a, b := net.Pipe()
+	go w.eng.HandleIntercepted(context.Background(), b, netip.MustParseAddrPort("10.137.0.21:1"), netip.MustParseAddrPort("93.184.216.99:41641"))
+	expectClosed(t, a)
+	r := newCapture()
+	w.udp("10.137.0.21:2", "93.184.216.99:41641", "x", r)
+	r.expectNone(t)
+	if n := w.internet.dials("93.184.216.99:41641") + w.internet.dials("udp:93.184.216.99:41641"); n != 0 {
+		t.Errorf("dialled the proxy's own address %d times", n)
+	}
+	waitEvent(t, w.eng.Log(), func(e events.Event) bool { return e.Reason == policy.ReasonForbiddenAddress })
 }
 
 func TestUDPFlowLimit(t *testing.T) {

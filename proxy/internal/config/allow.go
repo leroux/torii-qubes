@@ -18,7 +18,10 @@ type AllowEntry struct {
 }
 
 // ParseAllow reads "host", "host:port", "*.host", "1.2.3.4", "10.0.0.0/8:5432",
-// "[fd00::1]:80" or "fd00::/8". Errors name the entry.
+// "[fd00::1]:80" or "fd00::/8". Errors name the entry. An entry without a
+// protocol is TCP.
+//
+//charter:realizes SW-261127-2XS6
 func ParseAllow(s string) (AllowEntry, error) {
 	s = strings.TrimSpace(strings.ToLower(s))
 	var e AllowEntry

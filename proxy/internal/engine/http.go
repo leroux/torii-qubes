@@ -46,6 +46,10 @@ func httpError(c net.Conn, code int, why string) {
 		code, http.StatusText(code), len(body), body)
 }
 
+// httpConnect carries a CONNECT tunnel, decided by name as any
+// connection, its TLS server name checked before anything is relayed.
+//
+//charter:realizes SW-261127-H3W9
 func (e *Engine) httpConnect(ctx context.Context, workload string, c net.Conn, br *bufio.Reader, req *http.Request) {
 	host, port, err := config.SplitHostPort(req.Host)
 	if err != nil || host == "" || port == 0 {

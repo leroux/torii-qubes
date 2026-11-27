@@ -17,12 +17,13 @@ Serves: STK-261126-KZK8, STK-261126-SM33
 
 An address is tailnet if it is in 100.64.0.0/10 or fd7a:115c:a1e0::/48;
 otherwise forbidden if it is loopback, unspecified, link-local,
-multicast, broadcast, in 0.0.0.0/8, in Qubes' own 10.137.0.0/16 to
-10.139.0.0/16, or one of the proxy qube's own addresses; otherwise LAN if
-it is in 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 or fc00::/7;
-otherwise internet. A connection is decided by the zone of the address it
-dials, never of the name it used. A forbidden address is refused whatever
-the file says.
+multicast, 255.255.255.255, in 0.0.0.0/8, or in Qubes' own 10.137.0.0/16
+to 10.139.0.0/16; otherwise LAN if it is in 10.0.0.0/8, 172.16.0.0/12,
+192.168.0.0/16 or fc00::/7; otherwise internet. A connection is decided by
+the zone of the address it dials, never of the name it used. A forbidden
+address is refused whatever the file says, and so, on the direct path, is
+any address of the proxy qube's own; through an exit node those are the
+exit node's network.
 
 Why: a name allowed on the internet must not open the LAN, another qube
 or the proxy itself by resolving there; deciding by the address dialled
@@ -37,7 +38,14 @@ Scenarios:
    `internet: all` is refused the proxy qube's own address.
 4. `internet-name-to-lan` (agent, provisional): a name allowed on the
    internet that resolves to 192.168.1.1 is refused for a qube whose LAN
-   is `none`.
+   allowlist does not name it.
+
+Changes:
+- 2026-11-27: the proxy qube's own addresses are refused on the direct
+  path only, not placed in the forbidden zone, and broadcast is
+  255.255.255.255, as the code does; `internet-name-to-lan` says the LAN
+  allowlist does not name it, as its test has it (review of the first
+  implementation).
 
 ## SW-261127-2R9T A name entry counts only for a name the qube asked for, or resolved through the proxy to that address
 
@@ -48,8 +56,8 @@ Serves: STK-261126-KZK8
 A name entry allows a connection only when the name it matches is the
 one the qube asked for (SOCKS, a forward, the HTTP proxy) or one the
 proxy's DNS resolved for that qube to the address dialled. The proxy
-remembers, per qube, each name it resolved and its addresses for the
-answer's TTL, at least a minute. A connection to an address no name of
+remembers, per qube, each name it resolved and its addresses for five
+minutes from the last answer, whatever the answer's TTL. A connection to an address no name of
 the qube's leads to, and no address entry covers, is refused.
 
 Why: an allowlist by name means nothing if any address may be claimed to
@@ -67,6 +75,11 @@ Scenarios:
    resolved by one qube is unresolved for another.
 4. `mapping-expires` (agent, provisional): after the mapping's time has
    passed, a connection to the address is refused as unresolved.
+
+Changes:
+- 2026-11-27: a resolved name counts for five minutes from the last answer
+  whatever its TTL, which the proxy does, not for the TTL with a minute's
+  floor (review of the first implementation).
 
 ## SW-261127-M7G9 A name resolves, for the qube and for the proxy, only to addresses the qube may reach under it
 
@@ -127,9 +140,10 @@ Serves: STK-261126-KZK8
 
 When a zone of the qube's entry is an allowlist, the client's bytes are
 held until its first bytes have been read; the server's side may speak
-meanwhile. A ClientHello's server name must match a name entry of the
-zone reached, with its port and protocol; on the tailnet it must also
-name the device behind the address. A TLS record from which no
+meanwhile. Unless an address entry allowed the connection, a
+ClientHello's server name must match a name entry of the zone reached,
+with its port and protocol; on the tailnet, when the device behind the
+address is known, it must also name that device. A TLS record from which no
 ClientHello can be read within two seconds of its first byte is refused.
 A connection that is not TLS, or a ClientHello with no server name, is
 decided on the names alone.
@@ -150,6 +164,11 @@ Scenarios:
 4. `tailnet-sni-names-device` (agent, provisional): on the tailnet, a
    server name naming another listed device than the one dialled is
    refused.
+
+Changes:
+- 2026-11-27: a connection an address entry allows is not checked by
+  server name, and the tailnet device is checked when known, as the proxy
+  does (review of the first implementation).
 
 ## SW-261127-H3W9 The HTTP proxy carries one host per connection
 
@@ -209,8 +228,9 @@ Serves: STK-261126-KZK8
 
 A connection arriving at a qube's tailnet identity is relayed only when
 its port is one the entry's `tailnet.inbound` or a service lists, and
-goes to the qube's port behind it. Every other port is refused. Who on
-the tailnet may connect at all is the grants'.
+goes to the qube's port behind it. An identity listens on no other
+port, and a connection to one would be refused. Who on the tailnet may
+connect at all is the grants'.
 
 Why: the file says what a qube offers; a port it does not offer must
 not be reachable however the grants are written.
@@ -221,6 +241,10 @@ Scenarios:
    8443.
 2. `unlisted-inbound-refused` (agent, provisional): a connection to a port
    the identity does not list is refused with `inbound-port-not-declared`.
+
+Changes:
+- 2026-11-27: an identity listens only on its declared ports, which is how
+  the proxy refuses the rest (review of the first implementation).
 
 ## SW-261127-QQYS UDP is decided per flow, and each qube has a cap on open flows
 
