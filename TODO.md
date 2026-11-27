@@ -2,6 +2,17 @@
 
 ## Later
 
+- **The proxy qube's uplink requires the guard too.** If the guard fails
+  to load, Qubes' network service (which turns forwarding on) and the
+  program do not start, but `qubes-network-uplink.service` is only ordered
+  after the guard, so the proxy qube still gets its own network. A
+  `Requires=torii-guard.service` drop-in for the uplink would leave it with
+  no network at all, failing closed; SW-261127-JWK2 would then say the
+  network does not come up.
+- **Run the network-namespace checks that need a real setup** with
+  `TORII_NETNS_REAL=1` on a machine whose kernel behaves as a Qubes
+  netvm's: UDP replies to a resolved name, and inbound into a routed
+  workload. Both fail in containers; find out whether they also fail there.
 - **Per-qube firewalling, Little Snitch-style.** An `ask` verdict
   (`outbound.internet: ask`): the engine holds a TCP connection while dom0,
   or a GUI qube, asks through a `torii.Ask` qrexec call (never a prompt in

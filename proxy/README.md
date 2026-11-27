@@ -122,7 +122,7 @@ level that can run on the machine.
 |---|---|---|---|
 | 1 | Unit: config, policy, SNI, SOCKS5, DNS, qrexec (a fake `qrexec-client-vm`), engine on `FakeNet` | `make test-unit` | nothing |
 | 2 | In-process tailnet: real tsnet nodes, WireGuard, local DERP, `testcontrol`; inbound, SOCKS by MagicDNS name, exit node through a real peer, sign-in link | `go test ./internal/itest -run 'TestRealTailnet\|TestSignIn'` | nothing |
-| 3 | Network namespaces as fake qubes: workloads behind `vif*` veths, real daemon, nftables and TPROXY, forwarding off, upstream netvm and DNS | `make test-netns` | root, `ip`, `nft` |
+| 3 | Network namespaces as fake qubes: workloads behind `vif*` veths, real daemon, nftables and TPROXY, forwarding off, upstream netvm and DNS. Two checks (UDP replies to a resolved name, inbound into a routed workload) fail in containers and run only with `TORII_NETNS_REAL=1` | `make test-netns` | root, `ip`, `nft` |
 | 4 | Local Headscale: two machines' proxies, two people's laptops, tags and **grants**, sign-in approval by tag owner | `make test-headscale` | `headscale` (v0.29.7) |
 | sim | Every cell of a machine file through the engine, the config from the dom0 tool | `go test ./internal/engine -run TestSimulatedMachine` | python3 (the dom0 tool) |
 | 5 | A Qubes machine (done by hand; see `../docs/testing.md`) | | Qubes 4.3, a test tailnet |
