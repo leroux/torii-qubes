@@ -238,7 +238,7 @@ exit path while the egress is unusable
 2. **Tailnet.** Allowed only with `outbound.tailnet`; with a device list,
    the destination must match it by MagicDNS name, peer name or address.
    Where on the tailnet it may go is the grants'. Dialled only on the
-   workload's own identity, never an egress's ([SW-261127-WSWG](../claims/identity.md#sw-261127-wswg-an-egresss-identity-carries-only-the-internet-and-grants-propose-it-nothing-else)).
+   workload's own identity, never an egress's ([SW-261127-WSWG](../claims/identity.md#sw-261127-wswg-an-egresss-identity-must-carry-only-internet-traffic-and-torii-grants-must-propose-it-nothing-else)).
 3. **Known address.** [`Permit`](../proxy/internal/policy/zone.go#L80) places
    it with [`ZoneOf`](../proxy/internal/policy/zone.go#L44):
 
@@ -401,7 +401,7 @@ connections from its netvm:
 Authorization of the remote peer is the tailnet's: a port declared but
 not granted is dropped by the identity's Tailscale packet filter, built
 from the grants in its netmap, before tsnet's listener sees it. torii only
-proposes the grants ([SW-261127-DH6R](../claims/identity.md#sw-261127-dh6r-torii-proposes-grants-for-the-tailnet-and-never-changes-its-policy)). Connections between qubes on
+proposes the grants ([SW-261127-DH6R](../claims/identity.md#sw-261127-dh6r-torii-must-only-propose-grants-for-the-tailnet-and-must-not-change-the-tailnets-policy)). Connections between qubes on
 the same machine do not go through the proxy at all: `local-inbound` is a
 dom0 policy line for `qubes.ConnectTCP`, and other qubes' addresses are in
 the forbidden zone.

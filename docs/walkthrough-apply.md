@@ -68,7 +68,7 @@ keys, wrong types, invalid ports, undefined egresses and moved keys from
 older formats are errors, collected for the whole file and raised before
 the machine is touched ([SW-261127-9BNW](../claims/apply.md#sw-261127-9bnw-the-machine-file-is-read-whole-and-refused-whole-when-a-key-a-network-or-a-value-is-wrong)). Defaults are resolved per
 qube, tags are expanded with the machine prefix
-([`tags_of`](../dom0/torii/machine.py#L25), [SW-261127-P8H7](../claims/identity.md#sw-261127-p8h7-a-tagged-identity-carries-exactly-the-files-tags-prefixed-by-the-machine-and-check-names-any-other)).
+([`tags_of`](../dom0/torii/machine.py#L25), [SW-261127-P8H7](../claims/identity.md#sw-261127-p8h7-torii-must-give-a-tagged-identity-exactly-the-files-tags-prefixed-by-the-machine-and-torii-check-must-name-any-other)).
 
 ## Snapshot
 
@@ -273,7 +273,7 @@ if needed and polls `torii.Status` every 2 s
 ([`status.read`](../dom0/torii/status.py#L13):
 `run_service("torii.Status", user="root")`, 15 s timeout per call) until `config_version` equals the
 planned version, printing each new sign-in link it sees
-([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-signs-in-by-a-link-a-person-approves-or-a-one-time-key-that-only-the-proxy-qube-keeps)), for up to 180 s:
+([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-must-sign-in-by-a-link-a-person-approves-or-by-a-one-time-key-that-only-the-proxy-qube-keeps)), for up to 180 s:
 
 <!-- charter:embed SW-261127-QMVP -->
 > **[SW-261127-QMVP](../claims/apply.md#sw-261127-qmvp-apply-goes-on-past-a-proxys-config-only-once-the-proxy-reports-running-it) apply goes on past a proxy's config only once the proxy reports running it**

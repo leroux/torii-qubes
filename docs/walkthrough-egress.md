@@ -51,13 +51,14 @@ and needs no identity of its own. Sharing is acceptable only because the
 node is authorized for nothing but the internet:
 
 <!-- charter:embed SW-261127-WSWG -->
-> **[SW-261127-WSWG](../claims/identity.md#sw-261127-wswg-an-egresss-identity-carries-only-the-internet-and-grants-propose-it-nothing-else) An egress's identity carries only the internet, and grants propose it nothing else**
+> **[SW-261127-WSWG](../claims/identity.md#sw-261127-wswg-an-egresss-identity-must-carry-only-internet-traffic-and-torii-grants-must-propose-it-nothing-else) An egress's identity MUST carry only internet traffic, and torii grants MUST propose it nothing else**
 >
-> An egress has one identity per proxy that carries it, shared by every
-> qube on that egress; the proxy never dials a tailnet destination on it,
-> since tailnet destinations are dialled only on a qube's own identity.
-> `torii grants` proposes for its tags only `autogroup:internet`, and
-> names its tags in no other grant.
+> - An egress has one identity per proxy that carries it, shared by every
+>   qube on that egress.
+> - The proxy MUST NOT dial a tailnet destination on an egress's identity;
+>   tailnet destinations MUST be dialled only on a qube's own identity.
+> - `torii grants` MUST propose only `autogroup:internet` for the egress's
+>   tags, and MUST NOT name those tags in any other grant.
 <!-- /charter:embed -->
 
 The routing half is [`pathIdentity`](../proxy/internal/policy/policy.go#L274):

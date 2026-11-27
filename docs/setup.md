@@ -88,7 +88,7 @@ qubes:
 That reads: `wiki` has no network card and no internet, and has a tailnet
 identity `m1-wiki` tagged `tag:m1-server` and `tag:m1`. Port 80 on that identity leads to port
 8080 in the qube. A file with one wrong key is refused whole
-([SW-261127-9BNW](../claims/apply.md#sw-261127-9bnw-the-machine-file-is-read-whole-and-refused-whole-when-a-key-a-network-or-a-value-is-wrong)); the tags' machine prefix is [SW-261127-P8H7](../claims/identity.md#sw-261127-p8h7-a-tagged-identity-carries-exactly-the-files-tags-prefixed-by-the-machine-and-check-names-any-other).
+([SW-261127-9BNW](../claims/apply.md#sw-261127-9bnw-the-machine-file-is-read-whole-and-refused-whole-when-a-key-a-network-or-a-value-is-wrong)); the tags' machine prefix is [SW-261127-P8H7](../claims/identity.md#sw-261127-p8h7-torii-must-give-a-tagged-identity-exactly-the-files-tags-prefixed-by-the-machine-and-torii-check-must-name-any-other).
 
 ## 5. Plan
 
@@ -175,7 +175,7 @@ instead (`torii sign-in-key wiki < key.txt`); both are in
 [`tailscale.md`, "Signing identities in"](tailscale.md#signing-identities-in).
 A few seconds later `torii show` says `Running 100.x.y.z`. Either way, the
 key or the identity's state is kept only in the proxy qube
-([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-signs-in-by-a-link-a-person-approves-or-a-one-time-key-that-only-the-proxy-qube-keeps)).
+([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-must-sign-in-by-a-link-a-person-approves-or-by-a-one-time-key-that-only-the-proxy-qube-keeps)).
 
 Then let people in. `torii grants` prints a proposal:
 
@@ -188,7 +188,7 @@ Then let people in. `torii grants` prints a proposal:
 
 Narrow `src` if not every member should reach it, and paste it into the
 tailnet policy ([`tailscale.md`, "Grants"](tailscale.md#grants)). torii
-never changes the tailnet's policy itself ([SW-261127-DH6R](../claims/identity.md#sw-261127-dh6r-torii-proposes-grants-for-the-tailnet-and-never-changes-its-policy)).
+never changes the tailnet's policy itself ([SW-261127-DH6R](../claims/identity.md#sw-261127-dh6r-torii-must-only-propose-grants-for-the-tailnet-and-must-not-change-the-tailnets-policy)).
 
 ## 8. Check it
 
@@ -428,7 +428,7 @@ devices stay in the admin console until you remove them.
 | `template`, `base-template` | `torii-<base-template>`, `fedora-44-minimal` | The tool's own template and what it's cloned from. A new base is a new template: `apply` creates it, moves the proxies onto it (one restart each) and removes the old one once nothing uses it. |
 | `tailnet.control-url` | Tailscale | A Headscale (or other) coordination server. |
 | `tailnet.tag-owners` | `[autogroup:admin]` | For `torii grants`. |
-| `tailnet.tailscale-logs` | `no` | `yes` lets each identity upload Tailscale's client logs to `log.tailscale.com`, which Tailscale support asks for. They go over the proxy qube's own network, not through an egress. Off, the control server is told so (no logs, no support). tsnet's port mapper (UPnP, NAT-PMP, PCP) is always off: behind Qubes' NAT it only broadcasts ([SW-261127-8PTP](../claims/identity.md#sw-261127-8ptp-an-identity-sends-tailscale-no-client-logs-unless-the-file-asks-and-never-maps-ports)). |
+| `tailnet.tailscale-logs` | `no` | `yes` lets each identity upload Tailscale's client logs to `log.tailscale.com`, which Tailscale support asks for. They go over the proxy qube's own network, not through an egress. Off, the control server is told so (no logs, no support). tsnet's port mapper (UPnP, NAT-PMP, PCP) is always off: behind Qubes' NAT it only broadcasts ([SW-261127-8PTP](../claims/identity.md#sw-261127-8ptp-the-proxy-must-not-send-tailscale-client-logs-unless-the-file-asks-and-must-not-map-ports)). |
 | `status-readers` | | Admin qubes that may read `torii.Status` besides dom0. |
 | `defaults` | | Any per-qube key below except `forwards` and `local-inbound`. |
 

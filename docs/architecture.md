@@ -75,7 +75,7 @@ files, and has no network access (dom0 has none).
 The only qube-originated data dom0 parses is `torii.Status` output, as
 JSON. dom0 relays no traffic and holds no tailnet credential: an auth key
 given to `torii sign-in-key` is piped to the proxy qube and stored there
-([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-signs-in-by-a-link-a-person-approves-or-a-one-time-key-that-only-the-proxy-qube-keeps)).
+([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-must-sign-in-by-a-link-a-person-approves-or-by-a-one-time-key-that-only-the-proxy-qube-keeps)).
 
 ## Template and packages
 
@@ -162,9 +162,9 @@ creates one [`TSNet`](../proxy/internal/tailnet/tsnet.go#L38) (a
 `tsnet.Server` with its own userspace WireGuard and gVisor netstack) per
 workload identity, per service and per egress, each with its own state
 directory under `/rw/torii/state/` on the qube's private volume:
-[SW-261127-WNGN](../claims/identity.md#sw-261127-wngn-each-identity-is-a-tailnet-device-of-its-own-with-its-own-name-and-state). One-time auth keys live under `/rw/torii/keys/`.
+[SW-261127-WNGN](../claims/identity.md#sw-261127-wngn-the-proxy-must-run-each-identity-as-a-tailnet-device-of-its-own-with-its-own-name-and-state). One-time auth keys live under `/rw/torii/keys/`.
 Client log upload to `log.tailscale.com` is off unless the file asks, and
-the port mapper (UPnP, NAT-PMP, PCP) is always off ([SW-261127-8PTP](../claims/identity.md#sw-261127-8ptp-an-identity-sends-tailscale-no-client-logs-unless-the-file-asks-and-never-maps-ports)).
+the port mapper (UPnP, NAT-PMP, PCP) is always off ([SW-261127-8PTP](../claims/identity.md#sw-261127-8ptp-the-proxy-must-not-send-tailscale-client-logs-unless-the-file-asks-and-must-not-map-ports)).
 
 **Listeners**, opened by [`daemon.Start`](../proxy/internal/daemon/daemon.go#L116):
 
@@ -312,4 +312,4 @@ that grants `qubes.ConnectTCP` to or from a managed qube.
 | dom0 → proxy | config as features | dom0-only write path; SHA-256 over the parts | [SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-takes-its-config-whole-or-not-at-all-and-a-failed-check-never-replaces-the-running-one) |
 | proxy → dom0 | status and log JSON | qrexec, as root, read-only service | [SW-261127-B8BM](../claims/seeing.md#sw-261127-b8bm-the-status-service-is-read-only-it-reports-and-changes-nothing-in-the-proxy) |
 | proxy → netvm | connections the program opens | kernel forwarding off, guard at −400 | [SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-the-proxy-qube-must-hand-every-routed-qubes-traffic-to-the-program-and-must-not-forward-any-of-it) |
-| proxy ↔ tailnet | each identity's WireGuard traffic | node keys; the grants decide reach | [SW-261127-DH6R](../claims/identity.md#sw-261127-dh6r-torii-proposes-grants-for-the-tailnet-and-never-changes-its-policy) |
+| proxy ↔ tailnet | each identity's WireGuard traffic | node keys; the grants decide reach | [SW-261127-DH6R](../claims/identity.md#sw-261127-dh6r-torii-must-only-propose-grants-for-the-tailnet-and-must-not-change-the-tailnets-policy) |

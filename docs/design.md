@@ -82,7 +82,7 @@ ambient mode: one connection-level proxy per node holding that node's
 workload identities. Workloads that need stronger separation get a dedicated
 proxy qube (`proxies:`, `proxy: <name>`), much as Istio adds
 sidecars only where they are needed. Each identity is a device of its own
-([SW-261127-WNGN](../claims/identity.md#sw-261127-wngn-each-identity-is-a-tailnet-device-of-its-own-with-its-own-name-and-state)); what a shared proxy qube holds if compromised is
+([SW-261127-WNGN](../claims/identity.md#sw-261127-wngn-the-proxy-must-run-each-identity-as-a-tailnet-device-of-its-own-with-its-own-name-and-state)); what a shared proxy qube holds if compromised is
 stated in [STK-261126-SM33](../claims/needs.md#stk-261126-sm33-torii-must-not-add-a-qrexec-call-network-path-or-dom0-exposure-beyond-those-the-file-declares).
 
 ### Our own `tsnet` program rather than stock `tailscaled`
@@ -180,7 +180,7 @@ egress's, chosen per connection by the zone of the address dialled.
 An egress identity is internet-only, held on both sides: the proxy never
 sends tailnet destinations through it (they are a zone of their own,
 dialled only on the workload's identity), and `torii grants` proposes only
-`autogroup:internet` for its tag ([SW-261127-WSWG](../claims/identity.md#sw-261127-wswg-an-egresss-identity-carries-only-the-internet-and-grants-propose-it-nothing-else)). Sharing a *path* is harmless, since everyone
+`autogroup:internet` for its tag ([SW-261127-WSWG](../claims/identity.md#sw-261127-wswg-an-egresss-identity-must-carry-only-internet-traffic-and-torii-grants-must-propose-it-nothing-else)). Sharing a *path* is harmless, since everyone
 behind one exit node shares its address anyway. Sharing tailnet
 *authorisation* is how compartments merge, so egresses don't do it.
 
@@ -241,7 +241,7 @@ The dom0 package carries the proxy and client packages as `.deb` and
 `.rpm`. On first run the tool clones a minimal template into its own, copies
 the package in and installs it, so no template needs a repository for
 torii ([SW-261127-HSHY](../claims/apply.md#sw-261127-hshy-the-proxy-package-comes-from-the-dom0-packages-bundle-with-no-repository-for-torii)). Each identity's Tailscale state lives in the
-proxy qube's private volume ([SW-261127-WNGN](../claims/identity.md#sw-261127-wngn-each-identity-is-a-tailnet-device-of-its-own-with-its-own-name-and-state)). A rebuilt machine gets new identities and new sign-ins rather than
+proxy qube's private volume ([SW-261127-WNGN](../claims/identity.md#sw-261127-wngn-the-proxy-must-run-each-identity-as-a-tailnet-device-of-its-own-with-its-own-name-and-state)). A rebuilt machine gets new identities and new sign-ins rather than
 restored keys.
 
 ### A dom0 tool that plans from a snapshot
@@ -267,7 +267,7 @@ golden-tested without a Qubes machine ([`testing.md`](testing.md)).
   as features. Put sensitive workloads on a dedicated proxy to keep them
   apart ([STK-261126-SM33](../claims/needs.md#stk-261126-sm33-torii-must-not-add-a-qrexec-call-network-path-or-dom0-exposure-beyond-those-the-file-declares)).
 - **dom0** stores no Tailscale credential. Auth keys, when used, go only to
-  the proxy qube ([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-signs-in-by-a-link-a-person-approves-or-a-one-time-key-that-only-the-proxy-qube-keeps)).
+  the proxy qube ([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-must-sign-in-by-a-link-a-person-approves-or-by-a-one-time-key-that-only-the-proxy-qube-keeps)).
 
 ## Limits
 

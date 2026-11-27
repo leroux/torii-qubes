@@ -18,7 +18,7 @@ Every qube with an identity is a device on the tailnet, held by `sys-torii`:
 The device's name is the qube's name (or the identity's, or `hostname:`). It
 is reachable as `name` and `name.<tailnet>.ts.net`. Each identity is a
 device of its own, with its own state in the proxy qube
-([SW-261127-WNGN](../claims/identity.md#sw-261127-wngn-each-identity-is-a-tailnet-device-of-its-own-with-its-own-name-and-state)); where they run is in
+([SW-261127-WNGN](../claims/identity.md#sw-261127-wngn-the-proxy-must-run-each-identity-as-a-tailnet-device-of-its-own-with-its-own-name-and-state)); where they run is in
 [`architecture.md`](architecture.md#the-proxy-qube).
 
 The machine file decides which ports a device offers. The policy decides
@@ -44,14 +44,14 @@ approve such a device:
 `torii grants` lists every tag the file uses. Keep tags per role (`tag:chat`),
 not per machine. Then grants read as what they allow, and a second machine
 reuses them. How the file's tags become the device's, and what `check` says
-when they differ, is [SW-261127-P8H7](../claims/identity.md#sw-261127-p8h7-a-tagged-identity-carries-exactly-the-files-tags-prefixed-by-the-machine-and-check-names-any-other).
+when they differ, is [SW-261127-P8H7](../claims/identity.md#sw-261127-p8h7-torii-must-give-a-tagged-identity-exactly-the-files-tags-prefixed-by-the-machine-and-torii-check-must-name-any-other).
 
 ## Grants
 
 `torii grants` prints a proposal from the file: a grant per inbound
 identity, with `autogroup:member` (every signed-in person's devices) as the
 source. Review it, narrow `src` where needed, and paste it in; torii never
-changes the policy itself ([SW-261127-DH6R](../claims/identity.md#sw-261127-dh6r-torii-proposes-grants-for-the-tailnet-and-never-changes-its-policy)):
+changes the policy itself ([SW-261127-DH6R](../claims/identity.md#sw-261127-dh6r-torii-must-only-propose-grants-for-the-tailnet-and-must-not-change-the-tailnets-policy)):
 
 ```jsonc
 "grants": [
@@ -108,16 +108,16 @@ certificate is issued.
 ## Signing identities in
 
 <!-- charter:embed SW-261127-3TPX -->
-> **[SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-signs-in-by-a-link-a-person-approves-or-a-one-time-key-that-only-the-proxy-qube-keeps) An identity signs in by a link a person approves, or a one-time key that only the proxy qube keeps**
+> **[SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-must-sign-in-by-a-link-a-person-approves-or-by-a-one-time-key-that-only-the-proxy-qube-keeps) An identity MUST sign in by a link a person approves, or by a one-time key that only the proxy qube keeps**
 >
-> A new identity asks the tailnet for a sign-in link, which apply, show
-> and check print for a person to approve. `torii sign-in-key` takes a
-> one-time key on dom0's standard input and writes it straight into the
-> proxy qube, as a new file under a directory only root can read, then
-> restarts the
-> proxy with that identity's old state removed so it signs in with the
-> key; dom0 writes the key to no file. After the first sign-in the
-> identity's own state keeps it signed in.
+> - A new identity asks the tailnet for a sign-in link, and `torii apply`,
+>   `show` and `check` MUST print it for a person to approve.
+> - `torii sign-in-key` MUST take a one-time key on dom0's standard input
+>   and write it straight into the proxy qube, as a new file under a
+>   directory only root can read, then restart the proxy with that
+>   identity's old state removed so it signs in with the key.
+> - dom0 MUST NOT write the key to any file.
+> - After the first sign-in, the identity's own state keeps it signed in.
 <!-- /charter:embed -->
 
 A new identity waits for sign-in. `torii show` (and `torii apply`) prints its
@@ -185,7 +185,7 @@ party from every exit node.
    (`torii grants` proposes it.) The proxy never sends tailnet destinations
    through an egress either; a qube that needs the tailnet gets its own
    identity, which carries its tailnet traffic while the egress carries its
-   internet ([SW-261127-WSWG](../claims/identity.md#sw-261127-wswg-an-egresss-identity-carries-only-the-internet-and-grants-propose-it-nothing-else)).
+   internet ([SW-261127-WSWG](../claims/identity.md#sw-261127-wswg-an-egresss-identity-must-carry-only-internet-traffic-and-torii-grants-must-propose-it-nothing-else)).
 
 How the egress chooses and changes its exit node, and how it fails closed,
 is followed through the code in [`walkthrough-egress.md`](walkthrough-egress.md):

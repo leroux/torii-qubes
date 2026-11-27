@@ -137,8 +137,8 @@ SW_261127_2XS6 = Spec("SW-261127-2XS6", "The proxy MUST match an allow entry by 
 #: SW_261127_3Q23 is SW-261127-3Q23: Every proxy qube has IPv6 off, for itself and every qube behind it
 SW_261127_3Q23 = Spec("SW-261127-3Q23", "Every proxy qube has IPv6 off, for itself and every qube behind it", "active", "invariant")
 
-#: SW_261127_3TPX is SW-261127-3TPX: An identity signs in by a link a person approves, or a one-time key that only the proxy qube keeps
-SW_261127_3TPX = Spec("SW-261127-3TPX", "An identity signs in by a link a person approves, or a one-time key that only the proxy qube keeps", "active", "invariant")
+#: SW_261127_3TPX is SW-261127-3TPX: An identity MUST sign in by a link a person approves, or by a one-time key that only the proxy qube keeps
+SW_261127_3TPX = Spec("SW-261127-3TPX", "An identity MUST sign in by a link a person approves, or by a one-time key that only the proxy qube keeps", "active", "invariant")
 
 #: SW_261127_62WV is SW-261127-62WV: show reports each qube's reach from the live machine, never from the file
 SW_261127_62WV = Spec("SW-261127-62WV", "show reports each qube's reach from the live machine, never from the file", "active", "invariant")
@@ -158,8 +158,8 @@ SW_261127_7C3Y = Spec("SW-261127-7C3Y", "The proxy MUST take a qrexec caller's i
 #: SW_261127_8DFY is SW-261127-8DFY: The egress selector MUST judge an exit node healthy only while it is listed, answers pings, and is not failing every real connection
 SW_261127_8DFY = Spec("SW-261127-8DFY", "The egress selector MUST judge an exit node healthy only while it is listed, answers pings, and is not failing every real connection", "active", "bound")
 
-#: SW_261127_8PTP is SW-261127-8PTP: An identity sends Tailscale no client logs unless the file asks, and never maps ports
-SW_261127_8PTP = Spec("SW-261127-8PTP", "An identity sends Tailscale no client logs unless the file asks, and never maps ports", "active", "invariant")
+#: SW_261127_8PTP is SW-261127-8PTP: The proxy MUST NOT send Tailscale client logs unless the file asks, and MUST NOT map ports
+SW_261127_8PTP = Spec("SW-261127-8PTP", "The proxy MUST NOT send Tailscale client logs unless the file asks, and MUST NOT map ports", "active", "invariant")
 
 #: SW_261127_9BNW is SW-261127-9BNW: The machine file is read whole and refused whole when a key, a network or a value is wrong
 SW_261127_9BNW = Spec("SW-261127-9BNW", "The machine file is read whole and refused whole when a key, a network or a value is wrong", "active", "invariant")
@@ -176,8 +176,8 @@ SW_261127_BHHX = Spec("SW-261127-BHHX", "The proxy MUST identify a routed qube b
 #: SW_261127_BNFC is SW-261127-BNFC: The egress selector MUST use exit nodes in the file's order, failing over at once and back only after a hold-down
 SW_261127_BNFC = Spec("SW-261127-BNFC", "The egress selector MUST use exit nodes in the file's order, failing over at once and back only after a hold-down", "active", "invariant")
 
-#: SW_261127_DH6R is SW-261127-DH6R: torii proposes grants for the tailnet and never changes its policy
-SW_261127_DH6R = Spec("SW-261127-DH6R", "torii proposes grants for the tailnet and never changes its policy", "active", "invariant")
+#: SW_261127_DH6R is SW-261127-DH6R: torii MUST only propose grants for the tailnet, and MUST NOT change the tailnet's policy
+SW_261127_DH6R = Spec("SW-261127-DH6R", "torii MUST only propose grants for the tailnet, and MUST NOT change the tailnet's policy", "active", "invariant")
 
 #: SW_261127_G26T is SW-261127-G26T: apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings
 SW_261127_G26T = Spec("SW-261127-G26T", "apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings", "active", "invariant")
@@ -212,8 +212,8 @@ SW_261127_M7G9 = Spec("SW-261127-M7G9", "The proxy MUST resolve a name, for the 
 #: SW_261127_N3N8 is SW-261127-N3N8: torii-client MUST listen on loopback only and MUST make one qrexec call per connection
 SW_261127_N3N8 = Spec("SW-261127-N3N8", "torii-client MUST listen on loopback only and MUST make one qrexec call per connection", "active", "invariant")
 
-#: SW_261127_P8H7 is SW-261127-P8H7: A tagged identity carries exactly the file's tags, prefixed by the machine, and check names any other
-SW_261127_P8H7 = Spec("SW-261127-P8H7", "A tagged identity carries exactly the file's tags, prefixed by the machine, and check names any other", "active", "invariant")
+#: SW_261127_P8H7 is SW-261127-P8H7: torii MUST give a tagged identity exactly the file's tags, prefixed by the machine, and torii check MUST name any other
+SW_261127_P8H7 = Spec("SW-261127-P8H7", "torii MUST give a tagged identity exactly the file's tags, prefixed by the machine, and torii check MUST name any other", "active", "invariant")
 
 #: SW_261127_PXX9 is SW-261127-PXX9: The proxy MUST decide a connection against the entry of the qube it came from, and only by a way that entry offers
 SW_261127_PXX9 = Spec("SW-261127-PXX9", "The proxy MUST decide a connection against the entry of the qube it came from, and only by a way that entry offers", "active", "invariant")
@@ -236,14 +236,14 @@ SW_261127_T7GG = Spec("SW-261127-T7GG", "The proxy MUST relay an inbound connect
 #: SW_261127_VPGK is SW-261127-VPGK: A qube adopted records its netvm once; a qube leaving the file is left with no netvm
 SW_261127_VPGK = Spec("SW-261127-VPGK", "A qube adopted records its netvm once; a qube leaving the file is left with no netvm", "active", "invariant")
 
-#: SW_261127_WNGN is SW-261127-WNGN: Each identity is a tailnet device of its own, with its own name and state
-SW_261127_WNGN = Spec("SW-261127-WNGN", "Each identity is a tailnet device of its own, with its own name and state", "active", "invariant")
+#: SW_261127_WNGN is SW-261127-WNGN: The proxy MUST run each identity as a tailnet device of its own, with its own name and state
+SW_261127_WNGN = Spec("SW-261127-WNGN", "The proxy MUST run each identity as a tailnet device of its own, with its own name and state", "active", "invariant")
 
 #: SW_261127_WNYB is SW-261127-WNYB: The proxy MUST place every address in exactly one zone and MUST NOT dial a forbidden address
 SW_261127_WNYB = Spec("SW-261127-WNYB", "The proxy MUST place every address in exactly one zone and MUST NOT dial a forbidden address", "active", "invariant")
 
-#: SW_261127_WSWG is SW-261127-WSWG: An egress's identity carries only the internet, and grants propose it nothing else
-SW_261127_WSWG = Spec("SW-261127-WSWG", "An egress's identity carries only the internet, and grants propose it nothing else", "active", "invariant")
+#: SW_261127_WSWG is SW-261127-WSWG: An egress's identity MUST carry only internet traffic, and torii grants MUST propose it nothing else
+SW_261127_WSWG = Spec("SW-261127-WSWG", "An egress's identity MUST carry only internet traffic, and torii grants MUST propose it nothing else", "active", "invariant")
 
 #: SW_261127_XGDY is SW-261127-XGDY: A proxy takes its config whole or not at all, and a failed check never replaces the running one
 SW_261127_XGDY = Spec("SW-261127-XGDY", "A proxy takes its config whole or not at all, and a failed check never replaces the running one", "active", "invariant")

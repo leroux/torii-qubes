@@ -134,8 +134,8 @@ var SW_261127_2XS6 = &Spec{ID: "SW-261127-2XS6", Title: "The proxy MUST match an
 // SW_261127_3Q23 is SW-261127-3Q23: Every proxy qube has IPv6 off, for itself and every qube behind it
 var SW_261127_3Q23 = &Spec{ID: "SW-261127-3Q23", Title: "Every proxy qube has IPv6 off, for itself and every qube behind it", Status: Active, Kind: "invariant"}
 
-// SW_261127_3TPX is SW-261127-3TPX: An identity signs in by a link a person approves, or a one-time key that only the proxy qube keeps
-var SW_261127_3TPX = &Spec{ID: "SW-261127-3TPX", Title: "An identity signs in by a link a person approves, or a one-time key that only the proxy qube keeps", Status: Active, Kind: "invariant"}
+// SW_261127_3TPX is SW-261127-3TPX: An identity MUST sign in by a link a person approves, or by a one-time key that only the proxy qube keeps
+var SW_261127_3TPX = &Spec{ID: "SW-261127-3TPX", Title: "An identity MUST sign in by a link a person approves, or by a one-time key that only the proxy qube keeps", Status: Active, Kind: "invariant"}
 
 // SW_261127_62WV is SW-261127-62WV: show reports each qube's reach from the live machine, never from the file
 var SW_261127_62WV = &Spec{ID: "SW-261127-62WV", Title: "show reports each qube's reach from the live machine, never from the file", Status: Active, Kind: "invariant"}
@@ -155,8 +155,8 @@ var SW_261127_7C3Y = &Spec{ID: "SW-261127-7C3Y", Title: "The proxy MUST take a q
 // SW_261127_8DFY is SW-261127-8DFY: The egress selector MUST judge an exit node healthy only while it is listed, answers pings, and is not failing every real connection
 var SW_261127_8DFY = &Spec{ID: "SW-261127-8DFY", Title: "The egress selector MUST judge an exit node healthy only while it is listed, answers pings, and is not failing every real connection", Status: Active, Kind: "bound"}
 
-// SW_261127_8PTP is SW-261127-8PTP: An identity sends Tailscale no client logs unless the file asks, and never maps ports
-var SW_261127_8PTP = &Spec{ID: "SW-261127-8PTP", Title: "An identity sends Tailscale no client logs unless the file asks, and never maps ports", Status: Active, Kind: "invariant"}
+// SW_261127_8PTP is SW-261127-8PTP: The proxy MUST NOT send Tailscale client logs unless the file asks, and MUST NOT map ports
+var SW_261127_8PTP = &Spec{ID: "SW-261127-8PTP", Title: "The proxy MUST NOT send Tailscale client logs unless the file asks, and MUST NOT map ports", Status: Active, Kind: "invariant"}
 
 // SW_261127_9BNW is SW-261127-9BNW: The machine file is read whole and refused whole when a key, a network or a value is wrong
 var SW_261127_9BNW = &Spec{ID: "SW-261127-9BNW", Title: "The machine file is read whole and refused whole when a key, a network or a value is wrong", Status: Active, Kind: "invariant"}
@@ -173,8 +173,8 @@ var SW_261127_BHHX = &Spec{ID: "SW-261127-BHHX", Title: "The proxy MUST identify
 // SW_261127_BNFC is SW-261127-BNFC: The egress selector MUST use exit nodes in the file's order, failing over at once and back only after a hold-down
 var SW_261127_BNFC = &Spec{ID: "SW-261127-BNFC", Title: "The egress selector MUST use exit nodes in the file's order, failing over at once and back only after a hold-down", Status: Active, Kind: "invariant"}
 
-// SW_261127_DH6R is SW-261127-DH6R: torii proposes grants for the tailnet and never changes its policy
-var SW_261127_DH6R = &Spec{ID: "SW-261127-DH6R", Title: "torii proposes grants for the tailnet and never changes its policy", Status: Active, Kind: "invariant"}
+// SW_261127_DH6R is SW-261127-DH6R: torii MUST only propose grants for the tailnet, and MUST NOT change the tailnet's policy
+var SW_261127_DH6R = &Spec{ID: "SW-261127-DH6R", Title: "torii MUST only propose grants for the tailnet, and MUST NOT change the tailnet's policy", Status: Active, Kind: "invariant"}
 
 // SW_261127_G26T is SW-261127-G26T: apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings
 var SW_261127_G26T = &Spec{ID: "SW-261127-G26T", Title: "apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings", Status: Active, Kind: "invariant"}
@@ -209,8 +209,8 @@ var SW_261127_M7G9 = &Spec{ID: "SW-261127-M7G9", Title: "The proxy MUST resolve 
 // SW_261127_N3N8 is SW-261127-N3N8: torii-client MUST listen on loopback only and MUST make one qrexec call per connection
 var SW_261127_N3N8 = &Spec{ID: "SW-261127-N3N8", Title: "torii-client MUST listen on loopback only and MUST make one qrexec call per connection", Status: Active, Kind: "invariant"}
 
-// SW_261127_P8H7 is SW-261127-P8H7: A tagged identity carries exactly the file's tags, prefixed by the machine, and check names any other
-var SW_261127_P8H7 = &Spec{ID: "SW-261127-P8H7", Title: "A tagged identity carries exactly the file's tags, prefixed by the machine, and check names any other", Status: Active, Kind: "invariant"}
+// SW_261127_P8H7 is SW-261127-P8H7: torii MUST give a tagged identity exactly the file's tags, prefixed by the machine, and torii check MUST name any other
+var SW_261127_P8H7 = &Spec{ID: "SW-261127-P8H7", Title: "torii MUST give a tagged identity exactly the file's tags, prefixed by the machine, and torii check MUST name any other", Status: Active, Kind: "invariant"}
 
 // SW_261127_PXX9 is SW-261127-PXX9: The proxy MUST decide a connection against the entry of the qube it came from, and only by a way that entry offers
 var SW_261127_PXX9 = &Spec{ID: "SW-261127-PXX9", Title: "The proxy MUST decide a connection against the entry of the qube it came from, and only by a way that entry offers", Status: Active, Kind: "invariant"}
@@ -233,14 +233,14 @@ var SW_261127_T7GG = &Spec{ID: "SW-261127-T7GG", Title: "The proxy MUST relay an
 // SW_261127_VPGK is SW-261127-VPGK: A qube adopted records its netvm once; a qube leaving the file is left with no netvm
 var SW_261127_VPGK = &Spec{ID: "SW-261127-VPGK", Title: "A qube adopted records its netvm once; a qube leaving the file is left with no netvm", Status: Active, Kind: "invariant"}
 
-// SW_261127_WNGN is SW-261127-WNGN: Each identity is a tailnet device of its own, with its own name and state
-var SW_261127_WNGN = &Spec{ID: "SW-261127-WNGN", Title: "Each identity is a tailnet device of its own, with its own name and state", Status: Active, Kind: "invariant"}
+// SW_261127_WNGN is SW-261127-WNGN: The proxy MUST run each identity as a tailnet device of its own, with its own name and state
+var SW_261127_WNGN = &Spec{ID: "SW-261127-WNGN", Title: "The proxy MUST run each identity as a tailnet device of its own, with its own name and state", Status: Active, Kind: "invariant"}
 
 // SW_261127_WNYB is SW-261127-WNYB: The proxy MUST place every address in exactly one zone and MUST NOT dial a forbidden address
 var SW_261127_WNYB = &Spec{ID: "SW-261127-WNYB", Title: "The proxy MUST place every address in exactly one zone and MUST NOT dial a forbidden address", Status: Active, Kind: "invariant"}
 
-// SW_261127_WSWG is SW-261127-WSWG: An egress's identity carries only the internet, and grants propose it nothing else
-var SW_261127_WSWG = &Spec{ID: "SW-261127-WSWG", Title: "An egress's identity carries only the internet, and grants propose it nothing else", Status: Active, Kind: "invariant"}
+// SW_261127_WSWG is SW-261127-WSWG: An egress's identity MUST carry only internet traffic, and torii grants MUST propose it nothing else
+var SW_261127_WSWG = &Spec{ID: "SW-261127-WSWG", Title: "An egress's identity MUST carry only internet traffic, and torii grants MUST propose it nothing else", Status: Active, Kind: "invariant"}
 
 // SW_261127_XGDY is SW-261127-XGDY: A proxy takes its config whole or not at all, and a failed check never replaces the running one
 var SW_261127_XGDY = &Spec{ID: "SW-261127-XGDY", Title: "A proxy takes its config whole or not at all, and a failed check never replaces the running one", Status: Active, Kind: "invariant"}

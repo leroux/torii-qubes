@@ -87,7 +87,7 @@ torii-sign-in-{{ q }}:
 `sign_in` lists identities by their tailnet name (a service's name, or the
 qube's device name, `<machine>-<qube>` by default). Keep `authkey` in an
 encrypted pillar; the tool stores it only in the proxy qube
-([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-signs-in-by-a-link-a-person-approves-or-a-one-time-key-that-only-the-proxy-qube-keeps)).
+([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-must-sign-in-by-a-link-a-person-approves-or-by-a-one-time-key-that-only-the-proxy-qube-keeps)).
 
 ## What to keep out of other states
 
