@@ -130,6 +130,7 @@ def _inbound_cfg(inbound) -> list[dict[str, Any]]:
              **({"tls": True} if i.tls else {})} for i in inbound]
 
 
+# charter:realizes SW-261127-XGDY
 def encode_chunks(cfg: dict[str, Any]) -> dict[str, str]:
     """The config as features: gzip, base64, split under QubesDB's limit.
 
@@ -186,6 +187,7 @@ def local_client_listens(m: Machine, name: str) -> list[dict[str, Any]]:
     return out
 
 
+# charter:realizes SW-261127-G26T
 def qube_state(m: Machine, q: Qube) -> QubeState:
     netvm = {"none": "", "proxy": m.proxies[q.proxy].name, "default": DEFAULT_NETVM}.get(q.network, q.network)
     cc = client_config(q) or {"listen": []}
@@ -201,6 +203,7 @@ def qube_state(m: Machine, q: Qube) -> QubeState:
     )
 
 
+# charter:realizes SW-261127-G26T, SW-261127-VPGK
 def reset_state() -> QubeState:
     """What a qube leaving the file gets: no netvm (failing closed), and
     nothing of the tool's. Its adoption record stays."""
@@ -280,6 +283,7 @@ def grants(m: Machine) -> dict[str, Any]:
 
 # --- meshes: one machine may have several files, each its own mesh --------
 
+# charter:realizes SW-261127-KWT2
 def policy_name(m: Machine) -> str:
     return f"{POLICY_NAME}-{m.mesh}" if m.mesh else POLICY_NAME
 
@@ -293,6 +297,7 @@ def is_managed(tags) -> bool:
     return any(t == MANAGED_TAG or t.startswith(MANAGED_TAG + "-") for t in tags)
 
 
+# charter:realizes SW-261127-KWT2
 def owned_by(m: Machine, tags) -> bool:
     """One of the tool's own qubes, and this mesh's (the default mesh's
     carry no mesh tag)."""

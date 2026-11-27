@@ -5,10 +5,13 @@ import (
 	"os"
 	"os/exec"
 	"testing"
+
+	"github.com/leroux/torii-qubes/claims"
 )
 
 // The dom0 tool's own encoder writes the fixture, so the two sides agree.
 func TestDecodesWhatDom0Writes(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_XGDY, "chunks-roundtrip", "half-written-refused")
 	py, err := exec.LookPath("python3")
 	if err != nil {
 		t.Skip("no python3")

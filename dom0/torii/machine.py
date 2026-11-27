@@ -546,6 +546,7 @@ def _service(name: str, spec: Any, defaults: dict, default_proxy: str, proxies: 
     return Service(str(name), qube, proxy, str(spec.get("hostname", name)), tags, tuple(ports))
 
 
+# charter:realizes SW-261127-9BNW
 def parse(text: str) -> Machine:
     try:
         doc = yaml.safe_load(text) or {}

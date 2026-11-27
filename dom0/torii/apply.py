@@ -41,6 +41,7 @@ class Applier:
         self.out = out
         self.ready_timeout = ready_timeout
 
+    # charter:realizes SW-261127-63CS
     def run(self, steps: list[Step]) -> None:
         for i, s in enumerate(steps, 1):
             self.out(f"[{i}/{len(steps)}] {s}")
@@ -121,6 +122,7 @@ class Applier:
         self.vm(s.target).tags.discard(s.data["tag"])
 
     # --- the proxy template ---------------------------------------------
+    # charter:realizes SW-261127-HSHY
     def do_template_package(self, s: Step) -> None:
         vm = self.vm(s.target)
         dist = vm.features.get("os-distribution", "debian")
@@ -160,6 +162,7 @@ class Applier:
         return out.decode(errors="replace")
 
     # --- proxy config and readiness --------------------------------------
+    # charter:realizes SW-261127-XGDY
     def do_proxy_config(self, s: Step) -> None:
         vm = self.vm(s.target)
         feats = s.data["features"]
@@ -174,6 +177,7 @@ class Applier:
             if feats[k] is None and k in vm.features:
                 del vm.features[k]
 
+    # charter:realizes SW-261127-QMVP
     def do_proxy_ready(self, s: Step) -> None:
         vm = self.vm(s.target)
         if not vm.is_running():

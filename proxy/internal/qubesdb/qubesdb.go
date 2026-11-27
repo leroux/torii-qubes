@@ -37,6 +37,8 @@ func Read(path string) ([]byte, error) {
 }
 
 // Config returns the JSON stored under /vm-config/<key>.
+//
+//charter:realizes SW-261127-XGDY
 func Config(read Reader, key string) ([]byte, error) {
 	head, err := read("/vm-config/" + key)
 	if err != nil {

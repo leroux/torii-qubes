@@ -9,7 +9,7 @@ config handed to each proxy as features and taken only when whole.
 
 ## SW-261127-9BNW The machine file is read whole and refused whole when a key, a network or a value is wrong
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-B4CP
 
@@ -33,7 +33,7 @@ Scenarios:
 
 ## SW-261127-2JH3 plan refuses before any step a file that names what this machine cannot be given
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-B4CP, STK-261126-SM33
 
@@ -62,7 +62,7 @@ Scenarios:
 
 ## SW-261127-G26T apply changes only what torii owns: its template, its proxy qubes, its policy files, and four settings of each workload
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-B4CP, STK-261126-SM33
 
@@ -84,12 +84,10 @@ Scenarios:
    listed qubes' owned settings.
 2. `service-host-untouched` (agent, provisional): a qube that hosts a
    service and is not listed gets no step.
-3. `other-mesh-untouched` (agent, provisional): applying one mesh's file
-   changes nothing another mesh manages.
 
 ## SW-261127-63CS apply makes the plan's steps in order, stops at the first that fails, and a second run continues
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-B4CP
 
@@ -114,7 +112,7 @@ Scenarios:
 
 ## SW-261127-VPGK A qube adopted records its netvm once; a qube leaving the file is left with no netvm
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-B4CP, STK-261126-SM33
 
@@ -138,7 +136,7 @@ Scenarios:
 
 ## SW-261127-XGDY A proxy takes its config whole or not at all, and a failed check never replaces the running one
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-SM33, STK-261126-B4CP
 
@@ -166,7 +164,7 @@ Scenarios:
 
 ## SW-261127-QMVP apply goes on past a proxy's config only once the proxy reports running it
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-B4CP
 
@@ -187,7 +185,7 @@ Scenarios:
 
 ## SW-261127-3Q23 Every proxy qube has IPv6 off, for itself and every qube behind it
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-KZK8
 
@@ -205,7 +203,7 @@ Scenarios:
 
 ## SW-261127-HSHY The proxy package comes from the dom0 package's bundle, installed into torii's template with no repository
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-B4CP, STK-261126-SM33
 Accounts: env:TORII_BUNDLE
@@ -230,7 +228,7 @@ Scenarios:
 
 ## SW-261127-KWT2 Each mesh's file changes only its own qubes and its own policy file
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-B4CP
 

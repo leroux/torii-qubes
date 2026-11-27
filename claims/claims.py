@@ -126,7 +126,7 @@ STK_261126_KZK8 = Spec("STK-261126-KZK8", "A carried qube's connection is relaye
 STK_261126_SM33 = Spec("STK-261126-SM33", "torii adds no qrexec call, network path or dom0 exposure beyond those the file declares", "planned", "")
 
 #: SW_261127_2JH3 is SW-261127-2JH3: plan refuses before any step a file that names what this machine cannot be given
-SW_261127_2JH3 = Spec("SW-261127-2JH3", "plan refuses before any step a file that names what this machine cannot be given", "planned", "invariant")
+SW_261127_2JH3 = Spec("SW-261127-2JH3", "plan refuses before any step a file that names what this machine cannot be given", "active", "invariant")
 
 #: SW_261127_2R9T is SW-261127-2R9T: A name entry counts only for a name the qube asked for, or resolved through the proxy to that address
 SW_261127_2R9T = Spec("SW-261127-2R9T", "A name entry counts only for a name the qube asked for, or resolved through the proxy to that address", "active", "invariant")
@@ -135,10 +135,10 @@ SW_261127_2R9T = Spec("SW-261127-2R9T", "A name entry counts only for a name the
 SW_261127_2XS6 = Spec("SW-261127-2XS6", "Allow entries match by exact name or subdomain, port and protocol, TCP unless they say UDP", "active", "invariant")
 
 #: SW_261127_3Q23 is SW-261127-3Q23: Every proxy qube has IPv6 off, for itself and every qube behind it
-SW_261127_3Q23 = Spec("SW-261127-3Q23", "Every proxy qube has IPv6 off, for itself and every qube behind it", "planned", "invariant")
+SW_261127_3Q23 = Spec("SW-261127-3Q23", "Every proxy qube has IPv6 off, for itself and every qube behind it", "active", "invariant")
 
 #: SW_261127_63CS is SW-261127-63CS: apply makes the plan's steps in order, stops at the first that fails, and a second run continues
-SW_261127_63CS = Spec("SW-261127-63CS", "apply makes the plan's steps in order, stops at the first that fails, and a second run continues", "planned", "invariant")
+SW_261127_63CS = Spec("SW-261127-63CS", "apply makes the plan's steps in order, stops at the first that fails, and a second run continues", "active", "invariant")
 
 #: SW_261127_6S2F is SW-261127-6S2F: Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read
 SW_261127_6S2F = Spec("SW-261127-6S2F", "Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read", "active", "invariant")
@@ -147,7 +147,7 @@ SW_261127_6S2F = Spec("SW-261127-6S2F", "Under an allowlist, a TLS server name m
 SW_261127_7C3Y = Spec("SW-261127-7C3Y", "A qrexec caller is the qube dom0 names, never one the caller states", "active", "invariant")
 
 #: SW_261127_9BNW is SW-261127-9BNW: The machine file is read whole and refused whole when a key, a network or a value is wrong
-SW_261127_9BNW = Spec("SW-261127-9BNW", "The machine file is read whole and refused whole when a key, a network or a value is wrong", "planned", "invariant")
+SW_261127_9BNW = Spec("SW-261127-9BNW", "The machine file is read whole and refused whole when a key, a network or a value is wrong", "active", "invariant")
 
 #: SW_261127_B6Z6 is SW-261127-B6Z6: A routed qube's traffic reaches the program and nothing else: interception, with forwarding off
 SW_261127_B6Z6 = Spec("SW-261127-B6Z6", "A routed qube's traffic reaches the program and nothing else: interception, with forwarding off", "active", "invariant")
@@ -156,19 +156,19 @@ SW_261127_B6Z6 = Spec("SW-261127-B6Z6", "A routed qube's traffic reaches the pro
 SW_261127_BHHX = Spec("SW-261127-BHHX", "A routed qube is named by its Qubes source address, which Qubes keeps it from forging", "active", "invariant")
 
 #: SW_261127_G26T is SW-261127-G26T: apply changes only what torii owns: its template, its proxy qubes, its policy files, and four settings of each workload
-SW_261127_G26T = Spec("SW-261127-G26T", "apply changes only what torii owns: its template, its proxy qubes, its policy files, and four settings of each workload", "planned", "invariant")
+SW_261127_G26T = Spec("SW-261127-G26T", "apply changes only what torii owns: its template, its proxy qubes, its policy files, and four settings of each workload", "active", "invariant")
 
 #: SW_261127_H3W9 is SW-261127-H3W9: The HTTP proxy carries one host per connection
 SW_261127_H3W9 = Spec("SW-261127-H3W9", "The HTTP proxy carries one host per connection", "active", "invariant")
 
 #: SW_261127_HSHY is SW-261127-HSHY: The proxy package comes from the dom0 package's bundle, installed into torii's template with no repository
-SW_261127_HSHY = Spec("SW-261127-HSHY", "The proxy package comes from the dom0 package's bundle, installed into torii's template with no repository", "planned", "invariant")
+SW_261127_HSHY = Spec("SW-261127-HSHY", "The proxy package comes from the dom0 package's bundle, installed into torii's template with no repository", "active", "invariant")
 
 #: SW_261127_JWK2 is SW-261127-JWK2: A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does
 SW_261127_JWK2 = Spec("SW-261127-JWK2", "A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does", "active", "invariant")
 
 #: SW_261127_KWT2 is SW-261127-KWT2: Each mesh's file changes only its own qubes and its own policy file
-SW_261127_KWT2 = Spec("SW-261127-KWT2", "Each mesh's file changes only its own qubes and its own policy file", "planned", "invariant")
+SW_261127_KWT2 = Spec("SW-261127-KWT2", "Each mesh's file changes only its own qubes and its own policy file", "active", "invariant")
 
 #: SW_261127_M36P is SW-261127-M36P: Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed
 SW_261127_M36P = Spec("SW-261127-M36P", "Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed", "active", "invariant")
@@ -183,7 +183,7 @@ SW_261127_N3N8 = Spec("SW-261127-N3N8", "In a qube with no netvm, the client lis
 SW_261127_PXX9 = Spec("SW-261127-PXX9", "A connection is decided against the entry of the qube it came from, by the way it arrived", "active", "invariant")
 
 #: SW_261127_QMVP is SW-261127-QMVP: apply goes on past a proxy's config only once the proxy reports running it
-SW_261127_QMVP = Spec("SW-261127-QMVP", "apply goes on past a proxy's config only once the proxy reports running it", "planned", "invariant")
+SW_261127_QMVP = Spec("SW-261127-QMVP", "apply goes on past a proxy's config only once the proxy reports running it", "active", "invariant")
 
 #: SW_261127_QQYS is SW-261127-QQYS: UDP is decided per flow, and each qube has a cap on open flows
 SW_261127_QQYS = Spec("SW-261127-QQYS", "UDP is decided per flow, and each qube has a cap on open flows", "active", "bound")
@@ -192,13 +192,13 @@ SW_261127_QQYS = Spec("SW-261127-QQYS", "UDP is decided per flow, and each qube 
 SW_261127_T7GG = Spec("SW-261127-T7GG", "An inbound connection reaches a qube only on a port its entry or a service lists", "active", "invariant")
 
 #: SW_261127_VPGK is SW-261127-VPGK: A qube adopted records its netvm once; a qube leaving the file is left with no netvm
-SW_261127_VPGK = Spec("SW-261127-VPGK", "A qube adopted records its netvm once; a qube leaving the file is left with no netvm", "planned", "invariant")
+SW_261127_VPGK = Spec("SW-261127-VPGK", "A qube adopted records its netvm once; a qube leaving the file is left with no netvm", "active", "invariant")
 
 #: SW_261127_WNYB is SW-261127-WNYB: Every address is in exactly one zone, and a forbidden address is never dialled
 SW_261127_WNYB = Spec("SW-261127-WNYB", "Every address is in exactly one zone, and a forbidden address is never dialled", "active", "invariant")
 
 #: SW_261127_XGDY is SW-261127-XGDY: A proxy takes its config whole or not at all, and a failed check never replaces the running one
-SW_261127_XGDY = Spec("SW-261127-XGDY", "A proxy takes its config whole or not at all, and a failed check never replaces the running one", "planned", "invariant")
+SW_261127_XGDY = Spec("SW-261127-XGDY", "A proxy takes its config whole or not at all, and a failed check never replaces the running one", "active", "invariant")
 
 #: QubesAntispoof is an observation of qubes: A Qubes netvm drops packets arriving on a qube's `vif` interface whose source address is not that qube's own; a qube cannot send as another.
 QubesAntispoof = Observation("QubesAntispoof", "qubes", "unsure")

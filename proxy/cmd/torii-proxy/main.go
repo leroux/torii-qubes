@@ -156,6 +156,8 @@ func run(args []string) error {
 // waitForNewConfig returns the next valid config with another version,
 // or nil when ctx ends. Invalid configs (a write in progress, a bad one)
 // leave the running config in place.
+//
+//charter:realizes SW-261127-XGDY
 func waitForNewConfig(ctx context.Context, src, version string, changed <-chan struct{}) *config.Config {
 	for {
 		select {

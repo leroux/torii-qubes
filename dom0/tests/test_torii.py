@@ -183,6 +183,7 @@ class MachineFile(unittest.TestCase):
         self.assertGreater(n, 3, "found the docs' yaml blocks")
 
     def test_errors(self):
+        claims.verifies(self, claims.SW_261127_9BNW, "unknown-key-refused")
         self.bad("qubes: {a: {netwrk-card: yes}}", "unknown key 'netwrk-card'")
         self.bad("qubes: {a: {outbound: {internet: ful}}}", "none, all, or a list")
         self.bad("qubes: {a: {outbound: {internet: pypi.org}}}", "none, all, or a list")
@@ -250,6 +251,7 @@ services:
             machine.parse("machine: M_1\nqubes: {}")
 
     def test_earlier_schema_says_where_keys_went(self):
+        claims.verifies(self, claims.SW_261127_9BNW, "earlier-key-redirected")
         self.bad("qubes: {a: {internet: full}}", "moved to outbound.internet")
         self.bad("qubes: {a: {internet-allow: [x.org]}}", "moved to the list in outbound.internet")
         self.bad("qubes: {a: {internet-via: ex}}", "moved to egress:")
@@ -290,6 +292,7 @@ class Plans(unittest.TestCase):
         golden("proxy-config.json", json.dumps(cfg, indent=1, sort_keys=True) + "\n")
 
     def test_second_apply_changes_nothing(self):
+        claims.verifies(self, claims.SW_261127_63CS, "second-apply-empty")
         m = full_machine()
         after = simulate(snap(), plan.make(m, snap(), VERSION))
         self.assertEqual([str(s) for s in plan.make(m, after, VERSION)], [])
@@ -308,6 +311,7 @@ class Plans(unittest.TestCase):
         self.assertEqual(plan.make(smaller, final, VERSION), [])
 
     def test_new_package_restarts_running_proxies(self):
+        claims.verifies(self, claims.SW_261127_HSHY, "running-proxy-restarted")
         m = full_machine()
         after = simulate(snap(), plan.make(m, snap(), VERSION))
         after.qubes["personal"].state = "Running"
@@ -368,6 +372,7 @@ class Plans(unittest.TestCase):
         self.assertEqual(plan.make(m, after, VERSION), [])
 
     def test_services_on_a_qube_the_file_does_not_manage(self):
+        claims.verifies(self, claims.SW_261127_G26T, "service-host-untouched")
         m = mparse(SERVICES)
         steps = plan.make(m, snap(), VERSION)
         golden("plan-services.txt", "\n".join(str(s) for s in steps) + "\n")
@@ -418,6 +423,7 @@ qubes:
             mparse("services: {m: {qube: x, tags: [t]}}")  # no ports
 
     def test_two_meshes_keep_to_their_own(self):
+        claims.verifies(self, claims.SW_261127_KWT2, "meshes-apart")
         main = mparse("qubes: {torii-probe: {}, personal: {network: proxy, outbound: {internet: all}}}")
         test = mparse("""
 mesh: test
@@ -448,12 +454,19 @@ qubes: {torii-probe2: {tailnet: {identity: tagged, tags: [t]}}}
         self.assertIn("another mesh", str(e.exception))
 
     def test_workload_must_exist(self):
+        claims.verifies(self, claims.SW_261127_2JH3, "missing-qube-refused")
         m = mparse("defaults: {network: none, tailnet: {tags: [t]}}\nqubes: {nosuch: {}}")
         with self.assertRaises(plan.PlanError) as e:
             plan.make(m, snap(), VERSION)
         self.assertIn("never creates workloads", str(e.exception))
+        # Every reason is named at once, and nothing is planned.
+        with self.assertRaises(plan.PlanError) as e:
+            plan.make(mparse("defaults: {network: none, tailnet: {tags: [t]}}\nqubes: {nosuch: {}, sys-net: {}}"), snap(), VERSION)
+        self.assertIn("nosuch is in the file but not on this machine", str(e.exception))
+        self.assertIn("sys-net provides network to other qubes", str(e.exception))
 
     def test_netvms_are_not_workloads(self):
+        claims.verifies(self, claims.SW_261127_2JH3, "netvm-not-a-workload")
         with self.assertRaises(plan.PlanError):
             plan.make(mparse("qubes: {sys-net: {}}"), snap(), VERSION)
 
@@ -481,6 +494,7 @@ class Schema(unittest.TestCase):
         self.assertIn(msg, str(e.exception))
 
     def test_network_is_required(self):
+        claims.verifies(self, claims.SW_261127_9BNW, "network-required")
         with self.assertRaises(machine.FileError) as e:
             machine.parse("machine: m1\nqubes: {a: {outbound: {internet: all}}}")
         self.assertIn("qubes.a.network: required", str(e.exception))
@@ -541,6 +555,7 @@ class Adoption(unittest.TestCase):
         ])
 
     def test_first_adoption_records_the_netvm_once(self):
+        claims.verifies(self, claims.SW_261127_VPGK, "prior-netvm-recorded-once")
         m = full_machine()
         steps = plan.make(m, snap(), VERSION)
         texts = [str(s) for s in steps]
@@ -562,6 +577,7 @@ class Adoption(unittest.TestCase):
         self.assertFalse([x for x in steps if x.target == "personal" and "torii-prior" in str(x)])
 
     def test_leaving_the_file_fails_closed_and_names_the_old_netvm(self):
+        claims.verifies(self, claims.SW_261127_VPGK, "leaving-fails-closed")
         m = full_machine()
         after = simulate(snap(), plan.make(m, snap(), VERSION))
         steps = plan.make(mparse("qubes: {torii-probe: {network: none}}"), after, VERSION)
@@ -577,6 +593,7 @@ class Adoption(unittest.TestCase):
         self.assertIn("sys-torii: unused (kept: it holds identities)", plan.notes(mparse("qubes: {}"), after))
 
     def test_unknown_netvm_needs_adopt_force(self):
+        claims.verifies(self, claims.SW_261127_2JH3, "unknown-netvm-needs-force")
         s = with_qube(with_qube(snap(), "sys-whonix", "sys-firewall", provides_network=True, qid=61),
                       "anon-whonix", "sys-whonix")
         with self.assertRaises(plan.PlanError) as e:
@@ -602,6 +619,7 @@ class Adoption(unittest.TestCase):
         self.assertIn(f"  adopted        from netvm sys-firewall on {TODAY}", show.format_view(dict(v, pattern="x")))
 
     def test_disposable_templates_need_disposables_yes(self):
+        claims.verifies(self, claims.SW_261127_2JH3, "disposable-template-needs-yes")
         s = with_qube(snap(), "browser-dvm", "sys-firewall", dvm=True)
         with self.assertRaises(plan.PlanError) as e:
             plan.make(mparse("qubes: {browser-dvm: {network: proxy}}"), s, VERSION)
@@ -772,6 +790,7 @@ class EgressStatus(unittest.TestCase):
 
 class Chunks(unittest.TestCase):
     def test_roundtrip_and_qubesdb_limit(self):
+        claims.verifies(self, claims.SW_261127_XGDY, "chunks-roundtrip")
         m = full_machine()
         big = {"workloads": {f"q{i}": {"internet_allow": [f"h{i}-{j}.example.org" for j in range(40)]}
                              for i in range(40)}}
@@ -782,15 +801,13 @@ class Chunks(unittest.TestCase):
         self.assertGreater(len(derive.encode_chunks(big)), 2)
 
     def test_half_written_is_refused(self):
+        claims.verifies(self, claims.SW_261127_XGDY, "half-written-refused")
         big = {"x": [os.urandom(8).hex() for _ in range(2000)]}
         f = derive.encode_chunks(big)
         f[f"{derive.CONFIG_FEATURE}.1"] = f[f"{derive.CONFIG_FEATURE}.1"][::-1]
         with self.assertRaises(Exception):
             derive.decode_chunks(f)
 
-
-if __name__ == "__main__":
-    unittest.main()
 
 
 CALLS = """
@@ -849,3 +866,171 @@ class Calls(unittest.TestCase):
         deny = derive.deny_policy().splitlines()
         self.assertIn("torii.Connect  *  @anyvm  @anyvm  deny", deny)
         self.assertIn("torii.Status   *  @anyvm  @anyvm  deny", deny)
+
+
+class Owned(unittest.TestCase):
+    """apply changes only what torii owns."""
+
+    def test_only_owned_settings_change(self):
+        claims.verifies(self, claims.SW_261127_G26T, "fresh-machine-steps")
+        m = full_machine()
+        s = snap()
+        own = {s.target for s in plan.make(m, s, VERSION) if s.kind in ("create", "clone", "template-install")}
+        own |= set(m.proxies) | {m.template, derive.policy_name(m), derive.DENY_POLICY}
+        listed = set(m.qubes)
+        owned_features = {derive.CLIENT_FEATURE, "service." + derive.CLIENT_SERVICE, derive.PRIOR_NETVM_FEATURE, derive.ADOPTED_FEATURE}
+        for st in plan.make(m, s, VERSION):
+            if st.target in own:
+                continue
+            self.assertIn(st.target, listed, f"{st} changes a qube that is neither torii's nor listed")
+            if st.kind == "pref":
+                self.assertEqual(st.data["key"], "netvm", str(st))
+            elif st.kind in ("feature-set", "feature-del"):
+                self.assertIn(st.data["key"], owned_features, str(st))
+            elif st.kind in ("tag-add", "tag-del"):
+                self.assertIn(st.data["tag"], (derive.MANAGED_TAG, derive.KEEP_TAG), str(st))
+            else:
+                self.fail(f"{st}: a {st.kind} step on a workload")
+
+    def test_proxies_have_ipv6_off(self):
+        claims.verifies(self, claims.SW_261127_3Q23, "ipv6-off")
+        m = full_machine()
+        fresh = [st for st in plan.make(m, snap(), VERSION) if st.target == "sys-torii" and st.kind == "feature-set"
+                 and st.data["key"] == "ipv6"]
+        self.assertEqual([st.data["value"] for st in fresh], [""])
+        after = simulate(snap(), plan.make(m, snap(), VERSION))
+        after.qubes["sys-torii"].features["ipv6"] = "1"
+        again = [st for st in plan.make(m, after, VERSION) if st.kind == "feature-set" and st.data["key"] == "ipv6"]
+        self.assertEqual([(st.target, st.data["value"]) for st in again], [("sys-torii", "")])
+
+    def test_the_bundle_is_installed_once(self):
+        claims.verifies(self, claims.SW_261127_HSHY, "bundle-installs")
+        m = full_machine()
+        steps = plan.make(m, snap(), VERSION)
+        pkg = [st for st in steps if st.kind == "template-package"]
+        self.assertEqual([(st.target, st.data["version"]) for st in pkg], [(m.template, VERSION)])
+        after = simulate(snap(), steps)
+        self.assertFalse([st for st in plan.make(m, after, VERSION) if st.kind == "template-package"])
+
+
+class Resume(unittest.TestCase):
+    def test_a_stopped_apply_continues(self):
+        claims.verifies(self, claims.SW_261127_63CS, "second-run-continues")
+        m = full_machine()
+        steps = plan.make(m, snap(), VERSION)
+        for k in (1, len(steps) // 2, len(steps) - 1):
+            partial = simulate(snap(), steps[:k])
+            rest = plan.make(m, partial, VERSION)
+            done = {str(st) for st in steps[:k]}
+            self.assertFalse(done & {str(st) for st in rest}, f"after {k} steps the plan repeats one")
+            self.assertEqual(plan.make(m, simulate(partial, rest), VERSION), [], f"after {k} steps")
+
+
+class FakeFeatures(dict):
+    def __init__(self, log):
+        super().__init__()
+        self.log = log
+
+    def __setitem__(self, k, v):
+        self.log.append(("set", k))
+        super().__setitem__(k, v)
+
+    def __delitem__(self, k):
+        self.log.append(("del", k))
+        super().__delitem__(k)
+
+
+class FakeProc:
+    def __init__(self, out):
+        self.out, self.returncode = out, 0
+
+    def communicate(self, data, timeout=None):
+        return self.out, b""
+
+
+class FakeVM:
+    def __init__(self, name, versions=()):
+        self.name, self.log = name, []
+        self.features = FakeFeatures(self.log)
+        self.running = False
+        self.versions = list(versions)  # what torii.Status reports, call by call
+
+    def is_running(self):
+        return self.running
+
+    def start(self):
+        self.log.append(("start", self.name))
+        self.running = True
+
+    def run_service(self, name, user=None):
+        v = self.versions.pop(0) if len(self.versions) > 1 else (self.versions[0] if self.versions else None)
+        return FakeProc(json.dumps({"status": {"config_version": v}}).encode())
+
+
+class FakeApp:
+    def __init__(self, *vms):
+        self.domains = {v.name: v for v in vms}
+
+
+class Applying(unittest.TestCase):
+    """apply's runner, against a fake Admin API."""
+
+    def applier(self, *vms, timeout=5):
+        from torii import apply as ap
+        out = []
+        real = ap.time.sleep
+        ap.time.sleep = lambda s: None
+        self.addCleanup(setattr, ap.time, "sleep", real)
+        return ap.Applier(FakeApp(*vms), None, "/nonexistent", out=out.append, ready_timeout=timeout), out
+
+    def test_stops_at_the_first_failure(self):
+        claims.verifies(self, claims.SW_261127_63CS, "stops-at-first-failure")
+        from torii import apply as ap
+        vm = FakeVM("w")
+        a, out = self.applier(vm)
+        steps = [plan.Step("feature-set", "w", "one", {"key": "a", "value": "1"}),
+                 plan.Step("feature-set", "nosuch", "two", {"key": "b", "value": "2"}),
+                 plan.Step("feature-set", "w", "three", {"key": "c", "value": "3"})]
+        with self.assertRaises(ap.ApplyError) as e:
+            a.run(steps)
+        self.assertIs(e.exception.step, steps[1])
+        self.assertIn("nosuch: two", str(e.exception))
+        self.assertEqual(dict(vm.features), {"a": "1"}, "a step after the failure was made")
+        self.assertEqual(out, ["[1/3] w: one", "[2/3] nosuch: two"])
+
+    def test_config_parts_first_head_last(self):
+        claims.verifies(self, claims.SW_261127_XGDY, "head-written-last")
+        vm = FakeVM("p")
+        a, _ = self.applier(vm)
+        head = derive.CONFIG_FEATURE
+        vm.features.update({f"{head}.3": "stale"})
+        feats = dict(derive.encode_chunks({"x": [os.urandom(8).hex() for _ in range(2000)]}))
+        feats[f"{head}.3"] = None
+        a.do_proxy_config(plan.Step("proxy-config", "p", "c", {"features": feats}))
+        order = [k for op, k in vm.log]
+        hi = order.index(head)
+        self.assertTrue(all(order.index(k) < hi for k in feats if k != head and feats[k] is not None), order)
+        self.assertEqual(vm.log[-1], ("del", f"{head}.3"))
+        self.assertNotIn(f"{head}.3", vm.features)
+
+    def test_waits_until_the_proxy_runs_the_version(self):
+        claims.verifies(self, claims.SW_261127_QMVP, "waits-for-version")
+        vm = FakeVM("p", versions=[None, "v1", "v1", "v2"])
+        a, _ = self.applier(vm)
+        a.do_proxy_ready(plan.Step("proxy-ready", "p", "r", {"version": "v2", "package": VERSION}))
+        self.assertEqual(vm.versions, ["v2"], "returned before the proxy reported v2")
+        self.assertIn(("start", "p"), vm.log)
+
+    def test_times_out_naming_what_it_runs(self):
+        claims.verifies(self, claims.SW_261127_QMVP, "times-out-naming-state")
+        from torii import apply as ap
+        vm = FakeVM("p", versions=["v1"])
+        vm.running = True
+        a, _ = self.applier(vm, timeout=0.05)
+        with self.assertRaises(ap.ApplyError) as e:
+            a.do_proxy_ready(plan.Step("proxy-ready", "p", "r", {"version": "v2", "package": VERSION}))
+        self.assertIn("runs config v1", str(e.exception))
+
+
+if __name__ == "__main__":
+    unittest.main()

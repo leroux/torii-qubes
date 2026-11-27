@@ -92,6 +92,7 @@ def _service_steps(target: str, have: dict[str, str], want: dict[str, bool]) -> 
     return out
 
 
+# charter:realizes SW-261127-2JH3, SW-261127-G26T, SW-261127-VPGK, SW-261127-3Q23, SW-261127-HSHY, SW-261127-KWT2
 def make(m: Machine, snap: Snapshot, bundle_version: str) -> list[Step]:
     steps: list[Step] = []
     q = snap.qubes
