@@ -361,7 +361,7 @@ def dispvm_escapes(m, snap: Snapshot) -> list[str]:
     return out
 
 
-# charter:realizes SW-261127-SMYC
+# charter:realizes SW-261127-SMYC, SW-261127-P8H7
 def check_problems(m, snap: Snapshot, ps: dict[str, dict[str, Any]], bundle_version: str, now) -> list[str]:
     """Every difference between the live machine and the file, one line
     each; none when they match. ps is each proxy's config, as its

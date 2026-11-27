@@ -33,6 +33,7 @@ def _has_timeout(p) -> bool:
         return False
 
 
+# charter:realizes SW-261127-3TPX
 def sign_in_links(st: dict[str, Any]) -> dict[str, str]:
     """Identities waiting for sign-in: workloads by name, egresses as
     "egress <name>"."""

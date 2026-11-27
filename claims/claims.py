@@ -137,6 +137,9 @@ SW_261127_2XS6 = Spec("SW-261127-2XS6", "Allow entries match by exact name or su
 #: SW_261127_3Q23 is SW-261127-3Q23: Every proxy qube has IPv6 off, for itself and every qube behind it
 SW_261127_3Q23 = Spec("SW-261127-3Q23", "Every proxy qube has IPv6 off, for itself and every qube behind it", "active", "invariant")
 
+#: SW_261127_3TPX is SW-261127-3TPX: An identity signs in by a link a person approves, or a one-time key that only the proxy qube keeps
+SW_261127_3TPX = Spec("SW-261127-3TPX", "An identity signs in by a link a person approves, or a one-time key that only the proxy qube keeps", "active", "invariant")
+
 #: SW_261127_62WV is SW-261127-62WV: show reports each qube's reach from the live machine, never from the file
 SW_261127_62WV = Spec("SW-261127-62WV", "show reports each qube's reach from the live machine, never from the file", "active", "invariant")
 
@@ -155,6 +158,9 @@ SW_261127_7C3Y = Spec("SW-261127-7C3Y", "A qrexec caller is the qube dom0 names,
 #: SW_261127_8DFY is SW-261127-8DFY: An exit node is healthy while listed, answering pings, and not failing every real connection through it
 SW_261127_8DFY = Spec("SW-261127-8DFY", "An exit node is healthy while listed, answering pings, and not failing every real connection through it", "active", "bound")
 
+#: SW_261127_8PTP is SW-261127-8PTP: An identity sends Tailscale no client logs unless the file asks, and never maps ports
+SW_261127_8PTP = Spec("SW-261127-8PTP", "An identity sends Tailscale no client logs unless the file asks, and never maps ports", "active", "invariant")
+
 #: SW_261127_9BNW is SW-261127-9BNW: The machine file is read whole and refused whole when a key, a network or a value is wrong
 SW_261127_9BNW = Spec("SW-261127-9BNW", "The machine file is read whole and refused whole when a key, a network or a value is wrong", "active", "invariant")
 
@@ -169,6 +175,9 @@ SW_261127_BHHX = Spec("SW-261127-BHHX", "A routed qube is named by its Qubes sou
 
 #: SW_261127_BNFC is SW-261127-BNFC: Exit nodes are used in the file's order, failing over at once and back only after a hold-down
 SW_261127_BNFC = Spec("SW-261127-BNFC", "Exit nodes are used in the file's order, failing over at once and back only after a hold-down", "active", "invariant")
+
+#: SW_261127_DH6R is SW-261127-DH6R: torii proposes grants for the tailnet and never changes the tailnet itself
+SW_261127_DH6R = Spec("SW-261127-DH6R", "torii proposes grants for the tailnet and never changes the tailnet itself", "active", "invariant")
 
 #: SW_261127_G26T is SW-261127-G26T: apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings
 SW_261127_G26T = Spec("SW-261127-G26T", "apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings", "active", "invariant")
@@ -203,6 +212,9 @@ SW_261127_M7G9 = Spec("SW-261127-M7G9", "A name resolves, for the qube and for t
 #: SW_261127_N3N8 is SW-261127-N3N8: In a qube with no netvm, the client listens on loopback only, one qrexec call per connection
 SW_261127_N3N8 = Spec("SW-261127-N3N8", "In a qube with no netvm, the client listens on loopback only, one qrexec call per connection", "active", "invariant")
 
+#: SW_261127_P8H7 is SW-261127-P8H7: A tagged identity carries exactly the file's tags, prefixed by the machine, and check names any other
+SW_261127_P8H7 = Spec("SW-261127-P8H7", "A tagged identity carries exactly the file's tags, prefixed by the machine, and check names any other", "active", "invariant")
+
 #: SW_261127_PXX9 is SW-261127-PXX9: A connection is decided against the entry of the qube it came from, by the way it arrived
 SW_261127_PXX9 = Spec("SW-261127-PXX9", "A connection is decided against the entry of the qube it came from, by the way it arrived", "active", "invariant")
 
@@ -224,8 +236,14 @@ SW_261127_T7GG = Spec("SW-261127-T7GG", "An inbound connection reaches a qube on
 #: SW_261127_VPGK is SW-261127-VPGK: A qube adopted records its netvm once; a qube leaving the file is left with no netvm
 SW_261127_VPGK = Spec("SW-261127-VPGK", "A qube adopted records its netvm once; a qube leaving the file is left with no netvm", "active", "invariant")
 
+#: SW_261127_WNGN is SW-261127-WNGN: Each identity is a tailnet device of its own, with its own name and state
+SW_261127_WNGN = Spec("SW-261127-WNGN", "Each identity is a tailnet device of its own, with its own name and state", "active", "invariant")
+
 #: SW_261127_WNYB is SW-261127-WNYB: Every address is in exactly one zone, and a forbidden address is never dialled
 SW_261127_WNYB = Spec("SW-261127-WNYB", "Every address is in exactly one zone, and a forbidden address is never dialled", "active", "invariant")
+
+#: SW_261127_WSWG is SW-261127-WSWG: An egress's identity carries only the internet, and grants propose it nothing else
+SW_261127_WSWG = Spec("SW-261127-WSWG", "An egress's identity carries only the internet, and grants propose it nothing else", "active", "invariant")
 
 #: SW_261127_XGDY is SW-261127-XGDY: A proxy takes its config whole or not at all, and a failed check never replaces the running one
 SW_261127_XGDY = Spec("SW-261127-XGDY", "A proxy takes its config whole or not at all, and a failed check never replaces the running one", "active", "invariant")

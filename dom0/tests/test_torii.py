@@ -4,6 +4,7 @@
 import copy
 import json
 import os
+import sys
 import textwrap
 import unittest
 
@@ -225,6 +226,7 @@ qubes:
         self.bad("qubes: {a: {outbound: {tailnet: [notes]}}}", "need an identity")
 
     def test_machine_and_tags(self):
+        claims.verifies(self, claims.SW_261127_P8H7, "tags-prefixed")
         with self.assertRaises(machine.FileError) as e:
             machine.parse("qubes: {}")
         self.assertIn("machine: required", str(e.exception))
@@ -481,6 +483,7 @@ class Schema(unittest.TestCase):
     identity in tailnet.identity, its network explicitly."""
 
     def test_tailscale_logs_off_unless_asked(self):
+        claims.verifies(self, claims.SW_261127_8PTP, "logs-on-asked")
         body = "qubes:\n  w: {network: proxy, outbound: {internet: all}}\n"
         off = derive.proxy_config(mparse(body), "sys-torii", {"w": "10.137.0.9"}, "v1")
         self.assertNotIn("tailscale_logs", off)
@@ -693,6 +696,7 @@ class Egresses(unittest.TestCase):
         self.assertEqual(dvm["workloads"], {})
 
     def test_grants_allow_only_the_internet(self):
+        claims.verifies(self, claims.SW_261127_WSWG, "grants-internet-only")
         g = derive.grants(mparse(EGRESS))
         self.assertIn({"src": ["tag:m1-egress"], "dst": ["autogroup:internet"], "ip": ["*"]}, g["grants"])
         self.assertIn("tag:m1-egress", g["tagOwners"])
@@ -751,6 +755,7 @@ class Disposables(unittest.TestCase):
 
 class EgressStatus(unittest.TestCase):
     def test_sign_in_links_include_egresses(self):
+        claims.verifies(self, claims.SW_261127_3TPX, "links-printed")
         from torii import status
         self.assertEqual(status.sign_in_links(PROXY_STATUS), {"egress vpn": "https://login/x"})
 
@@ -1143,6 +1148,89 @@ class Check(unittest.TestCase):
         claims.verifies(self, claims.SW_261127_SMYC, "clean-is-zero")
         m, after, ps = applied()
         self.assertEqual(show.check_problems(m, after, ps, VERSION, NOW), [])
+
+
+class Identity(unittest.TestCase):
+    def test_a_tag_mismatch_is_named(self):
+        claims.verifies(self, claims.SW_261127_P8H7, "mismatch-named")
+        m, after, ps = applied()
+        ps["sys-torii"]["status"]["status"]["workloads"] = {
+            "torii-probe2": {"identity": {"state": "Running", "hostname": "m1-torii-probe2",
+                                          "tag_mismatch": "has tag:other, the file gives tag:m1-t"}}}
+        self.assertIn("torii-probe2: has tag:other, the file gives tag:m1-t",
+                      show.check_problems(m, after, ps, VERSION, NOW))
+
+    def test_the_key_goes_to_the_proxy_only(self):
+        claims.verifies(self, claims.SW_261127_3TPX, "key-to-proxy-only")
+        import io
+        import tempfile
+        from torii import cli
+        sent = []
+
+        class Proc:
+            returncode = 0
+
+            def communicate(self, data):
+                sent.append(data)
+                return b"", b""
+
+        class VM:
+            def run_service(self, name, user=None):
+                sent.append((name, user))
+                return Proc()
+
+        class App:
+            domains = {"sys-torii": VM()}
+
+        d = tempfile.mkdtemp()
+        f = os.path.join(d, "torii.yaml")
+        with open(f, "w") as fh:
+            fh.write("machine: m1\ndefaults: {network: none}\nqubes: {torii-probe2: {tailnet: {identity: tagged, tags: [t]}}}\n")
+        before = set(os.listdir(d))
+        real_app, real_stdin = cli._app, sys.stdin
+        cli._app, sys.stdin = (lambda: App()), io.StringIO("tskey-auth-secret\n")
+        try:
+            rc = cli.cmd_sign_in_key(type("A", (), {"file": f, "qube": "torii-probe2"})())
+        finally:
+            cli._app, sys.stdin = real_app, real_stdin
+        self.assertEqual(rc, 0)
+        self.assertEqual(set(os.listdir(d)), before, "a file was written in dom0")
+        self.assertEqual(sent[0], ("qubes.VMRootShell", "root"))
+        payload = sent[1]
+        self.assertTrue(payload.endswith(b"tskey-auth-secret\n"), payload)
+        self.assertIn(b"install -d -m 0700 /rw/torii/keys", payload)
+        self.assertIn(b"umask 077", payload)
+        self.assertIn(b"/rw/torii/keys/torii-probe2", payload)
+        self.assertNotIn(b"tskey", b"".join(x for x in sent[3:] if isinstance(x, bytes)), "the key went to a second call")
+
+
+class Grants(unittest.TestCase):
+    def test_grants_are_printed_for_review(self):
+        claims.verifies(self, claims.SW_261127_DH6R, "grants-printed")
+        g = derive.grants(mparse(SERVICES.replace("qubes: {}", "qubes: {w: {tailnet: {identity: tagged, tags: [web], inbound: [443]}}}")))
+        self.assertIn({"src": ["autogroup:member"], "dst": ["tag:m1-web", "tag:m1"], "ip": ["tcp:443"]}, g["grants"])
+        self.assertIn({"src": ["autogroup:member"], "dst": ["tag:chat", "tag:m1"], "ip": ["tcp:443"]}, g["grants"])
+        for t in ("tag:m1-web", "tag:chat", "tag:notes", "tag:m1"):
+            self.assertIn(t, g["tagOwners"])
+
+    def test_the_dom0_tool_has_no_network(self):
+        claims.verifies(self, claims.SW_261127_DH6R, "dom0-no-network")
+        import ast
+        import glob
+        net = {"socket", "ssl", "http", "urllib", "requests", "httpx", "aiohttp", "ftplib", "smtplib", "asyncio", "xmlrpc"}
+        files = glob.glob(os.path.join(HERE, "..", "torii", "*.py"))
+        self.assertGreater(len(files), 5)
+        for path in files:
+            with open(path, encoding="utf-8") as fh:
+                tree = ast.parse(fh.read())
+            for node in ast.walk(tree):
+                names = []
+                if isinstance(node, ast.Import):
+                    names = [a.name for a in node.names]
+                elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
+                    names = [node.module]
+                for n in names:
+                    self.assertNotIn(n.split(".")[0], net, f"{os.path.basename(path)} imports {n}")
 
 
 if __name__ == "__main__":

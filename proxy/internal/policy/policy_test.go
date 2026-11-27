@@ -144,6 +144,7 @@ func TestDecideNameAndInbound(t *testing.T) {
 // An egress identity is internet-only: a workload without an identity of
 // its own never reaches the tailnet through its egress, whatever it dials.
 func TestEgressNeverCarriesTheTailnet(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_WSWG, "no-tailnet-on-egress")
 	c := testConfig(t)
 	for _, wl := range []string{"shop", "unlisted:10.137.0.99"} {
 		for _, a := range []string{"100.64.0.5", "100.100.100.100", "fd7a:115c:a1e0::1"} {

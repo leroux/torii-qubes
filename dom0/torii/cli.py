@@ -200,6 +200,7 @@ def cmd_log(a) -> int:
     return 0
 
 
+# charter:realizes SW-261127-3TPX
 def cmd_sign_in_key(a) -> int:
     """Store a one-time key for a qube's identity in its proxy qube (never
     in dom0) and restart the proxy so the identity signs in with it."""

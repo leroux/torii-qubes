@@ -21,6 +21,7 @@ SHORT_TAG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 MACHINE_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,20}$")
 
 
+# charter:realizes SW-261127-P8H7
 def tags_of(where: str, raw: Any, machine: str, full_ok: bool) -> tuple[str, ...]:
     """Expand a file's tags. A short tag (`server`) is the machine's:
     tag:<machine>-server. A full one (`tag:chat`) is used as written, and is

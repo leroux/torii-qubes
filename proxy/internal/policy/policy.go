@@ -124,9 +124,10 @@ func (o Outbound) proto() string {
 	return "tcp"
 }
 
-// DecideOutbound decides an outbound connection.
+// DecideOutbound decides an outbound connection. A tailnet destination is
+// dialled only on the workload's own identity, never its egress's.
 //
-//charter:realizes SW-261127-PXX9
+//charter:realizes SW-261127-PXX9, SW-261127-WSWG
 func DecideOutbound(c *config.Config, o Outbound) Decision {
 	w, ok := c.Lookup(o.Workload)
 	if !ok {

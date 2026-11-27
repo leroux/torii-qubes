@@ -54,7 +54,10 @@ type Daemon struct {
 type closer interface{ Close() error }
 
 // Identities builds the tsnet identities of cfg: each workload's that has
-// one, and each egress's under config.EgressIdentityKey.
+// one, and each egress's under config.EgressIdentityKey, each with its own
+// state directory under the state dir.
+//
+//charter:realizes SW-261127-WNGN, SW-261127-3TPX
 func Identities(cfg *config.Config, logf func(string, ...any)) (map[string]tailnet.Identity, error) {
 	ids := map[string]tailnet.Identity{}
 	authKey := func(name, file string) (string, error) {

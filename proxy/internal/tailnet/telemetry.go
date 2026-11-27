@@ -22,6 +22,8 @@ var (
 // off unless logs; off also tells the control server so. Once off, they
 // stay off for the process: it reports true when logs are wanted again,
 // and the program must restart for that.
+//
+//charter:realizes SW-261127-8PTP
 func SetTelemetry(logs bool) (restart bool) {
 	telemetryMu.Lock()
 	defer telemetryMu.Unlock()

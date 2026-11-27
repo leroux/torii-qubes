@@ -49,6 +49,7 @@ class QubeState:
     managed: bool  # carries MANAGED_TAG
 
 
+# charter:realizes SW-261127-WNGN, SW-261127-8PTP
 def proxy_config(m: Machine, proxy: str, addresses: dict[str, str], version: str) -> dict[str, Any]:
     """The proxy program's config (proxy/internal/config) for one proxy qube."""
     workloads = {}
@@ -256,6 +257,7 @@ def policy(m: Machine) -> str:
     return "\n".join(lines)
 
 
+# charter:realizes SW-261127-DH6R, SW-261127-WSWG
 def grants(m: Machine) -> dict[str, Any]:
     """Proposed tag owners and grants, for a person to review and paste.
 

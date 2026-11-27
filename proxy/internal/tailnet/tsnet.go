@@ -85,6 +85,9 @@ func (t *TSNet) Server() *tsnet.Server { return t.srv }
 
 func (t *TSNet) Hostname() string { return t.opt.Hostname }
 
+// StateDir is where the identity keeps its state.
+func (t *TSNet) StateDir() string { return t.opt.Dir }
+
 func (t *TSNet) Start(ctx context.Context) error {
 	if t.opt.Dir != "" {
 		if err := os.MkdirAll(t.opt.Dir, 0o700); err != nil {

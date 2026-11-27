@@ -1,6 +1,7 @@
 package tailnet
 
 import (
+	"github.com/leroux/torii-qubes/claims"
 	"os"
 	"testing"
 
@@ -8,6 +9,7 @@ import (
 )
 
 func TestTelemetryOffByDefault(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_8PTP, "logs-off-by-default", "logs-on-asked")
 	t.Cleanup(func() { logsOff = false; os.Unsetenv("TS_NO_LOGS_NO_SUPPORT"); os.Unsetenv("TS_DISABLE_PORTMAPPER") })
 	if SetTelemetry(false) {
 		t.Fatal("turning logs off needs no restart")
