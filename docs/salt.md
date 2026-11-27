@@ -37,12 +37,14 @@ torii-apply:
 ```
 
 The first `apply` on a machine downloads the base template and builds the
-tool's own; it takes minutes. Later ones take seconds.
+tool's own; it takes minutes. Later ones take seconds. A machine that
+already matches its file plans nothing, so the state does nothing
+([STK-261126-B4CP](../claims/needs.md#stk-261126-b4cp-apply-changes-only-what-torii-owns-and-exactly-the-steps-plan-showed)).
 
 ## The pillar
 
 Each machine's pillar holds its machine file under `torii:machine`, exactly
-as in [`setup.md`](setup.md) and [`reference.md`](reference.md):
+as in [`setup.md`](setup.md) and [its reference sections](setup.md#the-machine-file):
 
 ```yaml
 # not a machine file: pillar/laptops/alice.sls
@@ -84,7 +86,8 @@ torii-sign-in-{{ q }}:
 
 `sign_in` lists identities by their tailnet name (a service's name, or the
 qube's device name, `<machine>-<qube>` by default). Keep `authkey` in an
-encrypted pillar; the tool stores it only in the proxy qube.
+encrypted pillar; the tool stores it only in the proxy qube
+([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-signs-in-by-a-link-a-person-approves-or-a-one-time-key-that-only-the-proxy-qube-keeps)).
 
 ## What to keep out of other states
 
@@ -92,7 +95,8 @@ On the qubes in a machine's file, torii owns `netvm`, the `ipv6` feature and
 the `torii-*` tags and features; on its own qubes (the proxy qubes and its
 template), everything. Another state that sets these
 would undo `apply`, and `apply` would undo it. `torii check` lists such
-drift.
+drift ([SW-261127-SMYC](../claims/seeing.md#sw-261127-smyc-check-names-each-difference-it-looks-for-between-the-live-machine-and-the-file-and-fails-on-one)). Exactly what torii touches is
+[SW-261127-G26T](../claims/apply.md#sw-261127-g26t-apply-changes-only-what-torii-owns-its-template-its-proxy-qubes-its-policy-files-and-named-workload-settings).
 
 ## Not there yet
 

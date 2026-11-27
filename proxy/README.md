@@ -6,7 +6,7 @@ card (over qrexec) and of routed workloads (proxy qube as netvm, transparent
 interception), and decides every connection against its config. Why it is
 built this way: [`../docs/design.md`](../docs/design.md).
 
-The dom0 tool (`../dom0`, see `../docs/reference.md`) writes that config and reads
+The dom0 tool (`../dom0`, see `../docs/setup.md`) writes that config and reads
 the program's status. This directory also holds `torii-client`, the small
 program in workloads without a network card. The packages are built from
 `../packaging`.

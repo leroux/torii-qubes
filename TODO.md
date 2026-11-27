@@ -126,7 +126,7 @@ the owner's rulings.
 - `docs/design.md` says the server-name check "stops domain fronting with
   an allowed name". It stops a mismatched server name, not the classic form
   (allowed server name, other `Host` inside TLS). Reword.
-- `docs/reference.md` gives `outbound.tailnet` as `yes | no`, but the machine
+- `docs/setup.md` (The machine file) gives `outbound.tailnet` as `yes | no`, but the machine
   file also takes a list of devices (`dom0/torii/machine.py`, `tailnet_allow`).
   Document it.
 

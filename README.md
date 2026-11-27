@@ -43,7 +43,7 @@ netvm.
   `*.example.com:443`. A connection goes through only if the qube looked up
   an allowed name, and for TLS, only if the server name matches too. An
   address the qube never looked up is refused.
-  ([Limits](docs/reference.md#limits))
+  ([Limits](docs/design.md#limits))
 - Inbound connections reach only the ports you list.
 - Qubes on the same machine can reach each other's ports when you allow it.
 - Qubes you haven't listed, including disposables, get nothing unless you
@@ -220,16 +220,19 @@ tailnet policy. A port your file opens but no rule allows is never reached.
 
 Every command reads `~/torii.yaml` unless you pass `-f FILE`. The full list,
 including `grants`, `install-client` and `snapshot`, is in
-[`docs/reference.md`](docs/reference.md).
+[`docs/setup.md`](docs/setup.md#commands).
 
 ## Learn more
 
+Every doc, who it is for and the order to read them in:
+[`docs/README.md`](docs/README.md). The main ones:
+
 | | |
 |---|---|
-| [`docs/setup.md`](docs/setup.md) | Setting up a machine step by step, then each pattern |
+| [`docs/setup.md`](docs/setup.md) | Setting up a machine step by step, then each pattern; every command and file key |
 | [`docs/tailscale.md`](docs/tailscale.md) | The tailnet side: tags, grants, HTTPS, sign-in, exit nodes, Headscale |
-| [`docs/reference.md`](docs/reference.md) | Every command and file key, what torii owns, troubleshooting, limits |
-| [`docs/design.md`](docs/design.md) | The problem, the model, and why it's built this way |
+| [`docs/architecture.md`](docs/architecture.md) | The parts, what runs where, and what crosses each boundary |
+| [`docs/design.md`](docs/design.md) | The problem, the model, why it's built this way, and its limits |
 | [`docs/testing.md`](docs/testing.md) · [`docs/performance.md`](docs/performance.md) | How it's tested, and how fast it is |
 | [`docs/salt.md`](docs/salt.md) | Configuring many machines from Salt |
 | [`HACKING.md`](HACKING.md) · [`proxy/README.md`](proxy/README.md) | Working on the code |
@@ -240,7 +243,7 @@ Experimental. Tested end to end on Qubes 4.3 with a Fedora 44 proxy template
 and Fedora 43 qubes, against Tailscale and Headscale. Qubes 4.2 should work
 but hasn't been tested. Some features haven't been tried on a real machine
 yet; [`TODO.md`](TODO.md) lists them. Known limits are in
-[`docs/reference.md`](docs/reference.md#limits).
+[`docs/design.md`](docs/design.md#limits).
 
 ## License
 

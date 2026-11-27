@@ -16,7 +16,10 @@ Every qube with an identity is a device on the tailnet, held by `sys-torii`:
   laptop. For a work qube used by one person.
 
 The device's name is the qube's name (or the identity's, or `hostname:`). It
-is reachable as `name` and `name.<tailnet>.ts.net`.
+is reachable as `name` and `name.<tailnet>.ts.net`. Each identity is a
+device of its own, with its own state in the proxy qube
+([SW-261127-WNGN](../claims/identity.md#sw-261127-wngn-each-identity-is-a-tailnet-device-of-its-own-with-its-own-name-and-state)); where they run is in
+[`architecture.md`](architecture.md#the-proxy-qube).
 
 The machine file decides which ports a device offers. The policy decides
 who may reach them, and where a device with `outbound.tailnet: yes` may go. A port
@@ -40,13 +43,15 @@ approve such a device:
 
 `torii grants` lists every tag the file uses. Keep tags per role (`tag:chat`),
 not per machine. Then grants read as what they allow, and a second machine
-reuses them.
+reuses them. How the file's tags become the device's, and what `check` says
+when they differ, is [SW-261127-P8H7](../claims/identity.md#sw-261127-p8h7-a-tagged-identity-carries-exactly-the-files-tags-prefixed-by-the-machine-and-check-names-any-other).
 
 ## Grants
 
 `torii grants` prints a proposal from the file: a grant per inbound
 identity, with `autogroup:member` (every signed-in person's devices) as the
-source. Review it, narrow `src` where needed, and paste it in:
+source. Review it, narrow `src` where needed, and paste it in; torii never
+changes the policy itself ([SW-261127-DH6R](../claims/identity.md#sw-261127-dh6r-torii-proposes-grants-for-the-tailnet-and-never-changes-its-policy)):
 
 ```jsonc
 "grants": [
@@ -101,6 +106,19 @@ logs. The first connection to a name waits a few seconds while its
 certificate is issued.
 
 ## Signing identities in
+
+<!-- charter:embed SW-261127-3TPX -->
+> **[SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-signs-in-by-a-link-a-person-approves-or-a-one-time-key-that-only-the-proxy-qube-keeps) An identity signs in by a link a person approves, or a one-time key that only the proxy qube keeps**
+>
+> A new identity asks the tailnet for a sign-in link, which apply, show
+> and check print for a person to approve. `torii sign-in-key` takes a
+> one-time key on dom0's standard input and writes it straight into the
+> proxy qube, as a new file under a directory only root can read, then
+> restarts the
+> proxy with that identity's old state removed so it signs in with the
+> key; dom0 writes the key to no file. After the first sign-in the
+> identity's own state keeps it signed in.
+<!-- /charter:embed -->
 
 A new identity waits for sign-in. `torii show` (and `torii apply`) prints its
 link:
@@ -167,7 +185,11 @@ party from every exit node.
    (`torii grants` proposes it.) The proxy never sends tailnet destinations
    through an egress either; a qube that needs the tailnet gets its own
    identity, which carries its tailnet traffic while the egress carries its
-   internet.
+   internet ([SW-261127-WSWG](../claims/identity.md#sw-261127-wswg-an-egresss-identity-carries-only-the-internet-and-grants-propose-it-nothing-else)).
+
+How the egress chooses and changes its exit node, and how it fails closed,
+is followed through the code in [`walkthrough-egress.md`](walkthrough-egress.md):
+[SW-261127-8DFY](../claims/egress.md#sw-261127-8dfy-an-exit-node-is-healthy-while-listed-answering-pings-and-not-failing-every-real-connection-through-it), [SW-261127-BNFC](../claims/egress.md#sw-261127-bnfc-exit-nodes-are-used-in-the-files-order-failing-over-at-once-and-back-only-after-a-hold-down), [SW-261127-HJNX](../claims/egress.md#sw-261127-hjnx-while-an-egress-has-no-healthy-exit-node-its-connections-are-refused-at-once-and-its-dns-fails).
 
 ## Removing devices
 
@@ -186,6 +208,9 @@ coordination server you'll use. Headscale is tested at the program's level 4
 ([`proxy/README.md`](../proxy/README.md)), not yet on a Qubes machine.
 
 ## When something can't connect
+
+Each line of `torii log` is one decision with the rule that made it
+([SW-261127-R4CD](../claims/seeing.md#sw-261127-r4cd-every-connection-the-proxy-decides-is-logged-with-its-verdict-and-the-rule-that-made-it)); the reasons below are its words.
 
 | Symptom | Look at |
 |---|---|
