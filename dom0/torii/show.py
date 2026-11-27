@@ -25,6 +25,7 @@ class Rule:
     action: str
 
 
+# charter:realizes SW-261127-62WV
 def rules(snap: Snapshot) -> list[Rule]:
     files = dict(snap.other_policy)
     if snap.policy is not None:
@@ -44,6 +45,7 @@ def rules(snap: Snapshot) -> list[Rule]:
     return out
 
 
+# charter:realizes SW-261127-62WV
 def _allowed(rs: list[Rule], service: str, src: str, dst: str) -> dict[str, str]:
     """arg -> file, for allow rules of service from src to dst, first match wins
     per (arg) like qrexec's own reading order (files sorted by name)."""
@@ -68,6 +70,7 @@ def _allowed(rs: list[Rule], service: str, src: str, dst: str) -> dict[str, str]
     return seen
 
 
+# charter:realizes SW-261127-62WV
 def qube_view(snap: Snapshot, name: str, proxy_states: dict[str, dict[str, Any]]) -> dict[str, Any]:
     info = snap.qubes[name]
     rs = rules(snap)
@@ -115,7 +118,10 @@ def qube_view(snap: Snapshot, name: str, proxy_states: dict[str, dict[str, Any]]
     v["tailnet_outbound"] = bool((cfg or {}).get("tailnet_outbound"))
     if (cfg or {}).get("tailnet_allow"):
         v["tailnet_allow"] = cfg["tailnet_allow"]
-    if cfg is not None:
+    # The proxy's config says what the qube reaches only when its traffic
+    # goes through that proxy; on any other netvm it reaches what that
+    # netvm allows, whatever the proxy holds for it.
+    if cfg is not None and v["link"] in ("routed", "qrexec"):
         for zone in ("internet", "lan"):
             mode = cfg.get(zone, "none")
             v[zone] = "all" if mode == "full" else mode
@@ -330,3 +336,54 @@ def dispvm_escapes(m, snap: Snapshot) -> list[str]:
         out.append(f"{name} uses egress {q.egress}, but its default_dispvm ({dvm.name}) has netvm {dvm.netvm}: "
                    f"disposables opened from {name} go out directly")
     return out
+
+
+# charter:realizes SW-261127-SMYC
+def check_problems(m, snap: Snapshot, ps: dict[str, dict[str, Any]], bundle_version: str, now) -> list[str]:
+    """Every difference between the live machine and the file, one line
+    each; none when they match. ps is each proxy's config, as its
+    features hold it, and status."""
+    from . import plan
+    problems = []
+    try:
+        steps = plan.make(m, snap, bundle_version)
+    except plan.PlanError as e:
+        problems += [f"file: {l}" for l in str(e).splitlines()]
+        steps = []
+    problems += [f"drift: {s}" for s in steps]
+    for p in sorted(m.proxies):
+        d = ps.get(p)
+        if d is None:
+            continue
+        if d.get("config_error"):
+            problems.append(f"{p}: its config features are unreadable: {d['config_error']}")
+        if p in snap.qubes and snap.qubes[p].state != "Running":
+            problems.append(f"{p}: not running; its workloads have no network")
+            continue
+        if d.get("status_error"):
+            problems.append(f"{p}: no status: {d['status_error']}")
+            continue
+        st = (d.get("status") or {}).get("status") or {}
+        want = (d.get("config") or {}).get("version")
+        if want and st.get("config_version") != want:
+            problems.append(f"{p}: runs config {st.get('config_version')}, its features hold {want}")
+        for w, ws in sorted((st.get("workloads") or {}).items()):
+            ident = ws.get("identity") or {}
+            if ident and ident.get("state") != "Running":
+                problems.append(f"{w}: identity {ident.get('hostname')} is {ident.get('state')}"
+                                + (f"; sign in: {ident['auth_url']}" if ident.get("auth_url") else ""))
+            if ident.get("tag_mismatch"):
+                problems.append(f"{w}: {ident['tag_mismatch']}")
+        problems += egress_problems(p, st, now)
+        for line in unlisted_lines(snap, d.get("status") or {}):
+            if not line.endswith(", 0 refused"):
+                problems.append(f"{p}:{line.strip()} (attached, not in the file)")
+    problems += dispvm_escapes(m, snap)
+    # Hand-written policy that widens what the tool set.
+    for r in rules(snap):
+        if r.file.startswith(derive.POLICY_NAME) or r.file == derive.DENY_POLICY or r.action != "allow":
+            continue
+        if r.service in ("torii.Connect", "torii.Status") or \
+                (r.service == "qubes.ConnectTCP" and (r.target in m.qubes or r.source in m.proxies)):
+            problems.append(f"policy {r.file}: also allows {r.service} {r.arg} {r.source} -> {r.target}")
+    return problems

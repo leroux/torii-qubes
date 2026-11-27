@@ -183,6 +183,8 @@ func waitForNewConfig(ctx context.Context, src, version string, changed <-chan s
 }
 
 // statusService prints status and recent decisions as one JSON object.
+//
+//charter:realizes SW-261127-B8BM
 func statusService(c admin.Client) error {
 	ctx := context.Background()
 	var st, lg json.RawMessage

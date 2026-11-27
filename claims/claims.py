@@ -138,7 +138,7 @@ SW_261127_2XS6 = Spec("SW-261127-2XS6", "Allow entries match by exact name or su
 SW_261127_3Q23 = Spec("SW-261127-3Q23", "Every proxy qube has IPv6 off, for itself and every qube behind it", "active", "invariant")
 
 #: SW_261127_62WV is SW-261127-62WV: show reports each qube's reach from the live machine, never from the file
-SW_261127_62WV = Spec("SW-261127-62WV", "show reports each qube's reach from the live machine, never from the file", "planned", "invariant")
+SW_261127_62WV = Spec("SW-261127-62WV", "show reports each qube's reach from the live machine, never from the file", "active", "invariant")
 
 #: SW_261127_63CS is SW-261127-63CS: apply makes the plan's steps in order, stops at the first that fails, and a second run continues
 SW_261127_63CS = Spec("SW-261127-63CS", "apply makes the plan's steps in order, stops at the first that fails, and a second run continues", "active", "invariant")
@@ -156,7 +156,7 @@ SW_261127_9BNW = Spec("SW-261127-9BNW", "The machine file is read whole and refu
 SW_261127_B6Z6 = Spec("SW-261127-B6Z6", "A routed qube's traffic reaches the program and nothing else: interception, with forwarding off", "active", "invariant")
 
 #: SW_261127_B8BM is SW-261127-B8BM: The status service is read-only: it reports, and changes nothing in the proxy
-SW_261127_B8BM = Spec("SW-261127-B8BM", "The status service is read-only: it reports, and changes nothing in the proxy", "planned", "invariant")
+SW_261127_B8BM = Spec("SW-261127-B8BM", "The status service is read-only: it reports, and changes nothing in the proxy", "active", "invariant")
 
 #: SW_261127_BHHX is SW-261127-BHHX: A routed qube is named by its Qubes source address, which Qubes keeps it from forging
 SW_261127_BHHX = Spec("SW-261127-BHHX", "A routed qube is named by its Qubes source address, which Qubes keeps it from forging", "active", "invariant")
@@ -195,10 +195,10 @@ SW_261127_QMVP = Spec("SW-261127-QMVP", "apply goes on past a proxy's config onl
 SW_261127_QQYS = Spec("SW-261127-QQYS", "UDP is decided per flow, and each qube has a cap on open flows", "active", "bound")
 
 #: SW_261127_R4CD is SW-261127-R4CD: Every decision the proxy makes is logged with its verdict and the rule that made it
-SW_261127_R4CD = Spec("SW-261127-R4CD", "Every decision the proxy makes is logged with its verdict and the rule that made it", "planned", "invariant")
+SW_261127_R4CD = Spec("SW-261127-R4CD", "Every decision the proxy makes is logged with its verdict and the rule that made it", "active", "invariant")
 
 #: SW_261127_SMYC is SW-261127-SMYC: check names every difference between the live machine and the file, and fails when there is one
-SW_261127_SMYC = Spec("SW-261127-SMYC", "check names every difference between the live machine and the file, and fails when there is one", "planned", "invariant")
+SW_261127_SMYC = Spec("SW-261127-SMYC", "check names every difference between the live machine and the file, and fails when there is one", "active", "invariant")
 
 #: SW_261127_T7GG is SW-261127-T7GG: An inbound connection reaches a qube only on a port its entry or a service lists
 SW_261127_T7GG = Spec("SW-261127-T7GG", "An inbound connection reaches a qube only on a port its entry or a service lists", "active", "invariant")
@@ -213,7 +213,7 @@ SW_261127_WNYB = Spec("SW-261127-WNYB", "Every address is in exactly one zone, a
 SW_261127_XGDY = Spec("SW-261127-XGDY", "A proxy takes its config whole or not at all, and a failed check never replaces the running one", "active", "invariant")
 
 #: SW_261127_Z5ST is SW-261127-Z5ST: explain gives the decision the proxy would make, without sending anything
-SW_261127_Z5ST = Spec("SW-261127-Z5ST", "explain gives the decision the proxy would make, without sending anything", "planned", "invariant")
+SW_261127_Z5ST = Spec("SW-261127-Z5ST", "explain gives the decision the proxy would make, without sending anything", "active", "invariant")
 
 #: QubesAntispoof is an observation of qubes: A Qubes netvm drops packets arriving on a qube's `vif` interface whose source address is not that qube's own; a qube cannot send as another.
 QubesAntispoof = Observation("QubesAntispoof", "qubes", "unsure")

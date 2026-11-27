@@ -16,7 +16,10 @@ import (
 	"github.com/leroux/torii-qubes/proxy/internal/events"
 )
 
-// Handler serves the API for e.
+// Handler serves the API for e: GET requests only, for status, the log
+// and explain.
+//
+//charter:realizes SW-261127-B8BM
 func Handler(e *engine.Engine) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /status", func(w http.ResponseWriter, r *http.Request) {

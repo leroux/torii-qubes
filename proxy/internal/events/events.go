@@ -56,6 +56,8 @@ type Log struct {
 }
 
 // Emit records e, filling Time.
+//
+//charter:realizes SW-261127-R4CD
 func (l *Log) Emit(e Event) {
 	if e.Time.IsZero() {
 		if l.Now != nil {

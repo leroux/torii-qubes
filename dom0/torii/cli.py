@@ -164,49 +164,8 @@ def cmd_check(a) -> int:
     m = machine.load(a.file)
     app = _app()
     snap = _snapshot(app, m)
-    problems = []
-    try:
-        steps = plan.make(m, snap, _bundle_version())
-    except plan.PlanError as e:
-        problems += [f"file: {l}" for l in str(e).splitlines()]
-        steps = []
-    problems += [f"drift: {s}" for s in steps]
-    ps = _proxy_states(app, snap)
-    for p in sorted(m.proxies):
-        d = ps.get(p)
-        if d is None:
-            continue
-        if d.get("config_error"):
-            problems.append(f"{p}: its config features are unreadable: {d['config_error']}")
-        if p in snap.qubes and snap.qubes[p].state != "Running":
-            problems.append(f"{p}: not running; its workloads have no network")
-            continue
-        if d.get("status_error"):
-            problems.append(f"{p}: no status: {d['status_error']}")
-            continue
-        st = (d.get("status") or {}).get("status") or {}
-        want = (d.get("config") or {}).get("version")
-        if want and st.get("config_version") != want:
-            problems.append(f"{p}: runs config {st.get('config_version')}, its features hold {want}")
-        for w, ws in sorted((st.get("workloads") or {}).items()):
-            ident = ws.get("identity") or {}
-            if ident and ident.get("state") != "Running":
-                problems.append(f"{w}: identity {ident.get('hostname')} is {ident.get('state')}"
-                                + (f"; sign in: {ident['auth_url']}" if ident.get("auth_url") else ""))
-            if ident.get("tag_mismatch"):
-                problems.append(f"{w}: {ident['tag_mismatch']}")
-        problems += show.egress_problems(p, st, datetime.datetime.now(datetime.timezone.utc))
-        for line in show.unlisted_lines(snap, d.get("status") or {}):
-            if not line.endswith(", 0 refused"):
-                problems.append(f"{p}:{line.strip()} (attached, not in the file)")
-    problems += show.dispvm_escapes(m, snap)
-    # Hand-written policy that widens what the tool set.
-    for r in show.rules(snap):
-        if r.file.startswith(derive.POLICY_NAME) or r.file == derive.DENY_POLICY or r.action != "allow":
-            continue
-        if r.service in ("torii.Connect", "torii.Status") or \
-                (r.service == "qubes.ConnectTCP" and (r.target in m.qubes or r.source in m.proxies)):
-            problems.append(f"policy {r.file}: also allows {r.service} {r.arg} {r.source} -> {r.target}")
+    problems = show.check_problems(m, snap, _proxy_states(app, snap), _bundle_version(),
+                                   datetime.datetime.now(datetime.timezone.utc))
     if not problems:
         print("OK: the live system matches", a.file)
         return 0

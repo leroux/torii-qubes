@@ -892,6 +892,8 @@ type Explanation struct {
 }
 
 // Explain decides without sending traffic.
+//
+//charter:realizes SW-261127-Z5ST
 func (e *Engine) Explain(ctx context.Context, r ExplainRequest) (Explanation, error) {
 	w, ok := e.d.Config.Lookup(r.Workload)
 	if !ok {

@@ -8,7 +8,7 @@ state and log back to dom0, and the decision log with its reasons.
 
 ## SW-261127-62WV show reports each qube's reach from the live machine, never from the file
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-4Q75
 
@@ -35,7 +35,7 @@ Scenarios:
 
 ## SW-261127-SMYC check names every difference between the live machine and the file, and fails when there is one
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-4Q75
 
@@ -66,7 +66,7 @@ Scenarios:
 
 ## SW-261127-R4CD Every decision the proxy makes is logged with its verdict and the rule that made it
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-4Q75
 
@@ -91,7 +91,7 @@ Scenarios:
 
 ## SW-261127-B8BM The status service is read-only: it reports, and changes nothing in the proxy
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-4Q75, STK-261126-SM33
 
@@ -110,7 +110,7 @@ Scenarios:
 
 ## SW-261127-Z5ST explain gives the decision the proxy would make, without sending anything
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-4Q75
 

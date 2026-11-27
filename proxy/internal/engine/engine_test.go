@@ -786,3 +786,54 @@ func TestQrexecCallerMustBeAQrexecWorkload(t *testing.T) {
 		}
 	}
 }
+
+// A refusal is logged with the verdict, the reason, and what was asked.
+func TestARefusalIsLoggedWithItsReason(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_R4CD, "refusal-has-reason")
+	w := newWorld(t)
+	w.start(t)
+	if c, err := w.socksDial("job", "evil.com:443"); err == nil {
+		c.Close()
+		t.Fatal("evil.com allowed")
+	}
+	ev := waitEvent(t, w.eng.Log(), func(e events.Event) bool { return e.Workload == "job" && e.Dest == "evil.com:443" })
+	if ev.Verdict != policy.Refuse || ev.Reason != policy.ReasonNotAllowlisted || ev.Entry != policy.EntrySOCKS ||
+		ev.Direction != events.Out || ev.Time.IsZero() {
+		t.Errorf("event %+v", ev)
+	}
+}
+
+// explain gives a real connection's verdict and reason, and dials nothing.
+func TestExplainAgreesAndDialsNothing(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_Z5ST, "explain-agrees", "explain-dials-nothing")
+	w := newWorld(t)
+	w.start(t)
+	w.internet.name("pypi.org", "151.101.0.223")
+	w.internet.serve(t, "151.101.0.223:443", "pypi")
+	dests := []string{"pypi.org:443", "evil.com:443"}
+	xs := map[string]Explanation{}
+	for _, dest := range dests {
+		x, err := w.eng.Explain(context.Background(), ExplainRequest{Workload: "job", Dest: dest})
+		if err != nil {
+			t.Fatal(err)
+		}
+		xs[dest] = x
+	}
+	if n := w.internet.dials("151.101.0.223:443"); n != 0 {
+		t.Fatalf("explain dialled %d times", n)
+	}
+	for _, dest := range dests {
+		if c, err := w.socksDial("job", dest); err == nil {
+			c.Write([]byte("hi\n")) // not TLS: decided on the name
+			expectGreeting(t, c, "pypi")
+			c.Close()
+		}
+		ev := waitEvent(t, w.eng.Log(), func(e events.Event) bool { return e.Workload == "job" && e.Dest == dest })
+		if x := xs[dest]; x.Verdict != ev.Verdict || x.Reason != ev.Reason {
+			t.Errorf("%s: explain %s %s, the connection %s %s", dest, x.Verdict, x.Reason, ev.Verdict, ev.Reason)
+		}
+	}
+	if xs["pypi.org:443"].Verdict != policy.Allow || xs["evil.com:443"].Verdict != policy.Refuse {
+		t.Errorf("explanations %+v", xs)
+	}
+}

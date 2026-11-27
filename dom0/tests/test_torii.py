@@ -8,7 +8,7 @@ import textwrap
 import unittest
 
 import claims
-from torii import derive, machine, plan
+from torii import derive, machine, plan, show
 
 
 def mparse(text: str):
@@ -1039,6 +1039,81 @@ class Applying(unittest.TestCase):
         with self.assertRaises(ap.ApplyError) as e:
             a.do_proxy_ready(plan.Step("proxy-ready", "p", "r", {"version": "v2", "package": VERSION}))
         self.assertIn("runs config v1", str(e.exception))
+
+
+NOW = __import__("datetime").datetime(2026, 11, 27, tzinfo=__import__("datetime").timezone.utc)
+
+
+def applied():
+    """The full machine after apply, with its proxy running the config its
+    features hold."""
+    m = full_machine()
+    after = simulate(snap(), plan.make(m, snap(), VERSION))
+    cfg = derive.decode_chunks(after.qubes["sys-torii"].features)
+    ps = {"sys-torii": {"config": cfg, "status": {"status": {"config_version": cfg["version"], "workloads": {}}, "log": []}}}
+    return m, after, ps
+
+
+class Show(unittest.TestCase):
+    """show reads the live machine, never the file."""
+
+    def test_hand_written_policy_shows(self):
+        claims.verifies(self, claims.SW_261127_62WV, "hand-policy-shown")
+        m, after, ps = applied()
+        after.other_policy["30-mine"] = "qubes.ConnectTCP  +22  torii-probe  personal  allow\n"
+        v = show.qube_view(after, "personal", ps)
+        self.assertIn({"from": "torii-probe", "port": "22", "policy": "30-mine"}, v["local_inbound"])
+
+    def test_the_first_matching_rule_decides(self):
+        claims.verifies(self, claims.SW_261127_62WV, "first-match-wins")
+        m, after, ps = applied()
+        after.other_policy["20-deny"] = "qubes.ConnectTCP  +22  torii-probe  personal  deny\n"
+        after.other_policy["30-mine"] = "qubes.ConnectTCP  +22  torii-probe  personal  allow\n"
+        v = show.qube_view(after, "personal", ps)
+        self.assertEqual([x for x in v["local_inbound"] if x["from"] == "torii-probe"], [])
+        after.other_policy["30-mine"] = "qubes.ConnectTCP  *  torii-probe  personal  allow\n"
+        del after.other_policy["20-deny"]
+        v = show.qube_view(after, "personal", ps)
+        self.assertIn({"from": "torii-probe", "port": "*", "policy": "30-mine"}, v["local_inbound"])
+
+    def test_the_live_netvm_is_shown(self):
+        claims.verifies(self, claims.SW_261127_62WV, "live-netvm-shown")
+        m, after, ps = applied()
+        after.qubes["personal"].netvm = "sys-firewall"
+        v = show.qube_view(after, "personal", ps)
+        self.assertEqual((v["netvm"], v["link"]), ("sys-firewall", "netvm"))
+        self.assertEqual(v["internet"], "as sys-firewall allows (qvm-firewall)")
+
+
+class Check(unittest.TestCase):
+    """check names every difference, and nothing on a matching machine."""
+
+    def test_drift_is_named(self):
+        claims.verifies(self, claims.SW_261127_SMYC, "drift-named")
+        m, after, ps = applied()
+        after.qubes["personal"].netvm = "sys-firewall"
+        self.assertIn("drift: personal: set netvm = sys-torii (was sys-firewall)",
+                      show.check_problems(m, after, ps, VERSION, NOW))
+
+    def test_a_stale_config_is_named(self):
+        claims.verifies(self, claims.SW_261127_SMYC, "stale-config-named")
+        m, after, ps = applied()
+        want = ps["sys-torii"]["config"]["version"]
+        ps["sys-torii"]["status"]["status"]["config_version"] = "old"
+        self.assertIn(f"sys-torii: runs config old, its features hold {want}",
+                      show.check_problems(m, after, ps, VERSION, NOW))
+
+    def test_widening_policy_is_named(self):
+        claims.verifies(self, claims.SW_261127_SMYC, "widening-policy-named")
+        m, after, ps = applied()
+        after.other_policy["30-mine"] = "torii.Connect  +socks  work  sys-torii  allow\n"
+        self.assertIn("policy 30-mine: also allows torii.Connect +socks work -> sys-torii",
+                      show.check_problems(m, after, ps, VERSION, NOW))
+
+    def test_a_matching_machine_has_no_problem(self):
+        claims.verifies(self, claims.SW_261127_SMYC, "clean-is-zero")
+        m, after, ps = applied()
+        self.assertEqual(show.check_problems(m, after, ps, VERSION, NOW), [])
 
 
 if __name__ == "__main__":
