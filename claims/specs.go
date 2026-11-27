@@ -134,6 +134,9 @@ var SW_261127_2XS6 = &Spec{ID: "SW-261127-2XS6", Title: "Allow entries match by 
 // SW_261127_3Q23 is SW-261127-3Q23: Every proxy qube has IPv6 off, for itself and every qube behind it
 var SW_261127_3Q23 = &Spec{ID: "SW-261127-3Q23", Title: "Every proxy qube has IPv6 off, for itself and every qube behind it", Status: Active, Kind: "invariant"}
 
+// SW_261127_62WV is SW-261127-62WV: show reports each qube's reach from the live machine, never from the file
+var SW_261127_62WV = &Spec{ID: "SW-261127-62WV", Title: "show reports each qube's reach from the live machine, never from the file", Status: Planned, Kind: "invariant"}
+
 // SW_261127_63CS is SW-261127-63CS: apply makes the plan's steps in order, stops at the first that fails, and a second run continues
 var SW_261127_63CS = &Spec{ID: "SW-261127-63CS", Title: "apply makes the plan's steps in order, stops at the first that fails, and a second run continues", Status: Active, Kind: "invariant"}
 
@@ -148,6 +151,9 @@ var SW_261127_9BNW = &Spec{ID: "SW-261127-9BNW", Title: "The machine file is rea
 
 // SW_261127_B6Z6 is SW-261127-B6Z6: A routed qube's traffic reaches the program and nothing else: interception, with forwarding off
 var SW_261127_B6Z6 = &Spec{ID: "SW-261127-B6Z6", Title: "A routed qube's traffic reaches the program and nothing else: interception, with forwarding off", Status: Active, Kind: "invariant"}
+
+// SW_261127_B8BM is SW-261127-B8BM: The status service is read-only: it reports, and changes nothing in the proxy
+var SW_261127_B8BM = &Spec{ID: "SW-261127-B8BM", Title: "The status service is read-only: it reports, and changes nothing in the proxy", Status: Planned, Kind: "invariant"}
 
 // SW_261127_BHHX is SW-261127-BHHX: A routed qube is named by its Qubes source address, which Qubes keeps it from forging
 var SW_261127_BHHX = &Spec{ID: "SW-261127-BHHX", Title: "A routed qube is named by its Qubes source address, which Qubes keeps it from forging", Status: Active, Kind: "invariant"}
@@ -185,6 +191,12 @@ var SW_261127_QMVP = &Spec{ID: "SW-261127-QMVP", Title: "apply goes on past a pr
 // SW_261127_QQYS is SW-261127-QQYS: UDP is decided per flow, and each qube has a cap on open flows
 var SW_261127_QQYS = &Spec{ID: "SW-261127-QQYS", Title: "UDP is decided per flow, and each qube has a cap on open flows", Status: Active, Kind: "bound"}
 
+// SW_261127_R4CD is SW-261127-R4CD: Every decision the proxy makes is logged with its verdict and the rule that made it
+var SW_261127_R4CD = &Spec{ID: "SW-261127-R4CD", Title: "Every decision the proxy makes is logged with its verdict and the rule that made it", Status: Planned, Kind: "invariant"}
+
+// SW_261127_SMYC is SW-261127-SMYC: check names every difference between the live machine and the file, and fails when there is one
+var SW_261127_SMYC = &Spec{ID: "SW-261127-SMYC", Title: "check names every difference between the live machine and the file, and fails when there is one", Status: Planned, Kind: "invariant"}
+
 // SW_261127_T7GG is SW-261127-T7GG: An inbound connection reaches a qube only on a port its entry or a service lists
 var SW_261127_T7GG = &Spec{ID: "SW-261127-T7GG", Title: "An inbound connection reaches a qube only on a port its entry or a service lists", Status: Active, Kind: "invariant"}
 
@@ -196,6 +208,9 @@ var SW_261127_WNYB = &Spec{ID: "SW-261127-WNYB", Title: "Every address is in exa
 
 // SW_261127_XGDY is SW-261127-XGDY: A proxy takes its config whole or not at all, and a failed check never replaces the running one
 var SW_261127_XGDY = &Spec{ID: "SW-261127-XGDY", Title: "A proxy takes its config whole or not at all, and a failed check never replaces the running one", Status: Active, Kind: "invariant"}
+
+// SW_261127_Z5ST is SW-261127-Z5ST: explain gives the decision the proxy would make, without sending anything
+var SW_261127_Z5ST = &Spec{ID: "SW-261127-Z5ST", Title: "explain gives the decision the proxy would make, without sending anything", Status: Planned, Kind: "invariant"}
 
 // QubesAntispoof is an observation of qubes: A Qubes netvm drops packets arriving on a qube's `vif` interface whose source address is not that qube's own; a qube cannot send as another.
 var QubesAntispoof = &Observation{Name: "QubesAntispoof", Subject: "qubes", Status: "unsure"}
