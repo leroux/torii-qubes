@@ -66,7 +66,7 @@ call [`machine.load`](../dom0/torii/machine.py#L657), which reads the YAML and
 builds a `Machine` in [`machine.parse`](../dom0/torii/machine.py#L551): unknown
 keys, wrong types, invalid ports, undefined egresses and moved keys from
 older formats are errors, collected for the whole file and raised before
-the machine is touched ([SW-261127-9BNW](../claims/apply.md#sw-261127-9bnw-the-machine-file-is-read-whole-and-refused-whole-when-a-key-a-network-or-a-value-is-wrong)). Defaults are resolved per
+the machine is touched ([SW-261127-9BNW](../claims/apply.md#sw-261127-9bnw-torii-must-read-the-machine-file-whole-and-must-refuse-it-whole-when-a-key-a-network-or-a-value-is-wrong)). Defaults are resolved per
 qube, tags are expanded with the machine prefix
 ([`tags_of`](../dom0/torii/machine.py#L25), [SW-261127-P8H7](../claims/identity.md#sw-261127-p8h7-torii-must-give-a-tagged-identity-exactly-the-files-tags-prefixed-by-the-machine-and-torii-check-must-name-any-other)).
 
@@ -89,21 +89,28 @@ is pure. It first collects every precondition failure and raises them
 together (`PlanError`):
 
 <!-- charter:embed SW-261127-2JH3 -->
-> **[SW-261127-2JH3](../claims/apply.md#sw-261127-2jh3-plan-refuses-before-any-step-a-file-that-names-what-this-machine-cannot-be-given) plan refuses before any step a file that names what this machine cannot be given**
+> **[SW-261127-2JH3](../claims/apply.md#sw-261127-2jh3-torii-plan-must-refuse-before-any-step-a-file-that-names-what-this-machine-cannot-be-given) torii plan MUST refuse, before any step, a file that names what this machine cannot be given**
 >
-> plan is a function of the file and a snapshot of the live machine, and
-> it refuses, planning nothing, when the file names: a qube that does not
-> exist, since torii never creates a workload; one of torii's own qubes, a
-> template or dom0 as a workload; a netvm, or a qube another mesh manages,
-> as a workload; a netvm that is not one; a disposable template without
-> `disposables: yes`, or `disposables: yes` on a qube that is not one; a
-> qube whose current netvm torii does not know, without `adopt: force`; a
-> routed qube with no fixed address, such as a disposable; a
-> `local-inbound` source, or a service's qube, that is not on the machine
-> or cannot host it; a proxy whose netvm is not on the machine, or whose
-> name a qube not torii's, or another mesh's, already has. These are named
-> together; a template name a qube not torii's has, and a proxy to remove
-> that a qube still uses, are refused on their own.
+> `torii plan` is a function of the file and a snapshot of the live
+> machine. It MUST refuse, planning nothing, when the file names:
+>
+> - a qube that does not exist, since torii never creates a workload;
+> - one of torii's own qubes, a template or dom0 as a workload;
+> - a netvm, or a qube another mesh manages, as a workload;
+> - as a netvm, a qube that is not one;
+> - a disposable template without `disposables: yes`, or `disposables:
+>   yes` on a qube that is not a disposable template;
+> - a qube whose current netvm torii does not know, without
+>   `adopt: force`;
+> - a routed qube with no fixed address, such as a disposable;
+> - a `local-inbound` source, or a service's qube, that is not on the
+>   machine or cannot host it;
+> - a proxy whose netvm is not on the machine, or whose name a qube that
+>   is not torii's, or another mesh's, already has.
+>
+> These MUST be named together. A template name that a qube not torii's
+> already has, and a proxy to remove that a qube still uses, MUST each be
+> refused on their own.
 <!-- /charter:embed -->
 
 The adoption checks are the ones that protect a machine torii did not
@@ -116,16 +123,16 @@ It then emits typed `Step`s in a fixed order:
 
 1. **Template.** `template-install` of the base, `clone` to the tool's
    template, `template-package` when its `torii-version` feature differs
-   from the bundle's ([SW-261127-HSHY](../claims/apply.md#sw-261127-hshy-the-proxy-package-comes-from-the-dom0-packages-bundle-with-no-repository-for-torii)).
+   from the bundle's ([SW-261127-HSHY](../claims/apply.md#sw-261127-hshy-torii-must-install-the-proxy-package-from-the-dom0-packages-bundle-with-no-repository-for-torii)).
 2. **Proxy qubes in use.** `restart` (new package, or a template move),
-   `create`, `feature-set ipv6 ""` ([SW-261127-3Q23](../claims/apply.md#sw-261127-3q23-every-proxy-qube-has-ipv6-off-for-itself-and-every-qube-behind-it)), prefs, the
+   `create`, `feature-set ipv6 ""` ([SW-261127-3Q23](../claims/apply.md#sw-261127-3q23-torii-plan-must-turn-ipv6-off-on-every-proxy-qube-for-itself-and-every-qube-behind-it)), prefs, the
    `torii-proxy` service, `proxy-config` with the chunked features from
    [`derive.proxy_config`](../dom0/torii/derive.py#L53) and
    [`derive.encode_chunks`](../dom0/torii/derive.py#L135), and `proxy-ready`.
 3. **Policy.** `50-torii` (or `50-torii-<mesh>`) from
    [`derive.policy`](../dom0/torii/derive.py#L216), and the shared
    `59-torii-deny` from [`derive.deny_policy`](../dom0/torii/derive.py#L317)
-   ([SW-261127-M36P](../claims/links.md#sw-261127-m36p-toriis-qrexec-policy-must-allow-only-calls-that-run-in-the-direction-of-the-connection-they-carry-and-only-those-the-file-declares), [SW-261127-KWT2](../claims/apply.md#sw-261127-kwt2-each-meshs-file-changes-only-its-own-qubes-and-its-own-policy-file)).
+   ([SW-261127-M36P](../claims/links.md#sw-261127-m36p-toriis-qrexec-policy-must-allow-only-calls-that-run-in-the-direction-of-the-connection-they-carry-and-only-those-the-file-declares), [SW-261127-KWT2](../claims/apply.md#sw-261127-kwt2-a-meshs-file-must-change-only-its-own-qubes-and-its-own-policy-file)).
 4. **Workloads.** netvm, the `torii-managed` tag, on first adoption
    `torii-prior-netvm` and `torii-adopted`, and the `torii-client` service
    and `vm-config.torii-client` feature from
@@ -138,19 +145,22 @@ It then emits typed `Step`s in a fixed order:
 Scope is enforced here, by construction of the step list:
 
 <!-- charter:embed SW-261127-G26T -->
-> **[SW-261127-G26T](../claims/apply.md#sw-261127-g26t-apply-changes-only-what-torii-owns-its-template-its-proxy-qubes-its-policy-files-and-named-workload-settings) apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings**
+> **[SW-261127-G26T](../claims/apply.md#sw-261127-g26t-torii-apply-must-change-only-what-torii-owns-its-template-its-proxy-qubes-its-policy-files-and-named-settings-of-listed-qubes) torii apply MUST change only what torii owns: its template, its proxy qubes, its policy files, and named settings of listed qubes**
 >
-> torii creates, changes and removes only its own template, the proxy
-> qubes it created (tagged `torii-owned`, and with the mesh's tag for a
-> named mesh), its mesh's policy file `50-torii` (or `50-torii-<mesh>`) and
-> the shared deny file `59-torii-deny`; it may also download the base
-> template its own is cloned from, which it never changes. On a qube the
-> file lists it sets only the netvm, the `torii-client` service and its
-> feature, the `torii-managed` tag, and the adoption features written
-> once, and removes the earlier `torii-netvm-kept` tag. Restarting a proxy
-> detaches every running qube behind it and attaches it again, listed or
-> not. It never creates or removes a workload, and a qube that only hosts
-> a service is not changed.
+> - torii MUST create, change and remove only its own template, the proxy
+>   qubes it created (tagged `torii-owned`, and with the mesh's tag for a
+>   named mesh), its mesh's policy file `50-torii` (or `50-torii-<mesh>`)
+>   and the shared deny file `59-torii-deny`.
+> - torii MAY download the base template its own is cloned from, and MUST
+>   NOT change it.
+> - On a qube the file lists, torii MUST set only the netvm, the
+>   `torii-client` service and its feature, the `torii-managed` tag and the
+>   adoption features it writes once, and MUST remove the earlier
+>   `torii-netvm-kept` tag.
+> - Restarting a proxy detaches every running qube behind it and attaches
+>   it again, listed or not.
+> - torii MUST NOT create or remove a workload, and MUST NOT change a qube
+>   that only hosts a service.
 <!-- /charter:embed -->
 
 Ordering is load-bearing. Proxies are configured and confirmed running
@@ -160,16 +170,18 @@ and before any workload's netvm is pointed at them (steps 3 and 4).
 The exit path from torii fails closed:
 
 <!-- charter:embed SW-261127-VPGK -->
-> **[SW-261127-VPGK](../claims/apply.md#sw-261127-vpgk-a-qube-adopted-records-its-netvm-once-a-qube-leaving-the-file-is-left-with-no-netvm) A qube adopted records its netvm once; a qube leaving the file is left with no netvm**
+> **[SW-261127-VPGK](../claims/apply.md#sw-261127-vpgk-torii-must-record-an-adopted-qubes-netvm-once-and-must-leave-a-qube-that-leaves-the-file-with-no-netvm) torii MUST record an adopted qube's netvm once, and MUST leave a qube that leaves the file with no netvm**
 >
-> The first apply that lists a qube records the netvm it had, in
-> `torii-prior-netvm` and `torii-adopted`, and never writes them again. A
-> qube torii manages that the file no longer lists is set to no netvm,
-> loses the client's service and feature and the managed tag, and keeps
-> its record. A qube still carrying the earlier `torii-netvm-kept` tag
-> keeps the netvm it has, since that was never torii's to set. When the
-> record names a netvm other than none and the one it has, plan names it
-> and the command to restore it; it never restores it.
+> - The first apply that lists a qube MUST record the netvm it had, in
+>   `torii-prior-netvm` and `torii-adopted`, and MUST NOT write them again.
+> - A qube torii manages that the file no longer lists MUST be set to no
+>   netvm, MUST lose the client's service and feature and the managed tag,
+>   and MUST keep its record.
+> - A qube still carrying the earlier `torii-netvm-kept` tag MUST keep the
+>   netvm it has, since that netvm was never torii's to set.
+> - When the record names a netvm other than none and other than the one
+>   the qube has, plan MUST name it and the command to restore it, and
+>   MUST NOT restore it.
 <!-- /charter:embed -->
 
 Restoring the prior netvm automatically would be the wrong default: a
@@ -193,13 +205,13 @@ differ.
 `do_<kind>` method:
 
 <!-- charter:embed SW-261127-63CS -->
-> **[SW-261127-63CS](../claims/apply.md#sw-261127-63cs-apply-makes-the-plans-steps-in-order-stops-at-the-first-that-fails-and-a-second-run-continues) apply makes the plan's steps in order, stops at the first that fails, and a second run continues**
+> **[SW-261127-63CS](../claims/apply.md#sw-261127-63cs-torii-apply-must-make-plans-steps-in-order-stop-at-the-first-failure-and-continue-on-the-next-run) torii apply MUST make plan's steps in order, stop at the first failure, and continue on the next run**
 >
-> apply makes plan's steps one at a time, in plan's order, naming each.
-> The first step that fails stops it, naming the step and the cause, and
-> no later step is made. Run again, plan starts from the machine as the
-> stopped run left it, so it holds only the steps not yet made; on a
-> machine that matches the file it holds none.
+> `torii apply` MUST make plan's steps one at a time, in plan's order,
+> naming each. The first step that fails MUST stop it, naming the step and
+> the cause, and no later step is made. Run again, plan starts from the
+> machine as the stopped run left it, so it holds only the steps not yet
+> made; on a machine that matches the file it holds none.
 <!-- /charter:embed -->
 
 Idempotence follows from planning against the live state: every step is a
@@ -248,16 +260,20 @@ and parts, decodes and checks the SHA-256, and `config.Parse` validates
 the result:
 
 <!-- charter:embed SW-261127-XGDY -->
-> **[SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-takes-its-config-whole-or-not-at-all-and-a-failed-check-never-replaces-the-running-one) A proxy takes its config whole or not at all, and a failed check never replaces the running one**
+> **[SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-must-take-its-config-whole-or-not-at-all-and-a-config-that-fails-a-check-must-not-replace-the-running-one) A proxy MUST take its config whole or not at all, and a config that fails a check MUST NOT replace the running one**
 >
-> dom0 hands each proxy its config as the features `vm-config.torii*`: the
-> JSON compressed, encoded and split into parts under QubesDB's limit, with
-> a head of the part count and the JSON's SHA-256. apply writes the parts
-> first and the head last, then removes stale parts. The proxy joins the
-> parts, decodes them and checks the hash and the config itself; one that
-> fails any check is not taken, and the proxy keeps running the config it
-> has, or waits for a valid one if it has none. A valid one the program
-> then fails to start on ends the process, and its service restarts it.
+> - dom0 MUST hand each proxy its config as the features
+>   `vm-config.torii*`: the JSON compressed, encoded and split into parts
+>   under QubesDB's limit, with a head holding the part count and the
+>   JSON's SHA-256.
+> - apply MUST write the parts first and the head last, then remove stale
+>   parts.
+> - The proxy MUST join the parts, decode them, and check the hash and the
+>   config itself. A config that fails any check MUST NOT be taken: the
+>   proxy keeps running the config it has, or waits for a valid one if it
+>   has none.
+> - A valid config that the program then fails to start on ends the
+>   process, and its service restarts it.
 <!-- /charter:embed -->
 
 A valid config with a new `version` replaces the running one in-process
@@ -276,12 +292,13 @@ planned version, printing each new sign-in link it sees
 ([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-must-sign-in-by-a-link-a-person-approves-or-by-a-one-time-key-that-only-the-proxy-qube-keeps)), for up to 180 s:
 
 <!-- charter:embed SW-261127-QMVP -->
-> **[SW-261127-QMVP](../claims/apply.md#sw-261127-qmvp-apply-goes-on-past-a-proxys-config-only-once-the-proxy-reports-running-it) apply goes on past a proxy's config only once the proxy reports running it**
+> **[SW-261127-QMVP](../claims/apply.md#sw-261127-qmvp-torii-apply-must-not-go-past-a-proxys-config-until-the-proxy-reports-running-it) torii apply MUST NOT go past a proxy's config until the proxy reports running it**
 >
-> After writing a proxy's config, apply starts the proxy if it is not
-> running, and waits until the proxy's status reports that config's
-> version, showing any sign-in links as they appear. If the proxy does not
-> report it in time, the step fails, naming what it last reported.
+> After writing a proxy's config, `torii apply` MUST start the proxy if it
+> is not running, and MUST wait until the proxy's status reports that
+> config's version, showing any sign-in links as they appear. If the proxy
+> does not report the version in time, the step MUST fail, naming what the
+> proxy last reported.
 <!-- /charter:embed -->
 
 ## show

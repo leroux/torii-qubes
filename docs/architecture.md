@@ -64,11 +64,11 @@ files, and has no network access (dom0 has none).
 
 | Module | Role | Main declarations |
 |---|---|---|
-| [machine.py](../dom0/torii/machine.py) | parse and validate the machine file, whole or not at all ([SW-261127-9BNW](../claims/apply.md#sw-261127-9bnw-the-machine-file-is-read-whole-and-refused-whole-when-a-key-a-network-or-a-value-is-wrong)) | [`machine.parse`](../dom0/torii/machine.py#L551), [`tags_of`](../dom0/torii/machine.py#L25) |
+| [machine.py](../dom0/torii/machine.py) | parse and validate the machine file, whole or not at all ([SW-261127-9BNW](../claims/apply.md#sw-261127-9bnw-torii-must-read-the-machine-file-whole-and-must-refuse-it-whole-when-a-key-a-network-or-a-value-is-wrong)) | [`machine.parse`](../dom0/torii/machine.py#L551), [`tags_of`](../dom0/torii/machine.py#L25) |
 | [live.py](../dom0/torii/live.py) | read the machine into a serializable snapshot | [`live.take`](../dom0/torii/live.py#L83), [`Snapshot`](../dom0/torii/live.py#L44) |
 | [derive.py](../dom0/torii/derive.py) | the desired state: proxy configs, workload state, policy text, grants | [`derive.proxy_config`](../dom0/torii/derive.py#L53), [`derive.qube_state`](../dom0/torii/derive.py#L192), [`derive.policy`](../dom0/torii/derive.py#L216), [`derive.grants`](../dom0/torii/derive.py#L261), [`derive.encode_chunks`](../dom0/torii/derive.py#L135) |
-| [plan.py](../dom0/torii/plan.py) | pure diff of desired against snapshot into ordered steps ([SW-261127-2JH3](../claims/apply.md#sw-261127-2jh3-plan-refuses-before-any-step-a-file-that-names-what-this-machine-cannot-be-given), [SW-261127-G26T](../claims/apply.md#sw-261127-g26t-apply-changes-only-what-torii-owns-its-template-its-proxy-qubes-its-policy-files-and-named-workload-settings)) | [`plan.make`](../dom0/torii/plan.py#L96), [`plan.notes`](../dom0/torii/plan.py#L316) |
-| [apply.py](../dom0/torii/apply.py) | execute steps one at a time, stop at the first failure ([SW-261127-63CS](../claims/apply.md#sw-261127-63cs-apply-makes-the-plans-steps-in-order-stops-at-the-first-that-fails-and-a-second-run-continues)) | [`Applier.run`](../dom0/torii/apply.py#L45) |
+| [plan.py](../dom0/torii/plan.py) | pure diff of desired against snapshot into ordered steps ([SW-261127-2JH3](../claims/apply.md#sw-261127-2jh3-torii-plan-must-refuse-before-any-step-a-file-that-names-what-this-machine-cannot-be-given), [SW-261127-G26T](../claims/apply.md#sw-261127-g26t-torii-apply-must-change-only-what-torii-owns-its-template-its-proxy-qubes-its-policy-files-and-named-settings-of-listed-qubes)) | [`plan.make`](../dom0/torii/plan.py#L96), [`plan.notes`](../dom0/torii/plan.py#L316) |
+| [apply.py](../dom0/torii/apply.py) | execute steps one at a time, stop at the first failure ([SW-261127-63CS](../claims/apply.md#sw-261127-63cs-torii-apply-must-make-plans-steps-in-order-stop-at-the-first-failure-and-continue-on-the-next-run)) | [`Applier.run`](../dom0/torii/apply.py#L45) |
 | [show.py](../dom0/torii/show.py), [status.py](../dom0/torii/status.py) | reach from the live machine; drift; proxy status over qrexec | [`show.qube_view`](../dom0/torii/show.py#L97), [`show.check_problems`](../dom0/torii/show.py#L365), [`status.read`](../dom0/torii/status.py#L13) |
 | [cli.py](../dom0/torii/cli.py) | the commands | [`cli.main`](../dom0/torii/cli.py#L297) |
 
@@ -87,7 +87,7 @@ tagged `torii-owned`) and installs the proxy package from the bundle as
 root over `qubes.VMRootShell`, its dependencies coming from the
 template's distribution repositories
 ([`Applier.do_template_package`](../dom0/torii/apply.py#L126),
-[SW-261127-HSHY](../claims/apply.md#sw-261127-hshy-the-proxy-package-comes-from-the-dom0-packages-bundle-with-no-repository-for-torii)). No template is configured with a repository for
+[SW-261127-HSHY](../claims/apply.md#sw-261127-hshy-torii-must-install-the-proxy-package-from-the-dom0-packages-bundle-with-no-repository-for-torii)). No template is configured with a repository for
 torii. The client package is installed into a workload's template only by
 `torii install-client TEMPLATE`, and is inert where dom0 has not enabled
 the `torii-client` service.
@@ -97,7 +97,7 @@ the `torii-client` service.
 An AppVM on the tool's template with `provides_network`, `autostart`, the
 `torii-proxy` service enabled and the Qubes `ipv6` feature set empty
 (false) so that neither it nor its clients get IPv6 from Qubes
-([SW-261127-3Q23](../claims/apply.md#sw-261127-3q23-every-proxy-qube-has-ipv6-off-for-itself-and-every-qube-behind-it)). Its netvm is `sys-firewall` unless the file names
+([SW-261127-3Q23](../claims/apply.md#sw-261127-3q23-torii-plan-must-turn-ipv6-off-on-every-proxy-qube-for-itself-and-every-qube-behind-it)). Its netvm is `sys-firewall` unless the file names
 another.
 
 ### Boot ordering and the guard
@@ -155,7 +155,7 @@ which dom0 writes as features and the qube cannot change at the source.
 verifies the SHA-256; [`run`](../proxy/cmd/torii-proxy/main.go#L89) refuses
 to start on an invalid config and
 [`waitForNewConfig`](../proxy/cmd/torii-proxy/main.go#L165) never replaces a
-running one with an invalid one: [SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-takes-its-config-whole-or-not-at-all-and-a-failed-check-never-replaces-the-running-one).
+running one with an invalid one: [SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-must-take-its-config-whole-or-not-at-all-and-a-config-that-fails-a-check-must-not-replace-the-running-one).
 
 **Identities.** [`daemon.Identities`](../proxy/internal/daemon/daemon.go#L61)
 creates one [`TSNet`](../proxy/internal/tailnet/tsnet.go#L38) (a
@@ -309,7 +309,7 @@ that grants `qubes.ConnectTCP` to or from a managed qube.
 | workload → proxy, qrexec | a TCP stream and the service argument | dom0 names the caller; policy names the target | [SW-261127-7C3Y](../claims/links.md#sw-261127-7c3y-the-proxy-must-take-a-qrexec-callers-identity-from-what-dom0-sets-never-from-what-the-caller-sends) |
 | workload → proxy, `vif*` | IPv4 packets | Qubes anti-spoofing on the source address | [SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-the-proxy-must-identify-a-routed-qube-by-its-qubes-source-address-which-qubes-keeps-it-from-forging) |
 | proxy → workload | `qubes.ConnectTCP` to a declared port | dom0 policy, per port | [SW-261127-T7GG](../claims/connections.md#sw-261127-t7gg-the-proxy-must-relay-an-inbound-connection-to-a-qube-only-on-a-port-its-entry-or-a-service-lists) |
-| dom0 → proxy | config as features | dom0-only write path; SHA-256 over the parts | [SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-takes-its-config-whole-or-not-at-all-and-a-failed-check-never-replaces-the-running-one) |
+| dom0 → proxy | config as features | dom0-only write path; SHA-256 over the parts | [SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-must-take-its-config-whole-or-not-at-all-and-a-config-that-fails-a-check-must-not-replace-the-running-one) |
 | proxy → dom0 | status and log JSON | qrexec, as root, read-only service | [SW-261127-B8BM](../claims/seeing.md#sw-261127-b8bm-the-status-service-is-read-only-it-reports-and-changes-nothing-in-the-proxy) |
 | proxy → netvm | connections the program opens | kernel forwarding off, guard at −400 | [SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-the-proxy-qube-must-hand-every-routed-qubes-traffic-to-the-program-and-must-not-forward-any-of-it) |
 | proxy ↔ tailnet | each identity's WireGuard traffic | node keys; the grants decide reach | [SW-261127-DH6R](../claims/identity.md#sw-261127-dh6r-torii-must-only-propose-grants-for-the-tailnet-and-must-not-change-the-tailnets-policy) |

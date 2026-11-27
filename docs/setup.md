@@ -88,7 +88,7 @@ qubes:
 That reads: `wiki` has no network card and no internet, and has a tailnet
 identity `m1-wiki` tagged `tag:m1-server` and `tag:m1`. Port 80 on that identity leads to port
 8080 in the qube. A file with one wrong key is refused whole
-([SW-261127-9BNW](../claims/apply.md#sw-261127-9bnw-the-machine-file-is-read-whole-and-refused-whole-when-a-key-a-network-or-a-value-is-wrong)); the tags' machine prefix is [SW-261127-P8H7](../claims/identity.md#sw-261127-p8h7-torii-must-give-a-tagged-identity-exactly-the-files-tags-prefixed-by-the-machine-and-torii-check-must-name-any-other).
+([SW-261127-9BNW](../claims/apply.md#sw-261127-9bnw-torii-must-read-the-machine-file-whole-and-must-refuse-it-whole-when-a-key-a-network-or-a-value-is-wrong)); the tags' machine prefix is [SW-261127-P8H7](../claims/identity.md#sw-261127-p8h7-torii-must-give-a-tagged-identity-exactly-the-files-tags-prefixed-by-the-machine-and-torii-check-must-name-any-other).
 
 ## 5. Plan
 
@@ -124,7 +124,7 @@ that isn't there, a netvm named as a workload, a `sys-torii` you made
 yourself, and so on. Two refusals protect setups torii can't judge: a qube
 on a netvm it doesn't know (`sys-whonix`, a VPN qube) needs `adopt: force`
 before torii moves it, and a disposable template needs `disposables: yes`.
-The full list of refusals is [SW-261127-2JH3](../claims/apply.md#sw-261127-2jh3-plan-refuses-before-any-step-a-file-that-names-what-this-machine-cannot-be-given).
+The full list of refusals is [SW-261127-2JH3](../claims/apply.md#sw-261127-2jh3-torii-plan-must-refuse-before-any-step-a-file-that-names-what-this-machine-cannot-be-given).
 
 ## 6. Apply
 
@@ -147,8 +147,8 @@ Fix it and run `torii apply` again; finished steps are kept.
 ```
 
 Fix the cause (here: the template's updates proxy) and run `torii apply`
-again. It starts where it stopped ([SW-261127-63CS](../claims/apply.md#sw-261127-63cs-apply-makes-the-plans-steps-in-order-stops-at-the-first-that-fails-and-a-second-run-continues)). The wait for the
-proxy is [SW-261127-QMVP](../claims/apply.md#sw-261127-qmvp-apply-goes-on-past-a-proxys-config-only-once-the-proxy-reports-running-it).
+again. It starts where it stopped ([SW-261127-63CS](../claims/apply.md#sw-261127-63cs-torii-apply-must-make-plans-steps-in-order-stop-at-the-first-failure-and-continue-on-the-next-run)). The wait for the
+proxy is [SW-261127-QMVP](../claims/apply.md#sw-261127-qmvp-torii-apply-must-not-go-past-a-proxys-config-until-the-proxy-reports-running-it).
 
 ## 7. Sign the identity in, and grant access
 
@@ -309,7 +309,7 @@ Each step changes only what it names, and can be undone on its own:
 
 To undo a step, take its lines out and `apply`. A qube leaving the file gets
 no netvm, and `plan` prints the command that puts back the one it had
-([SW-261127-VPGK](../claims/apply.md#sw-261127-vpgk-a-qube-adopted-records-its-netvm-once-a-qube-leaving-the-file-is-left-with-no-netvm)).
+([SW-261127-VPGK](../claims/apply.md#sw-261127-vpgk-torii-must-record-an-adopted-qubes-netvm-once-and-must-leave-a-qube-that-leaves-the-file-with-no-netvm)).
 
 ## Disposables through an egress
 
@@ -463,19 +463,22 @@ Services (top level, `services:`):
 ## What torii owns
 
 <!-- charter:embed SW-261127-G26T -->
-> **[SW-261127-G26T](../claims/apply.md#sw-261127-g26t-apply-changes-only-what-torii-owns-its-template-its-proxy-qubes-its-policy-files-and-named-workload-settings) apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings**
+> **[SW-261127-G26T](../claims/apply.md#sw-261127-g26t-torii-apply-must-change-only-what-torii-owns-its-template-its-proxy-qubes-its-policy-files-and-named-settings-of-listed-qubes) torii apply MUST change only what torii owns: its template, its proxy qubes, its policy files, and named settings of listed qubes**
 >
-> torii creates, changes and removes only its own template, the proxy
-> qubes it created (tagged `torii-owned`, and with the mesh's tag for a
-> named mesh), its mesh's policy file `50-torii` (or `50-torii-<mesh>`) and
-> the shared deny file `59-torii-deny`; it may also download the base
-> template its own is cloned from, which it never changes. On a qube the
-> file lists it sets only the netvm, the `torii-client` service and its
-> feature, the `torii-managed` tag, and the adoption features written
-> once, and removes the earlier `torii-netvm-kept` tag. Restarting a proxy
-> detaches every running qube behind it and attaches it again, listed or
-> not. It never creates or removes a workload, and a qube that only hosts
-> a service is not changed.
+> - torii MUST create, change and remove only its own template, the proxy
+>   qubes it created (tagged `torii-owned`, and with the mesh's tag for a
+>   named mesh), its mesh's policy file `50-torii` (or `50-torii-<mesh>`)
+>   and the shared deny file `59-torii-deny`.
+> - torii MAY download the base template its own is cloned from, and MUST
+>   NOT change it.
+> - On a qube the file lists, torii MUST set only the netvm, the
+>   `torii-client` service and its feature, the `torii-managed` tag and the
+>   adoption features it writes once, and MUST remove the earlier
+>   `torii-netvm-kept` tag.
+> - Restarting a proxy detaches every running qube behind it and attaches
+>   it again, listed or not.
+> - torii MUST NOT create or remove a workload, and MUST NOT change a qube
+>   that only hosts a service.
 <!-- /charter:embed -->
 
 - **Reads, never writes:** every other policy file. Grants to
@@ -483,7 +486,7 @@ Services (top level, `services:`):
   `check`.
 - **The proxy's config** goes to it as the features `vm-config.torii*`
   (compressed and split, since QubesDB caps a value under 3 KB), and is
-  taken only whole ([SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-takes-its-config-whole-or-not-at-all-and-a-failed-check-never-replaces-the-running-one)). The proxy reloads when they change.
+  taken only whole ([SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-must-take-its-config-whole-or-not-at-all-and-a-config-that-fails-a-check-must-not-replace-the-running-one)). The proxy reloads when they change.
 
 ## Troubleshooting
 

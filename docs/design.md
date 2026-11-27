@@ -151,7 +151,7 @@ the workloads' interfaces to `torii-proxy`. The source address names the
 workload, and `torii-proxy` can trust it because Qubes' anti-spoofing rules on
 `vif*` drop forged sources ([SW-261127-BHHX](../claims/links.md#sw-261127-bhhx-the-proxy-must-identify-a-routed-qube-by-its-qubes-source-address-which-qubes-keeps-it-from-forging), resting on the
 observation [QubesAntispoof](../claims/observations.md#qubesantispoof)).
-IPv6 is turned off behind the proxy ([SW-261127-3Q23](../claims/apply.md#sw-261127-3q23-every-proxy-qube-has-ipv6-off-for-itself-and-every-qube-behind-it)). The guard is
+IPv6 is turned off behind the proxy ([SW-261127-3Q23](../claims/apply.md#sw-261127-3q23-torii-plan-must-turn-ipv6-off-on-every-proxy-qube-for-itself-and-every-qube-behind-it)). The guard is
 [SW-261127-JWK2](../claims/links.md#sw-261127-jwk2-the-proxy-template-must-load-a-guard-at-boot-that-keeps-the-proxy-qube-forwarding-nothing-whatever-the-program-does), the interception [SW-261127-B6Z6](../claims/links.md#sw-261127-b6z6-the-proxy-qube-must-hand-every-routed-qubes-traffic-to-the-program-and-must-not-forward-any-of-it).
 
 ### Allowlists by name, not address
@@ -231,7 +231,7 @@ dom0 writes each proxy qube's config as Qubes features (`vm-config.torii*`),
 which the qube can read through QubesDB but not change. QubesDB caps a value
 under 3 KB, so the JSON is compressed and split, with a hash to detect
 partial writes. A half-written or invalid config never replaces the running
-one ([SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-takes-its-config-whole-or-not-at-all-and-a-failed-check-never-replaces-the-running-one)). Status and the decision log come back to dom0
+one ([SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-must-take-its-config-whole-or-not-at-all-and-a-config-that-fails-a-check-must-not-replace-the-running-one)). Status and the decision log come back to dom0
 through one qrexec service, `torii.Status`, which changes nothing
 ([SW-261127-B8BM](../claims/seeing.md#sw-261127-b8bm-the-status-service-is-read-only-it-reports-and-changes-nothing-in-the-proxy)).
 
@@ -240,7 +240,7 @@ through one qrexec service, `torii.Status`, which changes nothing
 The dom0 package carries the proxy and client packages as `.deb` and
 `.rpm`. On first run the tool clones a minimal template into its own, copies
 the package in and installs it, so no template needs a repository for
-torii ([SW-261127-HSHY](../claims/apply.md#sw-261127-hshy-the-proxy-package-comes-from-the-dom0-packages-bundle-with-no-repository-for-torii)). Each identity's Tailscale state lives in the
+torii ([SW-261127-HSHY](../claims/apply.md#sw-261127-hshy-torii-must-install-the-proxy-package-from-the-dom0-packages-bundle-with-no-repository-for-torii)). Each identity's Tailscale state lives in the
 proxy qube's private volume ([SW-261127-WNGN](../claims/identity.md#sw-261127-wngn-the-proxy-must-run-each-identity-as-a-tailnet-device-of-its-own-with-its-own-name-and-state)). A rebuilt machine gets new identities and new sign-ins rather than
 restored keys.
 
@@ -248,7 +248,7 @@ restored keys.
 
 `plan` is a pure function of the file and a snapshot of the live machine,
 and `apply` executes that plan step by step, stopping at the first failure
-([SW-261127-63CS](../claims/apply.md#sw-261127-63cs-apply-makes-the-plans-steps-in-order-stops-at-the-first-that-fails-and-a-second-run-continues)); what it may touch is [SW-261127-G26T](../claims/apply.md#sw-261127-g26t-apply-changes-only-what-torii-owns-its-template-its-proxy-qubes-its-policy-files-and-named-workload-settings). The flow
+([SW-261127-63CS](../claims/apply.md#sw-261127-63cs-torii-apply-must-make-plans-steps-in-order-stop-at-the-first-failure-and-continue-on-the-next-run)); what it may touch is [SW-261127-G26T](../claims/apply.md#sw-261127-g26t-torii-apply-must-change-only-what-torii-owns-its-template-its-proxy-qubes-its-policy-files-and-named-settings-of-listed-qubes). The flow
 is in [`walkthrough-apply.md`](walkthrough-apply.md).
 That keeps the dom0 code small and reviewable, and lets plans be
 golden-tested without a Qubes machine ([`testing.md`](testing.md)).
