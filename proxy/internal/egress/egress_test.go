@@ -3,6 +3,7 @@ package egress
 import (
 	"context"
 	"errors"
+	"github.com/leroux/torii-qubes/claims"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 )
 
 func TestChoose(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_BNFC, "first-healthy-in-order", "failback-after-hold-down")
 	t0 := time.Unix(1000, 0)
 	fb := 2 * time.Minute
 	h := func(since time.Duration) *node { return &node{listed: true, healthySince: t0.Add(-since)} }
@@ -76,6 +78,7 @@ func (r *rig) tick(t *testing.T) {
 func (r *rig) set() string { return r.id.Status(context.Background()).ExitNode }
 
 func TestSelectorFailoverAndFailback(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_8DFY, "missed-pings-down")
 	r := newRig(t, "exit-1", "exit-2")
 	if r.s.Usable() {
 		t.Fatal("usable before any check")
@@ -128,6 +131,7 @@ func TestSelectorFailoverAndFailback(t *testing.T) {
 }
 
 func TestSelectorNoHealthyExitKeepsTheLastAndIsNotUsable(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_6YGC, "last-kept-when-none-healthy")
 	r := newRig(t, "exit-1", "exit-2")
 	r.tick(t)
 	r.exits["exit-1"].SetOffline(true)
@@ -150,6 +154,7 @@ func TestSelectorNoHealthyExitKeepsTheLastAndIsNotUsable(t *testing.T) {
 }
 
 func TestSelectorWithdrawnExitRouteIsDown(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_8DFY, "withdrawn-route-down")
 	r := newRig(t, "exit-1", "exit-2")
 	r.tick(t)
 	r.exits["exit-1"].StopOfferingExitNode() // online and answering, but no longer an exit node
@@ -161,6 +166,7 @@ func TestSelectorWithdrawnExitRouteIsDown(t *testing.T) {
 }
 
 func TestPassiveTrigger(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_8DFY, "passive-trip")
 	r := newRig(t, "exit-1", "exit-2")
 	r.tick(t)
 	fail := errors.New("dial: no route out")
@@ -214,5 +220,44 @@ func TestStatus(t *testing.T) {
 	}
 	if st.Exits[0].Healthy || st.Exits[0].Why == "" || !st.Exits[1].Healthy {
 		t.Fatalf("%+v", st.Exits)
+	}
+}
+
+// A named probe trips the active node after three failures in a row; an
+// egress that names none runs no probe.
+func TestProbeTripsTheActiveNode(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_8DFY, "probe-trips")
+	r := newRig(t, "exit-1", "exit-2")
+	calls, fail := 0, true
+	r.s = New("vpn", &config.Egress{Hostname: "m1-egress-vpn", Exits: []string{"exit-1", "exit-2"}, FailbackAfter: 120}, r.id, Options{
+		Now: r.clk.now, Log: r.log, CheckTimeout: 20 * time.Millisecond,
+		Probe: func(ctx context.Context) error {
+			calls++
+			if fail {
+				return errors.New("probe: no answer")
+			}
+			return nil
+		},
+	})
+	r.tick(t) // selects exit-1; no probe before an exit node is active
+	if calls != 0 || r.set() != "exit-1" {
+		t.Fatalf("calls %d, set %q", calls, r.set())
+	}
+	for i := 1; i <= 2; i++ {
+		r.clk.add(10 * time.Second)
+		r.tick(t)
+		if r.set() != "exit-1" {
+			t.Fatalf("tripped after %d failed probes", i)
+		}
+	}
+	r.clk.add(10 * time.Second)
+	r.tick(t)
+	if r.set() != "exit-2" || calls != 3 {
+		t.Fatalf("after 3 failed probes: set %q, %d probes", r.set(), calls)
+	}
+	// With no probe named, the selector has none to run.
+	plain := newRig(t, "exit-1")
+	if plain.s.opt.Probe != nil {
+		t.Error("a probe with none named")
 	}
 }

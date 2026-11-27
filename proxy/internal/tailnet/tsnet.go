@@ -165,6 +165,8 @@ func (t *TSNet) netstack() (*netstack.Impl, error) {
 // address, so nothing reaches the system network: without a peer or an
 // exit node for dst, WireGuard has nowhere to send the packets and the
 // dial fails (fails closed).
+//
+//charter:realizes SW-261127-K5TK
 func (t *TSNet) Dial(ctx context.Context, dst netip.AddrPort) (net.Conn, error) {
 	ns, err := t.netstack()
 	if err != nil {
@@ -379,6 +381,10 @@ func (t *TSNet) Ping(ctx context.Context, node string) error {
 	return nil
 }
 
+// SetExitNode names node as the exit node in one prefs change, LAN access
+// through it off; it never clears the exit node.
+//
+//charter:realizes SW-261127-6YGC
 func (t *TSNet) SetExitNode(ctx context.Context, node string) error {
 	st, err := t.lc.Status(ctx)
 	if err != nil {

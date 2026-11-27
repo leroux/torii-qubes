@@ -705,6 +705,7 @@ class Egresses(unittest.TestCase):
         self.assertFalse(any(s.startswith("sys-torii: create") for s in steps), "the main proxy is not used")
 
     def test_lan_with_an_egress_is_noted(self):
+        claims.verifies(self, claims.SW_261127_KYZW, "lan-noted")
         s = with_qube(snap(), "build", "")
         notes = plan.notes(mparse(EGRESS), s)
         self.assertIn("build: its LAN access goes direct through sys-torii's netvm, never through egress vpn", notes)

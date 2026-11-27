@@ -312,6 +312,7 @@ def make(m: Machine, snap: Snapshot, bundle_version: str) -> list[Step]:
     return steps
 
 
+# charter:realizes SW-261127-KYZW
 def notes(m: Machine, snap: Snapshot) -> list[str]:
     """Things apply does not change but a person should know."""
     out = []

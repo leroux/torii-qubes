@@ -251,6 +251,7 @@ func TestUDPRefusedFlowStaysRefused(t *testing.T) {
 }
 
 func TestUDPExitNodeFailsClosed(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_K5TK, "udp-exit-down-no-local-dial")
 	w, _ := udpWorld(t)
 	exit := w.net.Node("exit-1")
 	exit.OfferExitNode()

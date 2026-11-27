@@ -210,6 +210,8 @@ func (e *Engine) decide(o policy.Outbound) policy.Decision {
 // exitUsable refuses an exit-path decision whose egress has no healthy
 // exit node: the connection fails at once instead of hanging, and is
 // never sent another way.
+//
+//charter:realizes SW-261127-HJNX
 func (e *Engine) exitUsable(workload string, d policy.Decision) policy.Decision {
 	if d.Verdict != policy.Allow || d.Path != policy.PathExit {
 		return d
@@ -241,6 +243,8 @@ func (e *Engine) exitIdentity(workload string) tailnet.Identity {
 
 // dialExit dials through the workload's egress, and tells its selector
 // how it went (the passive health check).
+//
+//charter:realizes SW-261127-K5TK
 func (e *Engine) dialExit(ctx context.Context, workload string, dst netip.AddrPort, udp bool) (net.Conn, error) {
 	id := e.exitIdentity(workload)
 	if id == nil {
@@ -258,6 +262,8 @@ func (e *Engine) dialExit(ctx context.Context, workload string, dst netip.AddrPo
 
 // ExitResolver resolves through id's exit node: DNS over TCP to server,
 // dialled through the identity, so lookups never touch the local network.
+//
+//charter:realizes SW-261127-K5TK
 func ExitResolver(id tailnet.Identity, server string) Resolver {
 	ap := netip.MustParseAddrPort(server)
 	return &net.Resolver{

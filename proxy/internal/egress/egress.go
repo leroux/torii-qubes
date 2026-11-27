@@ -66,6 +66,8 @@ func (n *node) healthy(now time.Time) bool {
 // stays, unless one ahead of it in exits has been healthy for failback;
 // otherwise the first healthy one. With none healthy, the active one
 // stays (it is never cleared).
+//
+//charter:realizes SW-261127-BNFC, SW-261127-6YGC
 func choose(exits []string, st map[string]*node, active string, now time.Time, failback time.Duration) string {
 	if active != "" && st[active].healthy(now) {
 		for _, e := range exits {
@@ -148,6 +150,8 @@ func (s *Selector) Run(ctx context.Context) {
 
 // Tick checks every exit node once, at the same time and each within
 // CheckTimeout, then uses the one choose picks.
+//
+//charter:realizes SW-261127-8DFY
 func (s *Selector) Tick(ctx context.Context) {
 	type check struct {
 		peer    tailnet.Peer
@@ -253,6 +257,8 @@ func (s *Selector) Tick(ctx context.Context) {
 
 // tripLocked marks the active node down for the hold-down when the probe
 // failed FailedProbes times in a row, or the passive trigger fired.
+//
+//charter:realizes SW-261127-8DFY
 func (s *Selector) tripLocked(n *node, now time.Time, probeErr error) {
 	if s.opt.Probe != nil {
 		if probeErr != nil {

@@ -80,6 +80,7 @@ func TestPermit(t *testing.T) {
 }
 
 func TestLANNeverThroughTheExitNode(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_KYZW, "lan-direct")
 	w := wl(config.InternetFull, nil, config.InternetFull, nil)
 	w.Egress = "vpn"
 	if p := PathFor(w, netip.MustParseAddr("192.168.1.1")); p != PathInternet {

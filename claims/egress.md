@@ -9,7 +9,7 @@ and failback, and failing closed when none is up.
 
 ## SW-261127-K5TK An egress's traffic is dialled only into its identity's own network stack, never the system network
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-346B
 
@@ -34,7 +34,7 @@ Scenarios:
 
 ## SW-261127-HJNX While an egress has no healthy exit node, its connections are refused at once and its DNS fails
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-346B
 
@@ -57,7 +57,7 @@ Scenarios:
 
 ## SW-261127-6YGC An egress's exit node is never cleared: a switch is one change from the old node to the new
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-346B
 
@@ -76,7 +76,7 @@ Scenarios:
 
 ## SW-261127-BNFC Exit nodes are used in the file's order, failing over at once and back only after a hold-down
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-346B
 
@@ -97,9 +97,9 @@ Scenarios:
 2. `failback-after-hold-down` (agent, provisional): the first comes back
    and is used only once it has been healthy for `failback-after`.
 
-## SW-261127-8DFY An exit node is healthy while the tailnet lists it, its pings answer, and real connections through it do not all fail
+## SW-261127-8DFY An exit node is healthy while listed, answering pings, and not failing every real connection through it
 
-Status: planned
+Status: active
 Kind: bound
 Serves: STK-261126-346B
 
@@ -129,7 +129,7 @@ Scenarios:
 
 ## SW-261127-KYZW A qube's LAN traffic never goes through its egress, and plan says so
 
-Status: planned
+Status: active
 Kind: invariant
 Serves: STK-261126-346B
 

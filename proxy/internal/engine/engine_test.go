@@ -491,6 +491,7 @@ func TestRoutedDNSThenConnect(t *testing.T) {
 }
 
 func TestExitNodeFailsClosed(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_K5TK, "exit-down-no-local-dial")
 	w := newWorld(t)
 	exit := w.net.Node("exit-1")
 	exit.OfferExitNode()
@@ -524,6 +525,7 @@ func TestExitNodeFailsClosed(t *testing.T) {
 }
 
 func TestNoHealthyExitIsRefusedWithoutDialling(t *testing.T) {
+	claims.Verifies(t, claims.SW_261127_HJNX, "refused-at-once", "dns-servfail")
 	w := newWorld(t) // neither exit node offers to be one
 	w.start(t)
 	a, b := net.Pipe()
