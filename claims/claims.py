@@ -146,8 +146,14 @@ SW_261127_63CS = Spec("SW-261127-63CS", "apply makes the plan's steps in order, 
 #: SW_261127_6S2F is SW-261127-6S2F: Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read
 SW_261127_6S2F = Spec("SW-261127-6S2F", "Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read", "active", "invariant")
 
+#: SW_261127_6YGC is SW-261127-6YGC: An egress's exit node is never cleared: a switch is one change from the old node to the new
+SW_261127_6YGC = Spec("SW-261127-6YGC", "An egress's exit node is never cleared: a switch is one change from the old node to the new", "planned", "invariant")
+
 #: SW_261127_7C3Y is SW-261127-7C3Y: A qrexec caller is the qube dom0 names, never one the caller states
 SW_261127_7C3Y = Spec("SW-261127-7C3Y", "A qrexec caller is the qube dom0 names, never one the caller states", "active", "invariant")
+
+#: SW_261127_8DFY is SW-261127-8DFY: An exit node is healthy while the tailnet lists it, its pings answer, and real connections through it do not all fail
+SW_261127_8DFY = Spec("SW-261127-8DFY", "An exit node is healthy while the tailnet lists it, its pings answer, and real connections through it do not all fail", "planned", "bound")
 
 #: SW_261127_9BNW is SW-261127-9BNW: The machine file is read whole and refused whole when a key, a network or a value is wrong
 SW_261127_9BNW = Spec("SW-261127-9BNW", "The machine file is read whole and refused whole when a key, a network or a value is wrong", "active", "invariant")
@@ -161,11 +167,17 @@ SW_261127_B8BM = Spec("SW-261127-B8BM", "The status service is read-only: it rep
 #: SW_261127_BHHX is SW-261127-BHHX: A routed qube is named by its Qubes source address, which Qubes keeps it from forging
 SW_261127_BHHX = Spec("SW-261127-BHHX", "A routed qube is named by its Qubes source address, which Qubes keeps it from forging", "active", "invariant")
 
+#: SW_261127_BNFC is SW-261127-BNFC: Exit nodes are used in the file's order, failing over at once and back only after a hold-down
+SW_261127_BNFC = Spec("SW-261127-BNFC", "Exit nodes are used in the file's order, failing over at once and back only after a hold-down", "planned", "invariant")
+
 #: SW_261127_G26T is SW-261127-G26T: apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings
 SW_261127_G26T = Spec("SW-261127-G26T", "apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings", "active", "invariant")
 
 #: SW_261127_H3W9 is SW-261127-H3W9: The HTTP proxy carries one host per connection
 SW_261127_H3W9 = Spec("SW-261127-H3W9", "The HTTP proxy carries one host per connection", "active", "invariant")
+
+#: SW_261127_HJNX is SW-261127-HJNX: While an egress has no healthy exit node, its connections are refused at once and its DNS fails
+SW_261127_HJNX = Spec("SW-261127-HJNX", "While an egress has no healthy exit node, its connections are refused at once and its DNS fails", "planned", "invariant")
 
 #: SW_261127_HSHY is SW-261127-HSHY: The proxy package comes from the dom0 package's bundle, with no repository for torii
 SW_261127_HSHY = Spec("SW-261127-HSHY", "The proxy package comes from the dom0 package's bundle, with no repository for torii", "active", "invariant")
@@ -173,8 +185,14 @@ SW_261127_HSHY = Spec("SW-261127-HSHY", "The proxy package comes from the dom0 p
 #: SW_261127_JWK2 is SW-261127-JWK2: A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does
 SW_261127_JWK2 = Spec("SW-261127-JWK2", "A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does", "active", "invariant")
 
+#: SW_261127_K5TK is SW-261127-K5TK: An egress's traffic is dialled only into its identity's own network stack, never the system network
+SW_261127_K5TK = Spec("SW-261127-K5TK", "An egress's traffic is dialled only into its identity's own network stack, never the system network", "planned", "invariant")
+
 #: SW_261127_KWT2 is SW-261127-KWT2: Each mesh's file changes only its own qubes and its own policy file
 SW_261127_KWT2 = Spec("SW-261127-KWT2", "Each mesh's file changes only its own qubes and its own policy file", "active", "invariant")
+
+#: SW_261127_KYZW is SW-261127-KYZW: A qube's LAN traffic never goes through its egress, and plan says so
+SW_261127_KYZW = Spec("SW-261127-KYZW", "A qube's LAN traffic never goes through its egress, and plan says so", "planned", "invariant")
 
 #: SW_261127_M36P is SW-261127-M36P: Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed
 SW_261127_M36P = Spec("SW-261127-M36P", "Every qrexec call runs in the direction of the connection it carries, and only the declared ones are allowed", "active", "invariant")
