@@ -1,0 +1,8 @@
+# The areas in the order a connection meets them: decided, carried,
+# routed, identified; then how the owner declares them and reads them back.
+connections.md
+links.md
+egress.md
+identity.md
+apply.md
+seeing.md

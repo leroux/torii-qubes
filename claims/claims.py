@@ -124,3 +124,30 @@ STK_261126_KZK8 = Spec("STK-261126-KZK8", "A carried qube's connection is relaye
 
 #: STK_261126_SM33 is STK-261126-SM33: torii adds no qrexec call, network path or dom0 exposure beyond those the file declares
 STK_261126_SM33 = Spec("STK-261126-SM33", "torii adds no qrexec call, network path or dom0 exposure beyond those the file declares", "planned", "")
+
+#: SW_261127_2R9T is SW-261127-2R9T: A name entry counts only for a name the qube asked for, or resolved through the proxy to that address
+SW_261127_2R9T = Spec("SW-261127-2R9T", "A name entry counts only for a name the qube asked for, or resolved through the proxy to that address", "planned", "invariant")
+
+#: SW_261127_2XS6 is SW-261127-2XS6: Allow entries match by exact name or subdomain, port and protocol, TCP unless they say UDP
+SW_261127_2XS6 = Spec("SW-261127-2XS6", "Allow entries match by exact name or subdomain, port and protocol, TCP unless they say UDP", "planned", "invariant")
+
+#: SW_261127_6S2F is SW-261127-6S2F: Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read
+SW_261127_6S2F = Spec("SW-261127-6S2F", "Under an allowlist, a TLS server name must be allowed too, and nothing is relayed before it is read", "planned", "invariant")
+
+#: SW_261127_H3W9 is SW-261127-H3W9: The HTTP proxy carries one host per connection
+SW_261127_H3W9 = Spec("SW-261127-H3W9", "The HTTP proxy carries one host per connection", "planned", "invariant")
+
+#: SW_261127_M7G9 is SW-261127-M7G9: A name resolves, for the qube and for the proxy, only to addresses the qube may reach under it
+SW_261127_M7G9 = Spec("SW-261127-M7G9", "A name resolves, for the qube and for the proxy, only to addresses the qube may reach under it", "planned", "invariant")
+
+#: SW_261127_PXX9 is SW-261127-PXX9: A connection is decided against the entry of the qube it came from, by the way it arrived
+SW_261127_PXX9 = Spec("SW-261127-PXX9", "A connection is decided against the entry of the qube it came from, by the way it arrived", "planned", "invariant")
+
+#: SW_261127_QQYS is SW-261127-QQYS: UDP is decided per flow, and each qube has a cap on open flows
+SW_261127_QQYS = Spec("SW-261127-QQYS", "UDP is decided per flow, and each qube has a cap on open flows", "planned", "bound")
+
+#: SW_261127_T7GG is SW-261127-T7GG: An inbound connection reaches a qube only on a port its entry or a service lists
+SW_261127_T7GG = Spec("SW-261127-T7GG", "An inbound connection reaches a qube only on a port its entry or a service lists", "planned", "invariant")
+
+#: SW_261127_WNYB is SW-261127-WNYB: Every address is in exactly one zone, and a forbidden address is never dialled
+SW_261127_WNYB = Spec("SW-261127-WNYB", "Every address is in exactly one zone, and a forbidden address is never dialled", "planned", "invariant")
