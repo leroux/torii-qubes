@@ -72,12 +72,12 @@ a path by zone: an internet-zone address of a workload with an egress
 takes `PathExit`; a LAN address always takes the proxy qube's netvm:
 
 <!-- charter:embed SW-261127-KYZW -->
-> **[SW-261127-KYZW](../claims/egress.md#sw-261127-kyzw-a-qubes-lan-traffic-never-goes-through-its-egress-and-plan-says-so) A qube's LAN traffic never goes through its egress, and plan says so**
+> **[SW-261127-KYZW](../claims/egress.md#sw-261127-kyzw-the-proxy-must-send-a-qubes-lan-traffic-directly-never-through-its-egress-and-torii-plan-must-say-so) The proxy MUST send a qube's LAN traffic directly, never through its egress, and torii plan MUST say so**
 >
-> On an egress, a qube's connections to the LAN zone go directly through
-> its proxy's netvm; only the internet zone takes the exit path. plan
-> notes each qube with both an egress and LAN access, since its LAN
-> traffic is not hidden by the exit node.
+> - On an egress, a qube's connections to the LAN zone MUST go directly
+>   through its proxy's netvm; only the internet zone takes the exit path.
+> - `torii plan` MUST note each qube that has both an egress and LAN
+>   access, since the exit node does not hide its LAN traffic.
 <!-- /charter:embed -->
 
 So `browse` reaching a printer on `192.168.1.20` (with `outbound.lan`
@@ -111,7 +111,7 @@ the proxy qube's resolver is never asked. The server is the config's
 `exit_dns`; the dom0 tool does not set it, so today it is always
 `DefaultExitDNS`, `1.1.1.1:53` ([`Config`](../proxy/internal/config/config.go#L40)).
 The resolver still reads the proxy qube's `/etc/hosts` and may append its
-search domains ([SW-261127-K5TK](../claims/egress.md#sw-261127-k5tk-an-egresss-traffic-is-dialled-only-into-its-identitys-own-network-stack-never-the-system-network)).
+search domains ([SW-261127-K5TK](../claims/egress.md#sw-261127-k5tk-the-proxy-must-dial-an-egresss-traffic-only-into-the-egress-identitys-own-network-stack-never-the-system-network)).
 
 ## Dial
 
@@ -123,17 +123,18 @@ which dials into the egress identity's gVisor netstack,
 [`TSNet.DialUDP`](../proxy/internal/tailnet/tsnet.go#L208) for a UDP flow:
 
 <!-- charter:embed SW-261127-K5TK -->
-> **[SW-261127-K5TK](../claims/egress.md#sw-261127-k5tk-an-egresss-traffic-is-dialled-only-into-its-identitys-own-network-stack-never-the-system-network) An egress's traffic is dialled only into its identity's own network stack, never the system network**
+> **[SW-261127-K5TK](../claims/egress.md#sw-261127-k5tk-the-proxy-must-dial-an-egresss-traffic-only-into-the-egress-identitys-own-network-stack-never-the-system-network) The proxy MUST dial an egress's traffic only into the egress identity's own network stack, never the system network**
 >
-> A connection on an egress's path, its UDP flows and the DNS of a qube
-> behind the egress are dialled into the userspace network stack of the
-> egress's identity, from the identity's own address; the program never
-> uses tsnet's `Server.Dial`, which falls back to the system network for
-> an address with no tailnet route, nor the proxy qube's netvm. DNS goes
-> over TCP, through the same stack, to the egress's resolver; a name in
-> the proxy qube's own hosts file is answered from it, and its search
-> domains may be added to a query. Without an exit node that stack has no
-> route to the internet.
+> - The program MUST dial a connection on an egress's path, its UDP flows,
+>   and the DNS of a qube behind the egress into the userspace network
+>   stack of the egress's identity, from the identity's own address.
+> - The program MUST NOT use tsnet's `Server.Dial`, which falls back to the
+>   system network for an address with no tailnet route, and MUST NOT use
+>   the proxy qube's netvm for this traffic.
+> - DNS MUST go over TCP, through the same stack, to the egress's
+>   resolver. A name in the proxy qube's own hosts file is answered from
+>   it, and the proxy qube's search domains MAY be added to a query.
+> - Without an exit node, that stack has no route to the internet.
 <!-- /charter:embed -->
 
 The pitfall this avoids: `tsnet.Server.Dial` falls back to the host
@@ -161,15 +162,18 @@ online, offering an exit node) and, if present, a TSMP ping
 ([`TSNet.Ping`](../proxy/internal/tailnet/tsnet.go#L370)).
 
 <!-- charter:embed SW-261127-8DFY -->
-> **[SW-261127-8DFY](../claims/egress.md#sw-261127-8dfy-an-exit-node-is-healthy-while-listed-answering-pings-and-not-failing-every-real-connection-through-it) An exit node is healthy while listed, answering pings, and not failing every real connection through it**
+> **[SW-261127-8DFY](../claims/egress.md#sw-261127-8dfy-the-egress-selector-must-judge-an-exit-node-healthy-only-while-it-is-listed-answers-pings-and-is-not-failing-every-real-connection) The egress selector MUST judge an exit node healthy only while it is listed, answers pings, and is not failing every real connection**
 >
-> Every 10 seconds, each check bounded to 5, every exit node is checked:
-> it is healthy while the tailnet map lists it online and offering an
-> exit node, and fewer than 3 pings in a row have gone unanswered. The
-> active one is also marked down for the hold-down when, within 30
-> seconds, 3 or more distinct destinations failed through it and none
-> succeeded; and, when the egress names a `probe`, when that probe failed
-> 3 times in a row. No probe runs unless the file names one.
+> - Every 10 seconds, the selector MUST check every exit node, each check
+>   bounded to 5 seconds.
+> - A node MUST count as healthy while the tailnet map lists it online and
+>   offering an exit node, and fewer than 3 pings in a row have gone
+>   unanswered.
+> - The active node MUST also be marked down for the hold-down when, within
+>   30 seconds, 3 or more distinct destinations failed through it and none
+>   succeeded; and, when the egress names a `probe`, when that probe failed
+>   3 times in a row.
+> - The selector MUST NOT run a probe unless the file names one.
 <!-- /charter:embed -->
 
 Per-node health as the selector tracks it:
@@ -199,14 +203,16 @@ emit a fingerprintable connection from every exit node.
 ordered exit list, the per-node state, the active node and the time:
 
 <!-- charter:embed SW-261127-BNFC -->
-> **[SW-261127-BNFC](../claims/egress.md#sw-261127-bnfc-exit-nodes-are-used-in-the-files-order-failing-over-at-once-and-back-only-after-a-hold-down) Exit nodes are used in the file's order, failing over at once and back only after a hold-down**
+> **[SW-261127-BNFC](../claims/egress.md#sw-261127-bnfc-the-egress-selector-must-use-exit-nodes-in-the-files-order-failing-over-at-once-and-back-only-after-a-hold-down) The egress selector MUST use exit nodes in the file's order, failing over at once and back only after a hold-down**
 >
-> An egress uses the first of its exit nodes that is healthy. When the
-> active one stops being healthy it moves at once to the first healthy
-> one; it moves back to one earlier in the list only once that one has
-> stayed healthy for `failback-after`, two minutes unless the file says
-> otherwise. With none healthy before, the first to come back is used at
-> once.
+> - An egress MUST use the first of its exit nodes that is healthy.
+> - When the active node stops being healthy, the egress MUST move at once
+>   to the first healthy one.
+> - The egress MUST move back to a node earlier in the list only once that
+>   node has stayed healthy for `failback-after`, two minutes unless the
+>   file says otherwise.
+> - When no node was healthy before, the first to come back MUST be used
+>   at once.
 <!-- /charter:embed -->
 
 With `home-router` down, `browse` moves to `vps` in the same tick that
@@ -222,12 +228,12 @@ Headscale and 35 s on Tailscale, failback after the hold-down.
 `ExitNodeAllowLANAccess` to false:
 
 <!-- charter:embed SW-261127-6YGC -->
-> **[SW-261127-6YGC](../claims/egress.md#sw-261127-6ygc-an-egresss-exit-node-is-never-cleared-a-switch-is-one-change-from-the-old-node-to-the-new) An egress's exit node is never cleared: a switch is one change from the old node to the new**
+> **[SW-261127-6YGC](../claims/egress.md#sw-261127-6ygc-the-egress-selector-must-not-clear-an-exit-node-and-must-switch-in-one-change-from-the-old-node-to-the-new) The egress selector MUST NOT clear an exit node, and MUST switch in one change from the old node to the new**
 >
-> The selector sets an exit node only by naming the new one, in one
+> The selector sets an exit node only by naming the new one, in a single
 > change of the identity's preferences that also keeps LAN access through
-> the exit node off; it never clears it. With no exit node healthy, the
-> last one stays set and the egress reports itself unusable.
+> the exit node off, and it MUST NOT clear the exit node. With no exit node
+> healthy, the last one stays set and the egress reports itself unusable.
 <!-- /charter:embed -->
 
 The reason is a property of stock Tailscale, not of torii: clearing the
@@ -247,13 +253,14 @@ an active node is set and healthy. While it is false,
 exit-path decision before any dial:
 
 <!-- charter:embed SW-261127-HJNX -->
-> **[SW-261127-HJNX](../claims/egress.md#sw-261127-hjnx-while-an-egress-has-no-healthy-exit-node-its-connections-are-refused-at-once-and-its-dns-fails) While an egress has no healthy exit node, its connections are refused at once and its DNS fails**
+> **[SW-261127-HJNX](../claims/egress.md#sw-261127-hjnx-the-proxy-must-refuse-an-egresss-connections-at-once-and-fail-its-dns-while-the-egress-has-no-healthy-exit-node) The proxy MUST refuse an egress's connections at once, and fail its DNS, while the egress has no healthy exit node**
 >
-> Before dialling, the program refuses a connection on an egress's path
-> while the egress has no healthy exit node, with `egress-no-healthy-exit`
-> and the egress's identity, and dials nothing. A DNS question that would
-> be answered through the egress gets SERVFAIL, not "no such name", and is
-> asked nowhere.
+> - While the egress has no healthy exit node, the program MUST refuse a
+>   connection on the egress's path before dialling, with
+>   `egress-no-healthy-exit` and the egress's identity, and MUST dial
+>   nothing.
+> - A DNS query that would be answered through the egress MUST get
+>   SERVFAIL, not "no such name", and MUST NOT be sent anywhere.
 <!-- /charter:embed -->
 
 The two layers are independent. If the selector is wrong and calls a dead

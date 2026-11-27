@@ -189,7 +189,7 @@ party from every exit node.
 
 How the egress chooses and changes its exit node, and how it fails closed,
 is followed through the code in [`walkthrough-egress.md`](walkthrough-egress.md):
-[SW-261127-8DFY](../claims/egress.md#sw-261127-8dfy-an-exit-node-is-healthy-while-listed-answering-pings-and-not-failing-every-real-connection-through-it), [SW-261127-BNFC](../claims/egress.md#sw-261127-bnfc-exit-nodes-are-used-in-the-files-order-failing-over-at-once-and-back-only-after-a-hold-down), [SW-261127-HJNX](../claims/egress.md#sw-261127-hjnx-while-an-egress-has-no-healthy-exit-node-its-connections-are-refused-at-once-and-its-dns-fails).
+[SW-261127-8DFY](../claims/egress.md#sw-261127-8dfy-the-egress-selector-must-judge-an-exit-node-healthy-only-while-it-is-listed-answers-pings-and-is-not-failing-every-real-connection), [SW-261127-BNFC](../claims/egress.md#sw-261127-bnfc-the-egress-selector-must-use-exit-nodes-in-the-files-order-failing-over-at-once-and-back-only-after-a-hold-down), [SW-261127-HJNX](../claims/egress.md#sw-261127-hjnx-the-proxy-must-refuse-an-egresss-connections-at-once-and-fail-its-dns-while-the-egress-has-no-healthy-exit-node).
 
 ## Removing devices
 

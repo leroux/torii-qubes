@@ -167,7 +167,7 @@ Queries redirected to :15053, over UDP or TCP, reach
 3. Otherwise [`DecideName`](../proxy/internal/policy/policy.go#L243) checks
    whether any zone rule could allow the name (`all`, or a name entry
    matching it); if not, `NXDOMAIN`. On an egress with no healthy exit
-   node, `SERVFAIL` ([SW-261127-HJNX](../claims/egress.md#sw-261127-hjnx-while-an-egress-has-no-healthy-exit-node-its-connections-are-refused-at-once-and-its-dns-fails)).
+   node, `SERVFAIL` ([SW-261127-HJNX](../claims/egress.md#sw-261127-hjnx-the-proxy-must-refuse-an-egresss-connections-at-once-and-fail-its-dns-while-the-egress-has-no-healthy-exit-node)).
 4. A and AAAA are resolved upstream: by the proxy qube's resolver, or on
    the exit path by [`ExitResolver`](../proxy/internal/engine/engine.go#L267),
    DNS over TCP through the egress identity. An upstream failure other

@@ -179,7 +179,7 @@ regain direct, unfiltered access. `plan` names the prior netvm and the
 
 [`plan.notes`](../dom0/torii/plan.py#L316) adds non-step output, such as a
 workload on an egress whose LAN traffic is not routed through it
-([SW-261127-KYZW](../claims/egress.md#sw-261127-kyzw-a-qubes-lan-traffic-never-goes-through-its-egress-and-plan-says-so)) and a template that lacks the client package.
+([SW-261127-KYZW](../claims/egress.md#sw-261127-kyzw-the-proxy-must-send-a-qubes-lan-traffic-directly-never-through-its-egress-and-torii-plan-must-say-so)) and a template that lacks the client package.
 
 ## Execution
 

@@ -194,7 +194,7 @@ An egress lists exit nodes in order. The proxy uses the first healthy one,
 fails over when it goes down, and fails back to a preferred one once that
 has stayed healthy for a hold-down (`failback-after`, 2 minutes), so a
 flapping home exit node doesn't move the qubes' address every minute
-([SW-261127-BNFC](../claims/egress.md#sw-261127-bnfc-exit-nodes-are-used-in-the-files-order-failing-over-at-once-and-back-only-after-a-hold-down)).
+([SW-261127-BNFC](../claims/egress.md#sw-261127-bnfc-the-egress-selector-must-use-exit-nodes-in-the-files-order-failing-over-at-once-and-back-only-after-a-hold-down)).
 
 Healthy means: listed online and offering an exit node in the tailnet map
 (free, catches withdrawn routes and ACL changes), answering a Tailscale ping
@@ -202,18 +202,18 @@ Healthy means: listed online and offering an exit node in the tailnet map
 failing (three or more destinations failing within 30 s with none succeeding
 trips it: one dead site doesn't). No third-party probe runs by default; it
 would send a recognisable connection out of every exit node. `probe:` adds
-one for those who want it ([SW-261127-8DFY](../claims/egress.md#sw-261127-8dfy-an-exit-node-is-healthy-while-listed-answering-pings-and-not-failing-every-real-connection-through-it)).
+one for those who want it ([SW-261127-8DFY](../claims/egress.md#sw-261127-8dfy-the-egress-selector-must-judge-an-exit-node-healthy-only-while-it-is-listed-answers-pings-and-is-not-failing-every-real-connection)).
 
 Failing closed holds in two independent places. `torii-proxy` dials straight
 into the egress identity's userspace network stack and never uses
 `tsnet.Server.Dial`, which falls back to the system network for addresses
 without a tailnet route, so without an exit node nothing has a route out
-([SW-261127-K5TK](../claims/egress.md#sw-261127-k5tk-an-egresss-traffic-is-dialled-only-into-its-identitys-own-network-stack-never-the-system-network)). And the engine refuses exit-path connections, and
+([SW-261127-K5TK](../claims/egress.md#sw-261127-k5tk-the-proxy-must-dial-an-egresss-traffic-only-into-the-egress-identitys-own-network-stack-never-the-system-network)). And the engine refuses exit-path connections, and
 answers SERVFAIL to their DNS, while the egress has no healthy node
-([SW-261127-HJNX](../claims/egress.md#sw-261127-hjnx-while-an-egress-has-no-healthy-exit-node-its-connections-are-refused-at-once-and-its-dns-fails)). A switch is one prefs change from
+([SW-261127-HJNX](../claims/egress.md#sw-261127-hjnx-the-proxy-must-refuse-an-egresss-connections-at-once-and-fail-its-dns-while-the-egress-has-no-healthy-exit-node)). A switch is one prefs change from
 the old node to the new; the exit node is never cleared, because for a stock
 Tailscale client clearing it is exactly the switch back to direct
-([SW-261127-6YGC](../claims/egress.md#sw-261127-6ygc-an-egresss-exit-node-is-never-cleared-a-switch-is-one-change-from-the-old-node-to-the-new)). The whole flow is in
+([SW-261127-6YGC](../claims/egress.md#sw-261127-6ygc-the-egress-selector-must-not-clear-an-exit-node-and-must-switch-in-one-change-from-the-old-node-to-the-new)). The whole flow is in
 [`walkthrough-egress.md`](walkthrough-egress.md).
 
 ### Unlisted qubes and disposables

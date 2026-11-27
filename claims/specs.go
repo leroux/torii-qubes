@@ -146,14 +146,14 @@ var SW_261127_63CS = &Spec{ID: "SW-261127-63CS", Title: "apply makes the plan's 
 // SW_261127_6S2F is SW-261127-6S2F: The proxy MUST check an allowlisted connection's TLS server name before relaying any of the client's bytes
 var SW_261127_6S2F = &Spec{ID: "SW-261127-6S2F", Title: "The proxy MUST check an allowlisted connection's TLS server name before relaying any of the client's bytes", Status: Active, Kind: "invariant"}
 
-// SW_261127_6YGC is SW-261127-6YGC: An egress's exit node is never cleared: a switch is one change from the old node to the new
-var SW_261127_6YGC = &Spec{ID: "SW-261127-6YGC", Title: "An egress's exit node is never cleared: a switch is one change from the old node to the new", Status: Active, Kind: "invariant"}
+// SW_261127_6YGC is SW-261127-6YGC: The egress selector MUST NOT clear an exit node, and MUST switch in one change from the old node to the new
+var SW_261127_6YGC = &Spec{ID: "SW-261127-6YGC", Title: "The egress selector MUST NOT clear an exit node, and MUST switch in one change from the old node to the new", Status: Active, Kind: "invariant"}
 
 // SW_261127_7C3Y is SW-261127-7C3Y: The proxy MUST take a qrexec caller's identity from what dom0 sets, never from what the caller sends
 var SW_261127_7C3Y = &Spec{ID: "SW-261127-7C3Y", Title: "The proxy MUST take a qrexec caller's identity from what dom0 sets, never from what the caller sends", Status: Active, Kind: "invariant"}
 
-// SW_261127_8DFY is SW-261127-8DFY: An exit node is healthy while listed, answering pings, and not failing every real connection through it
-var SW_261127_8DFY = &Spec{ID: "SW-261127-8DFY", Title: "An exit node is healthy while listed, answering pings, and not failing every real connection through it", Status: Active, Kind: "bound"}
+// SW_261127_8DFY is SW-261127-8DFY: The egress selector MUST judge an exit node healthy only while it is listed, answers pings, and is not failing every real connection
+var SW_261127_8DFY = &Spec{ID: "SW-261127-8DFY", Title: "The egress selector MUST judge an exit node healthy only while it is listed, answers pings, and is not failing every real connection", Status: Active, Kind: "bound"}
 
 // SW_261127_8PTP is SW-261127-8PTP: An identity sends Tailscale no client logs unless the file asks, and never maps ports
 var SW_261127_8PTP = &Spec{ID: "SW-261127-8PTP", Title: "An identity sends Tailscale no client logs unless the file asks, and never maps ports", Status: Active, Kind: "invariant"}
@@ -170,8 +170,8 @@ var SW_261127_B8BM = &Spec{ID: "SW-261127-B8BM", Title: "The status service is r
 // SW_261127_BHHX is SW-261127-BHHX: The proxy MUST identify a routed qube by its Qubes source address, which Qubes keeps it from forging
 var SW_261127_BHHX = &Spec{ID: "SW-261127-BHHX", Title: "The proxy MUST identify a routed qube by its Qubes source address, which Qubes keeps it from forging", Status: Active, Kind: "invariant"}
 
-// SW_261127_BNFC is SW-261127-BNFC: Exit nodes are used in the file's order, failing over at once and back only after a hold-down
-var SW_261127_BNFC = &Spec{ID: "SW-261127-BNFC", Title: "Exit nodes are used in the file's order, failing over at once and back only after a hold-down", Status: Active, Kind: "invariant"}
+// SW_261127_BNFC is SW-261127-BNFC: The egress selector MUST use exit nodes in the file's order, failing over at once and back only after a hold-down
+var SW_261127_BNFC = &Spec{ID: "SW-261127-BNFC", Title: "The egress selector MUST use exit nodes in the file's order, failing over at once and back only after a hold-down", Status: Active, Kind: "invariant"}
 
 // SW_261127_DH6R is SW-261127-DH6R: torii proposes grants for the tailnet and never changes its policy
 var SW_261127_DH6R = &Spec{ID: "SW-261127-DH6R", Title: "torii proposes grants for the tailnet and never changes its policy", Status: Active, Kind: "invariant"}
@@ -182,8 +182,8 @@ var SW_261127_G26T = &Spec{ID: "SW-261127-G26T", Title: "apply changes only what
 // SW_261127_H3W9 is SW-261127-H3W9: The proxy's HTTP proxy MUST carry only one host and port per connection
 var SW_261127_H3W9 = &Spec{ID: "SW-261127-H3W9", Title: "The proxy's HTTP proxy MUST carry only one host and port per connection", Status: Active, Kind: "invariant"}
 
-// SW_261127_HJNX is SW-261127-HJNX: While an egress has no healthy exit node, its connections are refused at once and its DNS fails
-var SW_261127_HJNX = &Spec{ID: "SW-261127-HJNX", Title: "While an egress has no healthy exit node, its connections are refused at once and its DNS fails", Status: Active, Kind: "invariant"}
+// SW_261127_HJNX is SW-261127-HJNX: The proxy MUST refuse an egress's connections at once, and fail its DNS, while the egress has no healthy exit node
+var SW_261127_HJNX = &Spec{ID: "SW-261127-HJNX", Title: "The proxy MUST refuse an egress's connections at once, and fail its DNS, while the egress has no healthy exit node", Status: Active, Kind: "invariant"}
 
 // SW_261127_HSHY is SW-261127-HSHY: The proxy package comes from the dom0 package's bundle, with no repository for torii
 var SW_261127_HSHY = &Spec{ID: "SW-261127-HSHY", Title: "The proxy package comes from the dom0 package's bundle, with no repository for torii", Status: Active, Kind: "invariant"}
@@ -191,14 +191,14 @@ var SW_261127_HSHY = &Spec{ID: "SW-261127-HSHY", Title: "The proxy package comes
 // SW_261127_JWK2 is SW-261127-JWK2: The proxy template MUST load a guard at boot that keeps the proxy qube forwarding nothing, whatever the program does
 var SW_261127_JWK2 = &Spec{ID: "SW-261127-JWK2", Title: "The proxy template MUST load a guard at boot that keeps the proxy qube forwarding nothing, whatever the program does", Status: Active, Kind: "invariant"}
 
-// SW_261127_K5TK is SW-261127-K5TK: An egress's traffic is dialled only into its identity's own network stack, never the system network
-var SW_261127_K5TK = &Spec{ID: "SW-261127-K5TK", Title: "An egress's traffic is dialled only into its identity's own network stack, never the system network", Status: Active, Kind: "invariant"}
+// SW_261127_K5TK is SW-261127-K5TK: The proxy MUST dial an egress's traffic only into the egress identity's own network stack, never the system network
+var SW_261127_K5TK = &Spec{ID: "SW-261127-K5TK", Title: "The proxy MUST dial an egress's traffic only into the egress identity's own network stack, never the system network", Status: Active, Kind: "invariant"}
 
 // SW_261127_KWT2 is SW-261127-KWT2: Each mesh's file changes only its own qubes and its own policy file
 var SW_261127_KWT2 = &Spec{ID: "SW-261127-KWT2", Title: "Each mesh's file changes only its own qubes and its own policy file", Status: Active, Kind: "invariant"}
 
-// SW_261127_KYZW is SW-261127-KYZW: A qube's LAN traffic never goes through its egress, and plan says so
-var SW_261127_KYZW = &Spec{ID: "SW-261127-KYZW", Title: "A qube's LAN traffic never goes through its egress, and plan says so", Status: Active, Kind: "invariant"}
+// SW_261127_KYZW is SW-261127-KYZW: The proxy MUST send a qube's LAN traffic directly, never through its egress, and torii plan MUST say so
+var SW_261127_KYZW = &Spec{ID: "SW-261127-KYZW", Title: "The proxy MUST send a qube's LAN traffic directly, never through its egress, and torii plan MUST say so", Status: Active, Kind: "invariant"}
 
 // SW_261127_M36P is SW-261127-M36P: torii's qrexec policy MUST allow only calls that run in the direction of the connection they carry, and only those the file declares
 var SW_261127_M36P = &Spec{ID: "SW-261127-M36P", Title: "torii's qrexec policy MUST allow only calls that run in the direction of the connection they carry, and only those the file declares", Status: Active, Kind: "invariant"}

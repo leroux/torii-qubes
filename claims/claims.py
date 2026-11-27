@@ -149,14 +149,14 @@ SW_261127_63CS = Spec("SW-261127-63CS", "apply makes the plan's steps in order, 
 #: SW_261127_6S2F is SW-261127-6S2F: The proxy MUST check an allowlisted connection's TLS server name before relaying any of the client's bytes
 SW_261127_6S2F = Spec("SW-261127-6S2F", "The proxy MUST check an allowlisted connection's TLS server name before relaying any of the client's bytes", "active", "invariant")
 
-#: SW_261127_6YGC is SW-261127-6YGC: An egress's exit node is never cleared: a switch is one change from the old node to the new
-SW_261127_6YGC = Spec("SW-261127-6YGC", "An egress's exit node is never cleared: a switch is one change from the old node to the new", "active", "invariant")
+#: SW_261127_6YGC is SW-261127-6YGC: The egress selector MUST NOT clear an exit node, and MUST switch in one change from the old node to the new
+SW_261127_6YGC = Spec("SW-261127-6YGC", "The egress selector MUST NOT clear an exit node, and MUST switch in one change from the old node to the new", "active", "invariant")
 
 #: SW_261127_7C3Y is SW-261127-7C3Y: The proxy MUST take a qrexec caller's identity from what dom0 sets, never from what the caller sends
 SW_261127_7C3Y = Spec("SW-261127-7C3Y", "The proxy MUST take a qrexec caller's identity from what dom0 sets, never from what the caller sends", "active", "invariant")
 
-#: SW_261127_8DFY is SW-261127-8DFY: An exit node is healthy while listed, answering pings, and not failing every real connection through it
-SW_261127_8DFY = Spec("SW-261127-8DFY", "An exit node is healthy while listed, answering pings, and not failing every real connection through it", "active", "bound")
+#: SW_261127_8DFY is SW-261127-8DFY: The egress selector MUST judge an exit node healthy only while it is listed, answers pings, and is not failing every real connection
+SW_261127_8DFY = Spec("SW-261127-8DFY", "The egress selector MUST judge an exit node healthy only while it is listed, answers pings, and is not failing every real connection", "active", "bound")
 
 #: SW_261127_8PTP is SW-261127-8PTP: An identity sends Tailscale no client logs unless the file asks, and never maps ports
 SW_261127_8PTP = Spec("SW-261127-8PTP", "An identity sends Tailscale no client logs unless the file asks, and never maps ports", "active", "invariant")
@@ -173,8 +173,8 @@ SW_261127_B8BM = Spec("SW-261127-B8BM", "The status service is read-only: it rep
 #: SW_261127_BHHX is SW-261127-BHHX: The proxy MUST identify a routed qube by its Qubes source address, which Qubes keeps it from forging
 SW_261127_BHHX = Spec("SW-261127-BHHX", "The proxy MUST identify a routed qube by its Qubes source address, which Qubes keeps it from forging", "active", "invariant")
 
-#: SW_261127_BNFC is SW-261127-BNFC: Exit nodes are used in the file's order, failing over at once and back only after a hold-down
-SW_261127_BNFC = Spec("SW-261127-BNFC", "Exit nodes are used in the file's order, failing over at once and back only after a hold-down", "active", "invariant")
+#: SW_261127_BNFC is SW-261127-BNFC: The egress selector MUST use exit nodes in the file's order, failing over at once and back only after a hold-down
+SW_261127_BNFC = Spec("SW-261127-BNFC", "The egress selector MUST use exit nodes in the file's order, failing over at once and back only after a hold-down", "active", "invariant")
 
 #: SW_261127_DH6R is SW-261127-DH6R: torii proposes grants for the tailnet and never changes its policy
 SW_261127_DH6R = Spec("SW-261127-DH6R", "torii proposes grants for the tailnet and never changes its policy", "active", "invariant")
@@ -185,8 +185,8 @@ SW_261127_G26T = Spec("SW-261127-G26T", "apply changes only what torii owns: its
 #: SW_261127_H3W9 is SW-261127-H3W9: The proxy's HTTP proxy MUST carry only one host and port per connection
 SW_261127_H3W9 = Spec("SW-261127-H3W9", "The proxy's HTTP proxy MUST carry only one host and port per connection", "active", "invariant")
 
-#: SW_261127_HJNX is SW-261127-HJNX: While an egress has no healthy exit node, its connections are refused at once and its DNS fails
-SW_261127_HJNX = Spec("SW-261127-HJNX", "While an egress has no healthy exit node, its connections are refused at once and its DNS fails", "active", "invariant")
+#: SW_261127_HJNX is SW-261127-HJNX: The proxy MUST refuse an egress's connections at once, and fail its DNS, while the egress has no healthy exit node
+SW_261127_HJNX = Spec("SW-261127-HJNX", "The proxy MUST refuse an egress's connections at once, and fail its DNS, while the egress has no healthy exit node", "active", "invariant")
 
 #: SW_261127_HSHY is SW-261127-HSHY: The proxy package comes from the dom0 package's bundle, with no repository for torii
 SW_261127_HSHY = Spec("SW-261127-HSHY", "The proxy package comes from the dom0 package's bundle, with no repository for torii", "active", "invariant")
@@ -194,14 +194,14 @@ SW_261127_HSHY = Spec("SW-261127-HSHY", "The proxy package comes from the dom0 p
 #: SW_261127_JWK2 is SW-261127-JWK2: The proxy template MUST load a guard at boot that keeps the proxy qube forwarding nothing, whatever the program does
 SW_261127_JWK2 = Spec("SW-261127-JWK2", "The proxy template MUST load a guard at boot that keeps the proxy qube forwarding nothing, whatever the program does", "active", "invariant")
 
-#: SW_261127_K5TK is SW-261127-K5TK: An egress's traffic is dialled only into its identity's own network stack, never the system network
-SW_261127_K5TK = Spec("SW-261127-K5TK", "An egress's traffic is dialled only into its identity's own network stack, never the system network", "active", "invariant")
+#: SW_261127_K5TK is SW-261127-K5TK: The proxy MUST dial an egress's traffic only into the egress identity's own network stack, never the system network
+SW_261127_K5TK = Spec("SW-261127-K5TK", "The proxy MUST dial an egress's traffic only into the egress identity's own network stack, never the system network", "active", "invariant")
 
 #: SW_261127_KWT2 is SW-261127-KWT2: Each mesh's file changes only its own qubes and its own policy file
 SW_261127_KWT2 = Spec("SW-261127-KWT2", "Each mesh's file changes only its own qubes and its own policy file", "active", "invariant")
 
-#: SW_261127_KYZW is SW-261127-KYZW: A qube's LAN traffic never goes through its egress, and plan says so
-SW_261127_KYZW = Spec("SW-261127-KYZW", "A qube's LAN traffic never goes through its egress, and plan says so", "active", "invariant")
+#: SW_261127_KYZW is SW-261127-KYZW: The proxy MUST send a qube's LAN traffic directly, never through its egress, and torii plan MUST say so
+SW_261127_KYZW = Spec("SW-261127-KYZW", "The proxy MUST send a qube's LAN traffic directly, never through its egress, and torii plan MUST say so", "active", "invariant")
 
 #: SW_261127_M36P is SW-261127-M36P: torii's qrexec policy MUST allow only calls that run in the direction of the connection they carry, and only those the file declares
 SW_261127_M36P = Spec("SW-261127-M36P", "torii's qrexec policy MUST allow only calls that run in the direction of the connection they carry, and only those the file declares", "active", "invariant")
