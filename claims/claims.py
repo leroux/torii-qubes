@@ -155,14 +155,14 @@ SW_261127_B6Z6 = Spec("SW-261127-B6Z6", "A routed qube's traffic reaches the pro
 #: SW_261127_BHHX is SW-261127-BHHX: A routed qube is named by its Qubes source address, which Qubes keeps it from forging
 SW_261127_BHHX = Spec("SW-261127-BHHX", "A routed qube is named by its Qubes source address, which Qubes keeps it from forging", "active", "invariant")
 
-#: SW_261127_G26T is SW-261127-G26T: apply changes only what torii owns: its template, its proxy qubes, its policy files, and four settings of each workload
-SW_261127_G26T = Spec("SW-261127-G26T", "apply changes only what torii owns: its template, its proxy qubes, its policy files, and four settings of each workload", "active", "invariant")
+#: SW_261127_G26T is SW-261127-G26T: apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings
+SW_261127_G26T = Spec("SW-261127-G26T", "apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings", "active", "invariant")
 
 #: SW_261127_H3W9 is SW-261127-H3W9: The HTTP proxy carries one host per connection
 SW_261127_H3W9 = Spec("SW-261127-H3W9", "The HTTP proxy carries one host per connection", "active", "invariant")
 
-#: SW_261127_HSHY is SW-261127-HSHY: The proxy package comes from the dom0 package's bundle, installed into torii's template with no repository
-SW_261127_HSHY = Spec("SW-261127-HSHY", "The proxy package comes from the dom0 package's bundle, installed into torii's template with no repository", "active", "invariant")
+#: SW_261127_HSHY is SW-261127-HSHY: The proxy package comes from the dom0 package's bundle, with no repository for torii
+SW_261127_HSHY = Spec("SW-261127-HSHY", "The proxy package comes from the dom0 package's bundle, with no repository for torii", "active", "invariant")
 
 #: SW_261127_JWK2 is SW-261127-JWK2: A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does
 SW_261127_JWK2 = Spec("SW-261127-JWK2", "A guard loaded at boot keeps the proxy qube forwarding nothing, whatever the program does", "active", "invariant")

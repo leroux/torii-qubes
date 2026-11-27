@@ -2,6 +2,11 @@
 
 ## Later
 
+- **A proxy's restart keeps each client's netvm as it was.** Restarting a
+  proxy for a new package detaches its running clients and attaches them
+  to it again by name; a client that followed Qubes' default netvm then
+  has it set explicitly. Record which followed the default and restore
+  that.
 - **The proxy qube's uplink requires the guard too.** If the guard fails
   to load, Qubes' network service (which turns forwarding on) and the
   program do not start, but `qubes-network-uplink.service` is only ordered

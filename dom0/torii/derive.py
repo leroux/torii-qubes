@@ -288,6 +288,7 @@ def policy_name(m: Machine) -> str:
     return f"{POLICY_NAME}-{m.mesh}" if m.mesh else POLICY_NAME
 
 
+# charter:realizes SW-261127-KWT2
 def managed_tag(m: Machine) -> str:
     return f"{MANAGED_TAG}-{m.mesh}" if m.mesh else MANAGED_TAG
 

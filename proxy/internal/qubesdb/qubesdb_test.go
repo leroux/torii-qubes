@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 
 	"github.com/leroux/torii-qubes/claims"
@@ -55,6 +56,23 @@ print(json.dumps(derive.encode_chunks(cfg)))`
 	delete(feats, "vm-config.torii.0")
 	if _, err := Config(read, "torii"); err == nil {
 		t.Error("missing part accepted")
+	}
+	// A whole new write under the old head: every part decodes, and only
+	// the hash tells the two writes apart.
+	two, err := exec.Command(py, "-c", `import json,sys; sys.path.insert(0, "../../../dom0")
+from torii import derive
+print(json.dumps([derive.encode_chunks({"version": v, "x": c * 10}) for v, c in (("v1", "a"), ("v2", "b"))]))`).Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var pair []map[string]string
+	if err := jsonUnmarshal(two, &pair); err != nil {
+		t.Fatal(err)
+	}
+	feats = pair[1]
+	feats["vm-config.torii"] = pair[0]["vm-config.torii"]
+	if _, err := Config(read, "torii"); err == nil || !strings.Contains(err.Error(), "hash mismatch") {
+		t.Errorf("a new write under the old head: %v", err)
 	}
 	_ = os.Stdout
 }

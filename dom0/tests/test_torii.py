@@ -361,6 +361,7 @@ class Plans(unittest.TestCase):
         self.assertEqual(plan.make(m, after, VERSION), [])
 
     def test_old_template_another_mesh_uses_stays(self):
+        claims.verifies(self, claims.SW_261127_KWT2, "shared-template-kept")
         m = full_machine()
         after = simulate(snap(), plan.make(m, snap(), VERSION))
         after.qubes["torii-template"] = copy.deepcopy(after.qubes["torii-fedora-44-minimal"])
@@ -807,6 +808,14 @@ class Chunks(unittest.TestCase):
         f[f"{derive.CONFIG_FEATURE}.1"] = f[f"{derive.CONFIG_FEATURE}.1"][::-1]
         with self.assertRaises(Exception):
             derive.decode_chunks(f)
+        # A new config's parts, all of them, under the old head: every part
+        # decodes, and only the hash tells the two writes apart.
+        old = derive.encode_chunks({"version": "v1", "x": "a" * 10})
+        new = derive.encode_chunks({"version": "v2", "x": "b" * 10})
+        self.assertEqual(old[derive.CONFIG_FEATURE].split()[0], new[derive.CONFIG_FEATURE].split()[0])
+        mixed = dict(new, **{derive.CONFIG_FEATURE: old[derive.CONFIG_FEATURE]})
+        with self.assertRaisesRegex(ValueError, "do not match their hash"):
+            derive.decode_chunks(mixed)
 
 
 

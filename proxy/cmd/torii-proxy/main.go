@@ -82,6 +82,10 @@ func loadConfig(src string) (*config.Config, error) {
 	return config.Load(src)
 }
 
+// run waits for a valid config, runs the daemon on it, and replaces it
+// only with the next valid one.
+//
+//charter:realizes SW-261127-XGDY
 func run(args []string) error {
 	fs := flag.NewFlagSet("run", flag.ExitOnError)
 	src := fs.String("config", "qubesdb:torii", "config file, or qubesdb:KEY")
