@@ -1,18 +1,15 @@
-# How traffic leaves through an egress
+# Egress through tailnet exit nodes
 
-A walkthrough of a qube whose internet goes out through tailnet exit
-nodes: how its connections and its DNS are sent there and nowhere else,
-how the exit node is chosen and changed, and what happens when none is
-up. The parts are in [`architecture.md`](architecture.md), the deciding
-of a connection before this point in
-[`walkthrough-connection.md`](walkthrough-connection.md), and the rules in
-[`claims/egress.md`](../claims/egress.md).
-
-The example:
+How a workload's internet traffic and DNS are confined to an ordered set
+of Tailscale exit nodes, how the active exit node is selected and
+switched, and why the design fails closed at two independent layers.
+Components are in [`architecture.md`](architecture.md); authorization
+before this point is in [`walkthrough-connection.md`](walkthrough-connection.md);
+the rules are in [`claims/egress.md`](../claims/egress.md).
 
 ```yaml
 egress:
-  home: { exits: [home-router, vps] }
+  home: { exits: [home-router, vps], failback-after: 2m }
 qubes:
   browse:
     network: proxy
@@ -20,7 +17,7 @@ qubes:
     outbound: { internet: all }
 ```
 
-What it is for:
+The property:
 
 <!-- charter:embed STK-261126-346B -->
 > **[STK-261126-346B](../claims/needs.md#stk-261126-346b-a-qube-on-an-egress-reaches-the-internet-only-through-that-egresss-exit-nodes-or-not-at-all) A qube on an egress reaches the internet only through that egress's exit nodes, or not at all**
@@ -36,13 +33,20 @@ What it is for:
 > switches, which break.
 <!-- /charter:embed -->
 
-## The identity it leaves on
+The threat is a leak, not a hostile workload: an exit node going down, a
+withdrawn route, the program restarting or a half-written config must
+never result in a packet for `browse`'s internet destination leaving the
+proxy qube by its netvm.
 
-`browse` has no tailnet identity of its own, and needs none. The proxy
-carrying it holds one identity for the egress `home`, a tailnet device
-made by [`daemon.Identities`](../proxy/internal/daemon/daemon.go#L61) beside
-the qubes' own, and every qube on `home` shares it. Sharing it is
-harmless only because it carries nothing but the internet:
+## The egress identity
+
+Each proxy that carries `home` runs one extra tsnet node for it, made by
+[`daemon.Identities`](../proxy/internal/daemon/daemon.go#L61) with state in
+`/rw/torii/state/egress-home`, hostname `<machine>-egress-home` (with
+`-<proxy>` on proxies other than the main one) and the egress's tags
+(`tag:<machine>-egress` by default). Every workload on `home` shares it,
+and needs no identity of its own. Sharing is acceptable only because the
+node is authorized for nothing but the internet:
 
 <!-- charter:embed SW-261127-WSWG -->
 > **[SW-261127-WSWG](../claims/identity.md#sw-261127-wswg-an-egresss-identity-carries-only-the-internet-and-grants-propose-it-nothing-else) An egress's identity carries only the internet, and grants propose it nothing else**
@@ -54,16 +58,16 @@ harmless only because it carries nothing but the internet:
 > names its tags in no other grant.
 <!-- /charter:embed -->
 
-In the decision this is [`pathIdentity`](../proxy/internal/policy/policy.go#L274):
-the exit path gets the egress's identity, the tailnet path only the
-qube's own.
+The routing half is [`pathIdentity`](../proxy/internal/policy/policy.go#L274):
+the exit path gets the egress identity, the tailnet path only the
+workload's own. The authorization half is `torii grants`, which proposes
+`autogroup:internet` and nothing else for the egress tag.
 
-## Which way each connection goes
+## Path selection
 
-The zone of the address dialled decides the path,
-[`PathFor`](../proxy/internal/policy/zone.go#L166): an internet address of a
-qube on an egress takes the exit path; a LAN address always goes through
-the proxy's netvm:
+[`PathFor`](../proxy/internal/policy/zone.go#L166) maps an allowed address to
+a path by zone: an internet-zone address of a workload with an egress
+takes `PathExit`; a LAN address always takes the proxy qube's netvm:
 
 <!-- charter:embed SW-261127-KYZW -->
 > **[SW-261127-KYZW](../claims/egress.md#sw-261127-kyzw-a-qubes-lan-traffic-never-goes-through-its-egress-and-plan-says-so) A qube's LAN traffic never goes through its egress, and plan says so**
@@ -74,28 +78,31 @@ the proxy's netvm:
 > traffic is not hidden by the exit node.
 <!-- /charter:embed -->
 
-So `browse` printing to a printer on `192.168.1.20` does so from the
-machine's own network, not from the exit node's; `torii plan` says so in a
-note, for every qube on an egress.
+So `browse` reaching a printer on `192.168.1.20` (with `outbound.lan`
+allowing it) is seen with the machine's own LAN address, and a LAN-side
+observer can still place the machine. `plan` prints a note for every
+workload on an egress.
 
-## The name
+## DNS
 
-`browse` asks for `example.org`. [`Engine.AnswerDNS`](../proxy/internal/engine/engine.go#L807)
-decides the name as for any qube, then, the path being the exit path,
-resolves it with [`ExitResolver`](../proxy/internal/engine/engine.go#L267): DNS
-over TCP, dialled through the egress's identity like any connection on it.
-The local resolver is never asked. Today that resolver is the config's
-`exit_dns`, which the dom0 tool does not set, so it is always the
-default, `1.1.1.1:53` ([`Config`](../proxy/internal/config/config.go#L40)),
-reached through the exit node.
+For a workload on an egress, [`Engine.AnswerDNS`](../proxy/internal/engine/engine.go#L807)
+resolves A and AAAA with [`ExitResolver`](../proxy/internal/engine/engine.go#L267):
+a Go `net.Resolver` whose `Dial` returns a TCP connection opened through
+the egress identity, so queries are DNS over TCP via the exit node and
+the proxy qube's resolver is never asked. The server is the config's
+`exit_dns`; the dom0 tool does not set it, so today it is always
+`DefaultExitDNS`, `1.1.1.1:53` ([`Config`](../proxy/internal/config/config.go#L40)).
+The resolver still reads the proxy qube's `/etc/hosts` and may append its
+search domains ([SW-261127-K5TK](../claims/egress.md#sw-261127-k5tk-an-egresss-traffic-is-dialled-only-into-its-identitys-own-network-stack-never-the-system-network)).
 
-## The dial
+## Dial
 
-[`Engine.dial`](../proxy/internal/engine/engine.go#L659) sends an exit-path
-connection to [`Engine.dialExit`](../proxy/internal/engine/engine.go#L248),
-which dials into the egress identity's own network stack,
-[`TSNet.Dial`](../proxy/internal/tailnet/tsnet.go#L173), bound to the
-identity's tailnet address:
+[`Engine.dial`](../proxy/internal/engine/engine.go#L659) hands exit-path
+connections to [`Engine.dialExit`](../proxy/internal/engine/engine.go#L248),
+which dials into the egress identity's gVisor netstack,
+[`TSNet.Dial`](../proxy/internal/tailnet/tsnet.go#L173)
+(`DialContextTCPWithBind`, bound to the identity's Tailscale address), or
+[`TSNet.DialUDP`](../proxy/internal/tailnet/tsnet.go#L208) for a UDP flow:
 
 <!-- charter:embed SW-261127-K5TK -->
 > **[SW-261127-K5TK](../claims/egress.md#sw-261127-k5tk-an-egresss-traffic-is-dialled-only-into-its-identitys-own-network-stack-never-the-system-network) An egress's traffic is dialled only into its identity's own network stack, never the system network**
@@ -111,25 +118,29 @@ identity's tailnet address:
 > route to the internet.
 <!-- /charter:embed -->
 
-This is the trap the code is shaped against. tsnet's `Server.Dial` looks
-like the obvious call, and for an address with no tailnet route it falls
-back to the system network: with no exit node set, that would send the
-connection straight out of the proxy qube. Dialling into the netstack
-instead means there is no such fallback to get wrong; with no exit node,
-WireGuard has nowhere to send the packets. A UDP flow on the exit path
-goes the same way, [`TSNet.DialUDP`](../proxy/internal/tailnet/tsnet.go#L208).
+The pitfall this avoids: `tsnet.Server.Dial` falls back to the host
+network stack for any destination with no tailnet route. With no exit
+node selected, that fallback is a direct connection from the proxy qube,
+exactly the leak the egress exists to prevent. Dialling the netstack
+leaves no such fallback; with no exit node, WireGuard has no peer whose
+`AllowedIPs` covers the destination and the dial fails.
 
-Every TCP dial also reports how it went to the egress's selector,
-`Report`, which is half of how an exit node is judged.
+Each TCP dial's outcome is reported to the egress's selector
+(`Selector.Report`), the passive half of health checking. UDP dials are
+connectionless and report nothing.
 
-## Choosing the exit node
+## Health
 
-Each egress has a [`Selector`](../proxy/internal/egress/egress.go#L92),
-started by [`Engine.Start`](../proxy/internal/engine/engine.go#L286). Once the
-identity has signed in, [`Selector.Run`](../proxy/internal/egress/egress.go#L136)
-calls [`Selector.Tick`](../proxy/internal/egress/egress.go#L157) every ten
-seconds, and at once when real connections start failing. A tick checks
-every exit node at the same time, each within five seconds:
+One [`Selector`](../proxy/internal/egress/egress.go#L92) per egress, started
+by [`Engine.Start`](../proxy/internal/engine/engine.go#L286).
+[`Selector.Run`](../proxy/internal/egress/egress.go#L136) waits for the
+identity to reach `Running`, then calls
+[`Selector.Tick`](../proxy/internal/egress/egress.go#L157) every 10 s
+(`Interval`), and immediately when `Report` sees three distinct failed
+destinations. Each tick checks all exit nodes concurrently, each check
+bounded by 5 s (`CheckTimeout`): the netmap entry (`ExitPeer`: found,
+online, offering an exit node) and, if present, a TSMP ping
+([`TSNet.Ping`](../proxy/internal/tailnet/tsnet.go#L370)).
 
 <!-- charter:embed SW-261127-8DFY -->
 > **[SW-261127-8DFY](../claims/egress.md#sw-261127-8dfy-an-exit-node-is-healthy-while-listed-answering-pings-and-not-failing-every-real-connection-through-it) An exit node is healthy while listed, answering pings, and not failing every real connection through it**
@@ -143,14 +154,20 @@ every exit node at the same time, each within five seconds:
 > 3 times in a row. No probe runs unless the file names one.
 <!-- /charter:embed -->
 
-The two halves of "not failing every real connection" are in
-[`Selector.tripLocked`](../proxy/internal/egress/egress.go#L264): three
-distinct destinations failing within thirty seconds with none succeeding,
-or, if the egress has a `probe`, three failed probes in a row, mark the
-active node down for the hold-down. One dead website does not move
-anyone's address.
+The trips are in [`Selector.tripLocked`](../proxy/internal/egress/egress.go#L264)
+and apply to the active node only: three or more distinct destinations
+failing within 30 s (`PassiveWindow`) with no success, or, if `probe:`
+is set, three consecutive probe failures. A tripped node is held down
+for the failback interval. The design choices behind the thresholds: the
+netmap lags by tens of seconds; a TSMP ping proves WireGuard reachability
+but not that the node forwards to the internet; one dead destination must
+not move everyone's public address; and a default third-party probe would
+emit a fingerprintable connection from every exit node.
 
-Then [`choose`](../proxy/internal/egress/egress.go#L71) picks the node:
+## Selection and failback
+
+[`choose`](../proxy/internal/egress/egress.go#L71) is a pure function of the
+ordered exit list, the per-node state, the active node and the time:
 
 <!-- charter:embed SW-261127-BNFC -->
 > **[SW-261127-BNFC](../claims/egress.md#sw-261127-bnfc-exit-nodes-are-used-in-the-files-order-failing-over-at-once-and-back-only-after-a-hold-down) Exit nodes are used in the file's order, failing over at once and back only after a hold-down**
@@ -163,16 +180,17 @@ Then [`choose`](../proxy/internal/egress/egress.go#L71) picks the node:
 > once.
 <!-- /charter:embed -->
 
-With `home-router` down and `vps` up, `browse` leaves through `vps`. When
-`home-router` comes back, it must stay healthy for `failback-after`, two
-minutes by default, before `browse` moves back, so a flapping home line
-does not change the qube's address every minute.
+With `home-router` down, `browse` moves to `vps` in the same tick that
+marks `home-router` unhealthy. When `home-router` is healthy again, it must stay so for
+`failback-after` (120 s by default, `DefaultFailbackAfter`) before
+`browse` moves back. Measured on the lab (TODO.md): failover in 14 s on
+Headscale and 35 s on Tailscale, failback after the hold-down.
 
-## Switching without a gap
+## Switching
 
-The switch itself is one call,
-[`TSNet.SetExitNode`](../proxy/internal/tailnet/tsnet.go#L393), one change of
-the identity's prefs from the old node to the new:
+[`TSNet.SetExitNode`](../proxy/internal/tailnet/tsnet.go#L393) is a single
+`EditPrefs` setting `ExitNodeID` to the new node and
+`ExitNodeAllowLANAccess` to false:
 
 <!-- charter:embed SW-261127-6YGC -->
 > **[SW-261127-6YGC](../claims/egress.md#sw-261127-6ygc-an-egresss-exit-node-is-never-cleared-a-switch-is-one-change-from-the-old-node-to-the-new) An egress's exit node is never cleared: a switch is one change from the old node to the new**
@@ -183,19 +201,21 @@ the identity's prefs from the old node to the new:
 > last one stays set and the egress reports itself unusable.
 <!-- /charter:embed -->
 
-The trap again: for a stock Tailscale client, clearing the exit node is
-exactly the switch back to going out directly. So the code never clears
-it, not even when every node is down; `choose` keeps the active one, and
-the selector reports itself unusable instead. Connections open through
-the old node when it switches break; that is stated in the need, above,
-as not covered.
+The reason is a property of stock Tailscale, not of torii: clearing the
+exit node is how a client returns to direct internet access. A clear
+followed by a set has a window in which the identity would route
+directly, and if the set fails the window does not close. So the code
+never clears it. When every node is down, `choose` returns the current
+active node, the prefs are untouched, and the selector reports itself
+unusable instead. Connections open through the old node break on a
+switch; the need lists that as not covered.
 
-## When none is up
+## Fail-closed, both layers
 
-While no exit node is healthy,
-[`Selector.Usable`](../proxy/internal/egress/egress.go#L310) is false, and the
-engine refuses before dialling,
-[`Engine.exitUsable`](../proxy/internal/engine/engine.go#L215):
+[`Selector.Usable`](../proxy/internal/egress/egress.go#L310) is true only when
+an active node is set and healthy. While it is false,
+[`Engine.exitUsable`](../proxy/internal/engine/engine.go#L215) refuses every
+exit-path decision before any dial:
 
 <!-- charter:embed SW-261127-HJNX -->
 > **[SW-261127-HJNX](../claims/egress.md#sw-261127-hjnx-while-an-egress-has-no-healthy-exit-node-its-connections-are-refused-at-once-and-its-dns-fails) While an egress has no healthy exit node, its connections are refused at once and its DNS fails**
@@ -207,15 +227,20 @@ engine refuses before dialling,
 > asked nowhere.
 <!-- /charter:embed -->
 
-So failing closed holds twice over: the engine refuses an exit-path
-connection while the egress is unusable, and if it dialled one anyway,
-the network stack would have nowhere to send it.
+The two layers are independent. If the selector is wrong and calls a dead
+node healthy, the netstack dial has no route and fails. If the netstack
+had a route for some reason, the engine still refuses while the selector
+reports no healthy node. Neither path touches the proxy qube's netvm, and
+the guard forbids kernel forwarding regardless. Verified on the lab with
+both exits killed: refusals in under 20 ms, `egress-no-healthy-exit`
+logged, and no packet to the destination in a capture at the netvm.
 
-## Seeing it
+## Observability
 
-The selector logs each switch, and each node going down and coming back,
-as events of the egress's own; `torii log --egress home` prints them, and
-`torii show` gives each egress's active node and the state of the others.
-`torii check` names an egress with no healthy exit node
-([SW-261127-SMYC](../claims/seeing.md#sw-261127-smyc-check-names-each-difference-it-looks-for-between-the-live-machine-and-the-file-and-fails-on-one)). How to set up the exit nodes themselves is in
-[`tailscale.md`](tailscale.md#exit-nodes).
+The selector emits egress events (`exit-switch`, `exit-unhealthy`,
+`exit-healthy`) under the workload name `egress:<name>`;
+`torii log --egress home` prints them. `torii show` lists each egress's
+active node and every node's state with the reason it is down. `torii
+check` reports an egress with no healthy node, and one running on a
+fallback with how long ([SW-261127-SMYC](../claims/seeing.md#sw-261127-smyc-check-names-each-difference-it-looks-for-between-the-live-machine-and-the-file-and-fails-on-one)). Setting up the exit nodes
+and the grant: [`tailscale.md`](tailscale.md#exit-nodes).
