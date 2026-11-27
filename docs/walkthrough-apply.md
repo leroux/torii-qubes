@@ -1,13 +1,11 @@
-# How a plan becomes the machine
+# plan, apply, show and check
 
-A walkthrough of `torii plan` and `torii apply` in dom0, from reading
-`~/torii.yaml` to the proxy running the new config, and then of `torii
-show` and `torii check` reading the result back. The parts are described
+How the dom0 tool turns `~/torii.yaml` into Admin API calls, how a proxy's
+config crosses into the proxy qube and is taken atomically, and how
+`show` and `check` reconstruct reach from the live machine. Components are
 in [`architecture.md`](architecture.md); the rules are in
 [`claims/apply.md`](../claims/apply.md) and
 [`claims/seeing.md`](../claims/seeing.md).
-
-The need this flow answers:
 
 <!-- charter:embed STK-261126-B4CP -->
 > **[STK-261126-B4CP](../claims/needs.md#stk-261126-b4cp-apply-changes-only-what-torii-owns-and-exactly-the-steps-plan-showed) apply changes only what torii owns, and exactly the steps plan showed**
@@ -26,37 +24,39 @@ The need this flow answers:
 > removed from the file is left with no netvm, never its old one.
 <!-- /charter:embed -->
 
-## 1. The file
+The design constraint is that this code runs in dom0 with full control of
+the machine. It is kept small and deterministic: a pure planner over a
+snapshot, an executor that makes one Admin API change per step, and no
+parsing of anything a qube sends except the status JSON.
+
+## Parsing
 
 [`cmd_plan`](../dom0/torii/cli.py#L74) and [`cmd_apply`](../dom0/torii/cli.py#L94)
-start the same way: [`machine.load`](../dom0/torii/machine.py#L657) reads the
-file and [`machine.parse`](../dom0/torii/machine.py#L551) turns it into a
-`Machine`, every default filled in and every qube's entry resolved:
-[SW-261127-9BNW](../claims/apply.md#sw-261127-9bnw-the-machine-file-is-read-whole-and-refused-whole-when-a-key-a-network-or-a-value-is-wrong). A wrong key, a network that cannot be, a value of the
-wrong kind: the whole file is refused, and nothing has been read from the
-machine yet.
+call [`machine.load`](../dom0/torii/machine.py#L657), which reads the YAML and
+builds a `Machine` in [`machine.parse`](../dom0/torii/machine.py#L551): unknown
+keys, wrong types, invalid ports, undefined egresses and moved keys from
+older formats are errors, collected for the whole file and raised before
+the machine is touched ([SW-261127-9BNW](../claims/apply.md#sw-261127-9bnw-the-machine-file-is-read-whole-and-refused-whole-when-a-key-a-network-or-a-value-is-wrong)). Defaults are resolved per
+qube, tags are expanded with the machine prefix
+([`tags_of`](../dom0/torii/machine.py#L25), [SW-261127-P8H7](../claims/identity.md#sw-261127-p8h7-a-tagged-identity-carries-exactly-the-files-tags-prefixed-by-the-machine-and-check-names-any-other)).
 
-## 2. The snapshot
+## Snapshot
 
-[`live.take`](../dom0/torii/live.py#L83) reads the machine through the Admin
-API into one [`Snapshot`](../dom0/torii/live.py#L44): every qube's class,
-netvm, tags and state, the features of the qubes the file names and of
-the tool's own, and every qrexec policy file. Nothing after this step
-reads the machine again until apply makes its first change; `torii
-snapshot` prints this object, which is how the plan tests run without a
-Qubes machine ([`testing.md`](testing.md)).
+[`live.take`](../dom0/torii/live.py#L83) reads, through `qubesadmin`, every
+domain's class, power state, template, netvm (and whether it is the
+default), `provides_network`, IP, label, tags and disposable settings;
+features only for the domains the file names, the tool's own and their
+templates, to bound the number of Admin API calls; and, through
+`qrexec.policy.admin_client`, the text of every file in
+`/etc/qubes/policy.d`. The result is a serializable
+[`Snapshot`](../dom0/torii/live.py#L44); `torii snapshot` prints it, and the
+plan tests in `dom0/tests` run against snapshots recorded on Qubes 4.3.
 
-## 3. The plan
+## Planning
 
-[`plan.make`](../dom0/torii/plan.py#L96) is a function of the `Machine`, the
-`Snapshot` and the bundle's version, and of nothing else. It works in two
-passes.
-
-**First, everything this machine cannot be given**, gathered and refused
-together before any step: a qube the file names that does not exist, a
-template or a netvm offered as a workload, a qube another mesh manages, a
-disposable template listed without `disposables: yes`, a qube whose netvm
-torii does not know, which adopting would move, without `adopt: force`:
+[`plan.make`](../dom0/torii/plan.py#L96)`(machine, snapshot, bundle_version)`
+is pure. It first collects every precondition failure and raises them
+together (`PlanError`):
 
 <!-- charter:embed SW-261127-2JH3 -->
 > **[SW-261127-2JH3](../claims/apply.md#sw-261127-2jh3-plan-refuses-before-any-step-a-file-that-names-what-this-machine-cannot-be-given) plan refuses before any step a file that names what this machine cannot be given**
@@ -76,28 +76,36 @@ torii does not know, which adopting would move, without `adopt: force`:
 > that a qube still uses, are refused on their own.
 <!-- /charter:embed -->
 
-**Then the steps**, in the order apply will make them:
+The adoption checks are the ones that protect a machine torii did not
+build: a qube on a netvm torii does not know (a Whonix gateway, a VPN
+qube) is not moved without `adopt: force`, and a disposable template,
+whose netvm every disposable inherits, is not listed without
+`disposables: yes`.
 
-1. The proxy template: cloned from the base template if it is missing, and
-   the bundle's proxy package installed in it when its recorded version is
-   not the bundle's ([SW-261127-HSHY](../claims/apply.md#sw-261127-hshy-the-proxy-package-comes-from-the-dom0-packages-bundle-with-no-repository-for-torii)).
-2. Each proxy qube in use: created, or restarted on a new package; IPv6
-   off ([SW-261127-3Q23](../claims/apply.md#sw-261127-3q23-every-proxy-qube-has-ipv6-off-for-itself-and-every-qube-behind-it)); its prefs; its `torii-proxy` service; its
-   config, from [`derive.proxy_config`](../dom0/torii/derive.py#L53), as
-   features; and a step that waits until it runs that config.
-3. The policy files: this mesh's, from
-   [`derive.policy`](../dom0/torii/derive.py#L216), and the shared denies after
-   every mesh's ([SW-261127-M36P](../claims/links.md#sw-261127-m36p-every-qrexec-call-runs-in-the-direction-of-the-connection-it-carries-and-only-the-declared-ones-are-allowed), [SW-261127-KWT2](../claims/apply.md#sw-261127-kwt2-each-meshs-file-changes-only-its-own-qubes-and-its-own-policy-file)).
-4. Each qube in the file: its netvm, its managed tag, and on its first
-   adoption the record of the netvm it had; its client service and
-   feature, from [`derive.qube_state`](../dom0/torii/derive.py#L192).
-5. Each qube that left the file:
-   [`derive.reset_state`](../dom0/torii/derive.py#L208): no netvm, and none of torii's service,
-   feature or tag; its adoption record stays.
-6. The proxy qubes, and then the tool's old templates, nothing uses any
-   more.
+It then emits typed `Step`s in a fixed order:
 
-What it may touch at all:
+1. **Template.** `template-install` of the base, `clone` to the tool's
+   template, `template-package` when its `torii-version` feature differs
+   from the bundle's ([SW-261127-HSHY](../claims/apply.md#sw-261127-hshy-the-proxy-package-comes-from-the-dom0-packages-bundle-with-no-repository-for-torii)).
+2. **Proxy qubes in use.** `restart` (new package, or a template move),
+   `create`, `feature-set ipv6 ""` ([SW-261127-3Q23](../claims/apply.md#sw-261127-3q23-every-proxy-qube-has-ipv6-off-for-itself-and-every-qube-behind-it)), prefs, the
+   `torii-proxy` service, `proxy-config` with the chunked features from
+   [`derive.proxy_config`](../dom0/torii/derive.py#L53) and
+   [`derive.encode_chunks`](../dom0/torii/derive.py#L135), and `proxy-ready`.
+3. **Policy.** `50-torii` (or `50-torii-<mesh>`) from
+   [`derive.policy`](../dom0/torii/derive.py#L216), and the shared
+   `59-torii-deny` from [`derive.deny_policy`](../dom0/torii/derive.py#L317)
+   ([SW-261127-M36P](../claims/links.md#sw-261127-m36p-every-qrexec-call-runs-in-the-direction-of-the-connection-it-carries-and-only-the-declared-ones-are-allowed), [SW-261127-KWT2](../claims/apply.md#sw-261127-kwt2-each-meshs-file-changes-only-its-own-qubes-and-its-own-policy-file)).
+4. **Workloads.** netvm, the `torii-managed` tag, on first adoption
+   `torii-prior-netvm` and `torii-adopted`, and the `torii-client` service
+   and `vm-config.torii-client` feature from
+   [`derive.qube_state`](../dom0/torii/derive.py#L192).
+5. **Workloads that left the file.** [`derive.reset_state`](../dom0/torii/derive.py#L208):
+   netvm none, client service and feature removed, tag removed.
+6. **Removals.** Proxy qubes the file no longer names (refused if any
+   qube still uses one as netvm), then the tool's templates nothing uses.
+
+Scope is enforced here, by construction of the step list:
 
 <!-- charter:embed SW-261127-G26T -->
 > **[SW-261127-G26T](../claims/apply.md#sw-261127-g26t-apply-changes-only-what-torii-owns-its-template-its-proxy-qubes-its-policy-files-and-named-workload-settings) apply changes only what torii owns: its template, its proxy qubes, its policy files, and named workload settings**
@@ -115,8 +123,11 @@ What it may touch at all:
 > a service is not changed.
 <!-- /charter:embed -->
 
-The adoption record and the way out are one entry, because the second
-rests on the first:
+Ordering is load-bearing. Proxies are configured and confirmed running
+the new config (step 2) before the policy that lets workloads call them
+and before any workload's netvm is pointed at them (steps 3 and 4).
+
+The exit path from torii fails closed:
 
 <!-- charter:embed SW-261127-VPGK -->
 > **[SW-261127-VPGK](../claims/apply.md#sw-261127-vpgk-a-qube-adopted-records-its-netvm-once-a-qube-leaving-the-file-is-left-with-no-netvm) A qube adopted records its netvm once; a qube leaving the file is left with no netvm**
@@ -131,25 +142,25 @@ rests on the first:
 > and the command to restore it; it never restores it.
 <!-- /charter:embed -->
 
-The trap is in step 5: a qube leaving the file is not given its old netvm
-back. That netvm may send directly what the file had been sending through
-the proxy or an egress, so plan names it, and the `qvm-prefs` command to
-restore it, and leaves the choice to the owner.
+Restoring the prior netvm automatically would be the wrong default: a
+qube that was routed through an egress or an allowlist would silently
+regain direct, unfiltered access. `plan` names the prior netvm and the
+`qvm-prefs` command; the owner decides.
 
-[`plan.notes`](../dom0/torii/plan.py#L316) adds lines that change nothing, such
-as a qube on an egress whose LAN traffic still leaves through the proxy's
-netvm ([SW-261127-KYZW](../claims/egress.md#sw-261127-kyzw-a-qubes-lan-traffic-never-goes-through-its-egress-and-plan-says-so)). `torii plan` prints the steps and the notes;
-a machine that already matches the file plans nothing.
+[`plan.notes`](../dom0/torii/plan.py#L316) adds non-step output, such as a
+workload on an egress whose LAN traffic is not routed through it
+([SW-261127-KYZW](../claims/egress.md#sw-261127-kyzw-a-qubes-lan-traffic-never-goes-through-its-egress-and-plan-says-so)) and a template that lacks the client package.
 
-## 4. apply
+## Execution
 
-`torii apply` does not run a stored plan. It reads the file and the machine
-again, makes the plan again, prints it, and asks; the steps you say yes to
-are the ones it makes. An earlier `torii plan` on a machine that has since
-changed shows other steps, and apply shows the new ones before asking.
+`cmd_apply` does not execute a stored plan: it loads the file, takes a
+fresh snapshot, re-plans, prints the steps and prompts (`-y` skips the
+prompt; EOF on stdin is "no"). What is approved is what that invocation
+computed; an earlier `torii plan` on a machine that changed since may
+differ.
 
-[`Applier.run`](../dom0/torii/apply.py#L45) then makes the steps one at a time,
-each by its `do_` method:
+[`Applier.run`](../dom0/torii/apply.py#L45) dispatches each step to its
+`do_<kind>` method:
 
 <!-- charter:embed SW-261127-63CS -->
 > **[SW-261127-63CS](../claims/apply.md#sw-261127-63cs-apply-makes-the-plans-steps-in-order-stops-at-the-first-that-fails-and-a-second-run-continues) apply makes the plan's steps in order, stops at the first that fails, and a second run continues**
@@ -161,25 +172,49 @@ each by its `do_` method:
 > machine that matches the file it holds none.
 <!-- /charter:embed -->
 
-Since every step is a difference from the snapshot, a step that was made
-is not planned again: running apply after a failure makes only what is
-left.
+Idempotence follows from planning against the live state: every step is a
+diff, so after a partial run the next plan contains only the remainder.
 
-## 5. The config reaches the proxy
+Mechanics worth knowing when reviewing `apply.py`:
 
-The proxy's config cannot travel as one feature: QubesDB refuses a value
-of 3 KB or more. [`derive.encode_chunks`](../dom0/torii/derive.py#L135)
-compresses the JSON and splits it into parts, with a head holding the
-count and a hash of the whole.
-[`Applier.do_proxy_config`](../dom0/torii/apply.py#L166) writes the parts
-first, the head last and removes stale parts after it, so a reader in
-between sees a hash that does not match.
+- Qube changes are `qubesadmin` property, feature and tag writes; qubes
+  are created with `add_new_vm` and cloned with `clone_vm`, and tagged
+  `torii-owned` at creation, which is what later scope checks key on.
+- `template-package` starts the template, runs as root over
+  `qubes.VMRootShell`: the distro's dependencies (from the template's own
+  repositories, through the updates proxy), then the package bytes from
+  the dom0 bundle piped to `/tmp`, `dnf`/`apt` install, and `systemctl
+  enable` of the guard and the proxy; then shuts it down and records
+  `torii-version`.
+- `restart` detaches every running qube using the proxy as netvm, restarts
+  it (moving its template if needed), records `torii-started-version`,
+  and reattaches them in a `finally`. Reattachment sets the netvm
+  explicitly, so a client that followed Qubes' default now has it set
+  (TODO.md, "Later").
+- `policy` is `policy_replace(name, text, token="any")`: an unconditional
+  overwrite of the tool's own file, with no compare-and-swap against a
+  concurrent hand edit of that file.
 
-In the proxy qube, the program watches QubesDB; on a change
-[`waitForNewConfig`](../proxy/cmd/torii-proxy/main.go#L165) waits half a second
-for dom0 to finish, then [`qubesdb.Config`](../proxy/internal/qubesdb/qubesdb.go#L42)
-joins the parts and checks the hash. A config that does not check, or does
-not parse, is not taken, and the program goes on running the old one:
+## Config delivery to the proxy
+
+QubesDB refuses values of 3072 bytes or more, so
+[`derive.encode_chunks`](../dom0/torii/derive.py#L135) serializes the config
+as canonical JSON, gzips it (`mtime=0`, so the bytes are deterministic),
+base64-encodes it and splits it into 2800-byte parts:
+`vm-config.torii` holds `<parts> <sha256 of the JSON>`,
+`vm-config.torii.0..n-1` the parts.
+[`Applier.do_proxy_config`](../dom0/torii/apply.py#L166) writes the parts, then
+the head, then deletes stale higher-numbered parts, so a reader at any
+point sees either the old head, or a head whose hash does not match until
+the last part lands.
+
+In the proxy qube, `vm-config.*` features appear as `/vm-config/<key>` in
+QubesDB, writable only from dom0's side (a qube can overwrite its own
+copy; dom0's value stays). The program runs `qubesdb-watch`; on a change,
+[`waitForNewConfig`](../proxy/cmd/torii-proxy/main.go#L165) waits 500 ms, then
+[`qubesdb.Config`](../proxy/internal/qubesdb/qubesdb.go#L42) reads the head
+and parts, decodes and checks the SHA-256, and `config.Parse` validates
+the result:
 
 <!-- charter:embed SW-261127-XGDY -->
 > **[SW-261127-XGDY](../claims/apply.md#sw-261127-xgdy-a-proxy-takes-its-config-whole-or-not-at-all-and-a-failed-check-never-replaces-the-running-one) A proxy takes its config whole or not at all, and a failed check never replaces the running one**
@@ -194,17 +229,20 @@ not parse, is not taken, and the program goes on running the old one:
 > then fails to start on ends the process, and its service restarts it.
 <!-- /charter:embed -->
 
-A valid config with a new version restarts the program in-process
-([`run`](../proxy/cmd/torii-proxy/main.go#L89)): identities keep their state
-on disk and reconnect without a new sign-in, and open connections end.
+A valid config with a new `version` replaces the running one in-process
+([`run`](../proxy/cmd/torii-proxy/main.go#L89)): the daemon is closed and
+started again, identities reconnect from their state directories without
+a new sign-in, and open connections are dropped. The guard is not part of
+this cycle and stays loaded throughout.
 
-## 6. apply waits for it
+## Readiness
 
-The step after a config is
-[`Applier.do_proxy_ready`](../dom0/torii/apply.py#L181): it starts the proxy
-qube if it is not running, then reads its status over `torii.Status` until
-the program reports the config's version, printing each sign-in link it
-sees on the way ([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-signs-in-by-a-link-a-person-approves-or-a-one-time-key-that-only-the-proxy-qube-keeps)):
+[`Applier.do_proxy_ready`](../dom0/torii/apply.py#L181) starts the proxy qube
+if needed and polls `torii.Status` every 2 s
+([`status.read`](../dom0/torii/status.py#L13), `qvm-run`-style
+`run_service` as root, 15 s per call) until `config_version` equals the
+planned version, printing each new sign-in link it sees
+([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identity-signs-in-by-a-link-a-person-approves-or-a-one-time-key-that-only-the-proxy-qube-keeps)), for up to 180 s:
 
 <!-- charter:embed SW-261127-QMVP -->
 > **[SW-261127-QMVP](../claims/apply.md#sw-261127-qmvp-apply-goes-on-past-a-proxys-config-only-once-the-proxy-reports-running-it) apply goes on past a proxy's config only once the proxy reports running it**
@@ -215,18 +253,13 @@ sees on the way ([SW-261127-3TPX](../claims/identity.md#sw-261127-3tpx-an-identi
 > report it in time, the step fails, naming what it last reported.
 <!-- /charter:embed -->
 
-In the plan the proxies come before the policy and the qubes' netvms, so
-a qube is pointed at a proxy only once that proxy has reported the new
-config.
+## show
 
-## 7. Reading it back
-
-`torii show` never asks the file what a qube can reach. It takes a
-snapshot, reads each proxy's status and log over `torii.Status`, and
-[`show.qube_view`](../dom0/torii/show.py#L97) works out each qube's reach from
-those alone, parsing every policy file, hand-written ones included
-([`show.rules`](../dom0/torii/show.py#L39)). The file, if there is one, only
-picks which qubes to list:
+`cmd_show` takes a snapshot and each proxy's status and config, and
+[`show.qube_view`](../dom0/torii/show.py#L97) derives reach from those alone.
+Policy is evaluated by [`show.rules`](../dom0/torii/show.py#L39) over every
+policy file, hand-written ones included, with qrexec's first-match
+semantics:
 
 <!-- charter:embed SW-261127-62WV -->
 > **[SW-261127-62WV](../claims/seeing.md#sw-261127-62wv-show-reports-each-qubes-reach-from-the-live-machine-never-from-the-file) show reports each qube's reach from the live machine, never from the file**
@@ -244,13 +277,15 @@ picks which qubes to list:
 > behind no proxy is shown as reaching what its netvm allows.
 <!-- /charter:embed -->
 
-`torii check` is the same reading set against the file.
-[`show.check_problems`](../dom0/torii/show.py#L365) runs `plan.make` and reports
-every step it would make as drift, then adds what a plan cannot see, among them a
-proxy that is down or runs another config than its features hold, an
-identity not signed in or carrying other tags ([SW-261127-P8H7](../claims/identity.md#sw-261127-p8h7-a-tagged-identity-carries-exactly-the-files-tags-prefixed-by-the-machine-and-check-names-any-other)), a
-qube attached to a proxy but not in the file, and hand-written policy that
-widens what torii set:
+The file is read only to choose which qubes to list, so `show` reports
+what the machine does, not what the file intends; tokens it does not
+evaluate are reported by `check` rather than guessed at.
+
+## check
+
+[`show.check_problems`](../dom0/torii/show.py#L365) is `plan.make` with every
+step reported as `drift:` and every `PlanError` as `file:`, plus checks a
+plan cannot express:
 
 <!-- charter:embed SW-261127-SMYC -->
 > **[SW-261127-SMYC](../claims/seeing.md#sw-261127-smyc-check-names-each-difference-it-looks-for-between-the-live-machine-and-the-file-and-fails-on-one) check names each difference it looks for between the live machine and the file, and fails on one**
@@ -270,6 +305,12 @@ widens what torii set:
 > qubes' firewall rules or the rules inside a proxy qube.
 <!-- /charter:embed -->
 
-What `torii log QUBE` prints is the decision log the proxy kept,
-[SW-261127-R4CD](../claims/seeing.md#sw-261127-r4cd-every-connection-the-proxy-decides-is-logged-with-its-verdict-and-the-rule-that-made-it), read over the same read-only service
+The policy check is the one a security reviewer will care about: any
+other file granting `torii.Connect`, `torii.Status`, `qubes.ConnectTCP` to
+or from a managed qube or proxy, or a wildcard service, is named, so a
+hand-written line cannot widen reach invisibly. It does not read the
+qubes' firewall rules or the nftables state inside a proxy qube.
+
+`torii log QUBE` prints the proxy's decision events for that workload
+([SW-261127-R4CD](../claims/seeing.md#sw-261127-r4cd-every-connection-the-proxy-decides-is-logged-with-its-verdict-and-the-rule-that-made-it)), over the same read-only service
 ([SW-261127-B8BM](../claims/seeing.md#sw-261127-b8bm-the-status-service-is-read-only-it-reports-and-changes-nothing-in-the-proxy)).
