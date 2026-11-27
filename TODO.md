@@ -24,6 +24,9 @@ the owner's rulings.
   recorded machine), and cite each need's scenarios from them.
 - **The owner's rulings.** Every scenario is `(agent, provisional)`; once
   read, record them as the owner's, with a Changes line per entry.
+- **Curate the docs.** Eleven drafts in `docs/` (2026-11-27); read each
+  against what it names, then `build/charter curate -by owner docs/FILE`.
+  `charter check` warns of each until then.
 - **When charter is public,** drop `GOPRIVATE` from this Makefile.
 
 ## Later
@@ -123,6 +126,33 @@ the owner's rulings.
 
 ## Small
 
+- Found drafting the docs (2026-11-27), each for the owner to rule: a change
+  to the doc, to the record through a story, or a question.
+  - `docs/setup.md` step 5's plan sample lacks the IPv6 and `59-torii-deny`
+    steps, and step 6 counts `[1/13]` against 15; its `grants` sample shows
+    `tag:server` where `derive.grants` gives `tag:m1-server` (P8H7).
+  - `docs/setup.md` "Remove a qube" says it goes back to the file's defaults;
+    VPGK: no netvm, and none of torii's service, feature or tag.
+  - `docs/setup.md` "Undo everything" leaves `59-torii-deny.policy`.
+  - `docs/tailscale.md` "Tags" advises role tags not per machine, with
+    unprefixed examples; P8H7 prefixes every qube's tags by the machine.
+  - `docs/salt.md` says torii owns the listed qubes' `ipv6` feature; plan
+    sets it on proxy qubes (G26T), and the line leaves out `torii-client`.
+  - `docs/design.md` Goals: identities join "by sign-in links"; 3TPX and
+    KHZB allow a one-time key too.
+  - `docs/design.md` Limits (from reference.md): "not built yet:
+    measurements of userspace throughput", which performance.md measured.
+  - `proxy/README.md` "so domain fronting on a shared address is refused",
+    the same overclaim as design.md's.
+  - Explain is only `torii-proxy explain` in the proxy qube; no dom0
+    command reaches it (`torii.Status` carries status and log), while
+    Z5ST's Why is the owner asking before trying.
+  - K5TK says "the egress's resolver"; it is always `1.1.1.1:53`, the
+    config default, and the machine file cannot change it.
+  - `QubesAntispoof` is `unsure`, but `proxy/README.md` records it
+    confirmed on Qubes 4.3 (level 5); cite that or probe it.
+  - `cmd_sign_in_key` deletes the identity's state first: a key given to a
+    joined identity makes a new device. salt.md says so; tailscale.md does not.
 - `docs/design.md` says the server-name check "stops domain fronting with
   an allowed name". It stops a mismatched server name, not the classic form
   (allowed server name, other `Host` inside TLS). Reword.
