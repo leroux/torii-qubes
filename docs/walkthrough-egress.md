@@ -83,6 +83,22 @@ allowing it) is seen with the machine's own LAN address, and a LAN-side
 observer can still place the machine. `plan` prints a note for every
 workload on an egress.
 
+How an allowed connection of a workload on an egress is routed, and
+where it fails closed:
+
+```mermaid
+flowchart LR
+  c["allowed connection<br/>of a workload on egress"] --> z{"ZoneOf(address)"}
+  z -- LAN --> lan["proxy qube's netvm<br/>(direct, plan notes it)"]
+  z -- tailnet --> own["workload's own identity<br/>(never the egress's)"]
+  z -- internet --> u{"Selector.Usable?"}
+  u -- no --> ref["refuse egress-no-healthy-exit<br/>DNS: SERVFAIL"]
+  u -- yes --> ns["egress identity netstack<br/>DialContextTCPWithBind"]
+  ns --> x{"exit node route?"}
+  x -- yes --> out(("internet via exit node"))
+  x -- no --> fail["dial fails<br/>(no fallback to host stack)"]
+```
+
 ## DNS
 
 For a workload on an egress, [`Engine.AnswerDNS`](../proxy/internal/engine/engine.go#L807)
@@ -153,6 +169,17 @@ online, offering an exit node) and, if present, a TSMP ping
 > succeeded; and, when the egress names a `probe`, when that probe failed
 > 3 times in a row. No probe runs unless the file names one.
 <!-- /charter:embed -->
+
+Per-node health as the selector tracks it:
+
+```mermaid
+stateDiagram-v2
+  [*] --> Unhealthy: not yet checked
+  Unhealthy --> Healthy: listed, online, offers exit,<br/>pings answered
+  Healthy --> Unhealthy: off the netmap / offline /<br/>3 missed TSMP pings
+  Healthy --> Tripped: active node, ≥3 destinations<br/>failed in 30 s, none ok,<br/>or 3 failed probes
+  Tripped --> Unhealthy: hold-down (failback-after)<br/>expires, re-checked
+```
 
 The trips are in [`Selector.tripLocked`](../proxy/internal/egress/egress.go#L264)
 and apply to the active node only: three or more distinct destinations

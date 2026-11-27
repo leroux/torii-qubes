@@ -29,6 +29,35 @@ the machine. It is kept small and deterministic: a pure planner over a
 snapshot, an executor that makes one Admin API change per step, and no
 parsing of anything a qube sends except the status JSON.
 
+Overview of one `torii apply` that changes a proxy's config:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant T as torii apply (dom0)
+  participant A as Admin API / qubesd
+  participant DB as QubesDB in sys-torii
+  participant P as torii-proxy
+  T->>A: snapshot (domains, features, policy files)
+  T->>T: plan.make (pure) → steps
+  T->>A: template, proxy qube, prefs, service
+  T->>A: features vm-config.torii.0..n-1
+  T->>A: feature vm-config.torii = "n sha256"
+  A-->>DB: /vm-config/torii*
+  DB-->>P: qubesdb-watch fires
+  P->>P: wait 500 ms · join parts · check SHA-256 · Parse
+  alt valid, new version
+    P->>P: close daemon, start on new config
+  else invalid or partial
+    P->>P: keep running config
+  end
+  loop every 2 s, up to 180 s
+    T->>P: qrexec torii.Status
+    P-->>T: status JSON (config_version, sign-in links)
+  end
+  T->>A: policy files, then workloads' netvm, tags, client
+```
+
 ## Parsing
 
 [`cmd_plan`](../dom0/torii/cli.py#L74) and [`cmd_apply`](../dom0/torii/cli.py#L94)

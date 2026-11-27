@@ -10,27 +10,33 @@ component carries are entries in `claims/`, named in each section.
 
 ## Overview
 
-```
- dom0 ──────────────────────────────────────────────────────────────────────┐
- │ torii (Python, qubesadmin): parse ~/torii.yaml → snapshot → plan → apply │
- │ writes /etc/qubes/policy.d/{50-torii,59-torii-deny}.policy               │
- └──────┬─────────────────────────────────────▲────────────────────────────┘
-        │ Admin API: prefs, tags, services,   │ qrexec torii.Status (root,
-        │ features vm-config.torii{,.N}       │ read-only JSON)
- ┌──────▼─────────────────────────────────────┴────────┐
- │ sys-torii (AppVM, provides_network)                 │   netvm (sys-firewall,
- │  torii-guard.nft  inet torii-guard, prio −400       │──▶ a VPN qube…) ──▶ internet, LAN
- │  torii-proxy run  nft inet torii, one tsnet node    │
- │                   per identity and per egress       │──▶ tailnet (WireGuard/DERP)
- └──▲───────────────────────▲──────────────────┬───────┘
-    │ qrexec torii.Connect   │ vif* (routed)    │ qrexec qubes.ConnectTCP+<port>
-    │ +socks|+http|+f.<name> │ TCP/DNS REDIRECT │ (inbound, declared ports)
-    │                        │ UDP TPROXY       │
- ┌──┴───────────────────┐ ┌─┴──────────────────▼─┐
- │ network: none        │ │ network: proxy       │
- │ torii-client         │ │ netvm = sys-torii    │
- │ 127.0.0.1:1080/3128/…│ │                      │
- └──────────────────────┘ └──────────────────────┘
+```mermaid
+flowchart TB
+  subgraph dom0["dom0 (trusted)"]
+    tool["torii CLI<br/>parse → snapshot → plan → apply"]
+    pol[("policy.d/<br/>50-torii, 59-torii-deny")]
+  end
+  subgraph proxy["sys-torii (proxy qube)"]
+    guard["torii-guard.nft<br/>inet torii-guard, prio −400<br/>no forwarding, no IPv6 from vif*"]
+    tp["torii-proxy<br/>nft inet torii · engine<br/>tsnet node per identity / egress"]
+  end
+  subgraph wl["workloads (untrusted)"]
+    q1["network: none<br/>torii-client on 127.0.0.1"]
+    q2["network: proxy<br/>netvm = sys-torii"]
+  end
+  netvm["netvm<br/>sys-firewall / VPN qube"]
+  ts(("tailnet<br/>WireGuard / DERP"))
+  inet(("internet, LAN"))
+
+  tool -- "Admin API: prefs, tags, services,<br/>features vm-config.torii*" --> tp
+  tool --> pol
+  tp -- "qrexec torii.Status (root, read-only)" --> tool
+  q1 -- "qrexec torii.Connect+socks|http|f.NAME" --> tp
+  q2 -- "vif*: TCP/DNS REDIRECT, UDP TPROXY" --> tp
+  tp -- "qrexec qubes.ConnectTCP+PORT (inbound)" --> q1
+  tp -- "qrexec qubes.ConnectTCP+PORT (inbound)" --> q2
+  tp -- "dials it opens itself" --> netvm --> inet
+  tp <-- "per-identity WireGuard" --> ts
 ```
 
 ## Trust model
