@@ -1,2 +1,0 @@
-# Surfaces no entry accounts for yet. Each line goes when its area is written.
-env:TORII_BUNDLE	the dom0 tool area is not written yet

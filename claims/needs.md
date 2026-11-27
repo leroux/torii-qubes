@@ -79,7 +79,8 @@ empty.
 
 torii owns: its template, the proxy qubes it created, the policy file
 `/etc/qubes/policy.d/50-torii.policy`, and on each managed qube only its
-netvm, the `torii-client` service and feature, and its torii tags. It
+netvm, the `torii-client` service and feature, its torii tags and the
+adoption features it writes once. It
 creates or deletes no other qube and writes no other policy file. A qube
 removed from the file is left with no netvm, never its old one.
 
